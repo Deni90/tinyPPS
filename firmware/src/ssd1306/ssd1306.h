@@ -37,14 +37,14 @@ class Ssd1306 {
      *
      * @return Screen width in pixels
      */
-    uint16_t get_width() const;
+    uint16_t getWidth() const;
 
     /**
      * @brief Return screen height
      *
      * @return Screen height in pixels
      */
-    uint16_t get_height() const;
+    uint16_t getHeight() const;
 
   private:
     /**

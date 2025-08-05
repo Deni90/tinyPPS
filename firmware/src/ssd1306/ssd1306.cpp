@@ -118,9 +118,9 @@ void Ssd1306::display(const uint8_t* buffer) {
     m_i2c->writeTo(k_i2c_addr, temp_buf, len + 1);
 }
 
-uint16_t Ssd1306::get_width() const { return k_width; }
+uint16_t Ssd1306::getWidth() const { return k_width; }
 
-uint16_t Ssd1306::get_height() const {
+uint16_t Ssd1306::getHeight() const {
     return m_type == Type::ssd1306_128x64 ? 64 : 32;
 }
 

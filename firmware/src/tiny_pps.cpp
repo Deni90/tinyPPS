@@ -64,7 +64,7 @@ void TinyPPS::handle() {
 }
 
 TinyPPS::State TinyPPS::handleMenuState() {
-    MenuScreen menu_screen(m_oled.get_width(), m_oled.get_height());
+    MenuScreen menu_screen(m_oled.getWidth(), m_oled.getHeight());
     std::vector<std::string> profile_names;
     for (const auto& it : m_configs) {
         profile_names.emplace_back(it.first);
@@ -107,7 +107,7 @@ TinyPPS::State TinyPPS::handleMenuState() {
 }
 
 TinyPPS::State TinyPPS::handleMainState() {
-    MainScreen main_screen(m_oled.get_width(), m_oled.get_height());
+    MainScreen main_screen(m_oled.getWidth(), m_oled.getHeight());
     int8_t selection = 0;
     bool is_editing = false;
     bool blinking_state = true;
