@@ -38,6 +38,7 @@ add_executable(TinyPD src/main.cpp src/config.cpp src/tiny_pps.cpp)
 
 add_subdirectory(src/gui)
 add_subdirectory(src/hal)
+add_subdirectory(src/ina226)
 add_subdirectory(src/rotary_encoder)
 add_subdirectory(src/rp_imp)
 add_subdirectory(src/ssd1306)
@@ -55,6 +56,7 @@ target_link_libraries(TinyPD
         pico_stdlib
         tinypps_gui
         tinypps_hal
+        tinypps_ina226
         tinypps_rotary_encoder
         tinypps_rp_imp
         tinypps_ssd1306

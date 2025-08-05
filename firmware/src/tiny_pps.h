@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "config.h"
+#include "ina226.h"
 #include "rotary_encoder.h"
 #include "rp_i2c.h"
 #include "rp_pin.h"
@@ -42,6 +43,7 @@ class TinyPPS {
     State handleMainState();
 
     RpI2c m_i2c;
+    Ina226 m_ina226;
     Ssd1306 m_oled;
     RpPin m_rot_enc_a_pin, m_rot_enc_b_pin, m_rot_enc_btn_pin;
     RotaryEncoder m_rotary_encoder;

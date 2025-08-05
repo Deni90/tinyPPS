@@ -15,17 +15,22 @@ static constexpr uint k_rot_enc_b_pin = 17;
 static constexpr unsigned int k_i2c_sda_pin = 20;
 static constexpr unsigned int k_i2c_scl_pin = 21;
 
+static constexpr uint8_t k_ina226_addr = 0x40;
+
 static constexpr unsigned int k_step = 50;
 static constexpr unsigned int k_big_step_period = 75;         // ms
 static constexpr unsigned int k_blinking_period = 500;        // ms
 static constexpr unsigned int k_double_click_period = 1000;   // ms
+static constexpr unsigned int k_measuring_period = 200;       // ms
 
 static volatile uint32_t g_clock = 0;
 static volatile uint32_t g_debounce_clock = 0;
 static volatile uint32_t g_rotary_state_clock = 0;
+static volatile uint32_t g_measuring_clock = 0;
 
 TinyPPS::TinyPPS()
     : m_i2c(i2c0, k_i2c_sda_pin, k_i2c_scl_pin, 400),
+      m_ina226(&m_i2c, k_ina226_addr),   // TODO update shunt resistor value
       m_oled(&m_i2c, Ssd1306::Type::ssd1306_128x64),
       m_rot_enc_a_pin(k_rot_enc_a_pin), m_rot_enc_b_pin(k_rot_enc_b_pin),
       m_rot_enc_btn_pin(k_rot_enc_btn_pin),
@@ -41,6 +46,7 @@ TinyPPS::TinyPPS()
             ++g_clock;
             ++g_debounce_clock;
             ++g_rotary_state_clock;
+            ++g_measuring_clock;
             return true;
         },
         NULL, &timer);
@@ -53,6 +59,8 @@ TinyPPS::TinyPPS()
     m_configs.emplace_back(
         std::make_pair("PPS: 3.3-20V 100-5000mA",
                        ConfigBuilder::buildPpsProfile(3300, 20000, 100, 5000)));
+
+    m_ina226.calibrate(0.5); // TODO set this to 5A once the shunt is changed
 }
 
 void TinyPPS::handle() {
@@ -175,6 +183,13 @@ TinyPPS::State TinyPPS::handleMainState() {
                     }
                     m_oled.display(main_screen.build());
                 }
+            }
+
+            if (g_measuring_clock >= k_measuring_period) {
+                g_measuring_clock = 0;
+                main_screen.setMeasuredVoltage(m_ina226.readBusVoltage());
+                main_screen.setMeasuredCurrent(m_ina226.readCurrent());
+                m_oled.display(main_screen.build());
             }
         }
 
