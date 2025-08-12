@@ -3,26 +3,30 @@
 #include <iomanip>
 #include <sstream>
 
-static const uint8_t empty_circle[] = {0x1c, 0x22, 0x41, 0x41,
-                                       0x41, 0x22, 0x1c};
-static const uint8_t full_circle[] = {0x1c, 0x3e, 0x7f, 0x7f, 0x7f, 0x3e, 0x1c};
-
 MainScreen::MainScreen(uint16_t width, uint16_t height)
-    : Screen(width, height), m_is_led_on(false), m_mode(MainScreen::Mode::none),
-      m_is_cc(false), m_is_cv(false), m_is_output_enabled(false),
-      m_temperature(0.0f), m_measured_voltage(0), m_measured_current(0),
-      m_target_voltage(0), m_is_target_voltage_selected(false),
-      m_target_current(0), m_is_target_current_selected(false) {}
+    : Screen(width, height), m_mode(MainScreen::Mode::none), m_is_cc(false),
+      m_is_cv(false), m_is_output_enabled(false), m_temperature(0.0f),
+      m_measured_voltage(0), m_measured_current(0), m_target_voltage(0),
+      m_is_target_voltage_selected(false), m_target_current(0),
+      m_is_target_current_selected(false) {}
 
 uint8_t* MainScreen::build() {
     clear();
 
-    // LED indicator
-    if (m_is_led_on) {
-        draw(0, 0, full_circle, 7, 7, false);
-    } else {
-        draw(0, 0, empty_circle, 7, 7, false);
+    // Mode indicator
+    std::string mode_str;
+    switch (m_mode) {
+    case MainScreen::Mode::pdo:
+        mode_str = "PDO";
+        break;
+    case MainScreen::Mode::pps:
+        mode_str = "PPS";
+        break;
+    case MainScreen::Mode::none:
+    default:
+        mode_str = "N/A";
     }
+    printString(0, 0, mode_str);
 
     // Temperature
     std::ostringstream temperature_stream;
@@ -64,40 +68,19 @@ uint8_t* MainScreen::build() {
                        {.invert = m_is_target_current_selected});
     printString(33 + len, 40, "mA");
 
-    // Mode indicator
-    std::string mode_str;
-    switch(m_mode) {
-        case MainScreen::Mode::pdo:
-            mode_str = "PDO";
-            break;
-        case MainScreen::Mode::pps:
-            mode_str = "PPS";
-            break;
-        case MainScreen::Mode::none:
-        default:
-            mode_str = "N/A";
-    }
-    drawRectangle(21, 53, 20, 11, true);
-    printString(24, 54, mode_str, {.invert = true});
-
     // Constant voltage indicator
-    drawRectangle(42, 53, 20, 11, m_is_cv);
-    printString(48, 54, "CV", {.invert = m_is_cv});
+    drawRectangle(32, 53, 20, 11, m_is_cv);
+    printString(38, 54, "CV", {.invert = m_is_cv});
 
     // Constant current indicator
-    drawRectangle(63, 53, 20, 11, m_is_cc);
-    printString(69, 54, "CC", {.invert = m_is_cc});
+    drawRectangle(53, 53, 20, 11, m_is_cc);
+    printString(59, 54, "CC", {.invert = m_is_cc});
 
     // Output enable indicator
-    drawRectangle(84, 53, 20, 11, m_is_output_enabled);
-    printString(89, 54, "EN", {.invert = m_is_output_enabled});
+    drawRectangle(74, 53, 20, 11, m_is_output_enabled);
+    printString(79, 54, "EN", {.invert = m_is_output_enabled});
 
     return m_frame_buffer;
-}
-
-MainScreen& MainScreen::setLed(bool value) {
-    m_is_led_on = value;
-    return *this;
 }
 
 MainScreen& MainScreen::setMode(MainScreen::Mode value) {

@@ -32,14 +32,6 @@ class MainScreen : public Screen {
     virtual uint8_t* build() override;
 
     /**
-     * @brief Set led status
-     *
-     * @param[in] value True - ON, False - OFF
-     * @return reference to this main screen object
-     */
-    MainScreen& setLed(bool value);
-
-    /**
      * @brief Set Mode
      *
      * @param[in] value Mode
@@ -128,7 +120,6 @@ class MainScreen : public Screen {
     MainScreen& selectTargetCurrent(bool value);
 
   private:
-    bool m_is_led_on;
     Mode m_mode;
     bool m_is_cv;
     bool m_is_cc;
