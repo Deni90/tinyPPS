@@ -36,7 +36,9 @@ TinyPPS::TinyPPS()
       m_rot_enc_btn_pin(k_rot_enc_btn_pin),
       m_rotary_encoder(&m_rot_enc_a_pin, &m_rot_enc_b_pin, &m_rot_enc_btn_pin,
                        &g_debounce_clock),
-      m_state(State::menu), m_active_config_index(0) {
+      m_state(State::menu), m_active_config_index(0) {}
+
+bool TinyPPS::initialize() {
     stdio_init_all();
     // Initialize a timer to repeat every 1 ms
     static struct repeating_timer timer;
@@ -60,7 +62,13 @@ TinyPPS::TinyPPS()
         std::make_pair("PPS: 3.3-20V 100-5000mA",
                        ConfigBuilder::buildPpsProfile(3300, 20000, 100, 5000)));
 
-    m_ina226.calibrate(0.5); // TODO set this to 5A once the shunt is changed
+    // TODO set this to 5A once the shunt is changed
+    if (!m_ina226.calibrate(0.5)) {
+        // Failed to calibrate INA226
+        return false;
+    }
+
+    return true;
 }
 
 void TinyPPS::handle() {

@@ -24,6 +24,12 @@ class TinyPPS {
     TinyPPS();
 
     /**
+     * @brief Initialize the module
+     * @return True if the module is successfully initialized
+     */
+    bool initialize();
+
+    /**
      * @brief Handle function used executing the main logic
      * @note Call this function from the main loop
      */
