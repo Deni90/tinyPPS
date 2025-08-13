@@ -28,13 +28,13 @@ set(PICO_BOARD pico2_w CACHE STRING "Board type")
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico_sdk_import.cmake)
 
-project(TinyPD C CXX ASM)
+project(TinyPPS C CXX ASM)
 
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
-add_executable(TinyPD src/main.cpp src/config.cpp src/tiny_pps.cpp)
+add_executable(TinyPPS src/main.cpp src/config.cpp src/tiny_pps.cpp)
 
 add_subdirectory(src/gui)
 add_subdirectory(src/hal)
@@ -43,15 +43,15 @@ add_subdirectory(src/rotary_encoder)
 add_subdirectory(src/rp_imp)
 add_subdirectory(src/ssd1306)
 
-pico_set_program_name(TinyPD "TinyPD")
-pico_set_program_version(TinyPD "1.0")
+pico_set_program_name(TinyPPS "TinyPPS")
+pico_set_program_version(TinyPPS "1.0")
 
 # Modify the below lines to enable/disable output over UART/USB
-pico_enable_stdio_uart(TinyPD 0)
-pico_enable_stdio_usb(TinyPD 1)
+pico_enable_stdio_uart(TinyPPS 0)
+pico_enable_stdio_usb(TinyPPS 1)
 
 # Add the standard library to the build
-target_link_libraries(TinyPD
+target_link_libraries(TinyPPS
         hardware_i2c
         pico_stdlib
         tinypps_gui
@@ -62,5 +62,5 @@ target_link_libraries(TinyPD
         tinypps_ssd1306
 )
 
-pico_add_extra_outputs(TinyPD)
+pico_add_extra_outputs(TinyPPS)
 
