@@ -58,16 +58,7 @@
           "width": 0.0
         }
       ],
-      "drc_exclusions": [
-        [
-          "courtyards_overlap|94823732|91805000|bccfe028-12b4-47ac-b326-7cb33872c83c|ed61944c-bd3a-42d4-87d0-c8160643b910",
-          ""
-        ],
-        [
-          "lib_footprint_mismatch|111800000|89754500|d240169c-4c73-4c07-b48a-ee62748db2eb|00000000-0000-0000-0000-000000000000",
-          ""
-        ]
-      ],
+      "drc_exclusions": [],
       "meta": {
         "version": 2
       },
@@ -198,8 +189,10 @@
       "track_widths": [
         0.0,
         0.15,
+        0.2,
         0.3,
         0.5,
+        0.6,
         1.0
       ],
       "tuning_pattern_settings": {
