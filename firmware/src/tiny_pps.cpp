@@ -44,10 +44,10 @@ bool TinyPPS::initialize() {
     add_repeating_timer_ms(
         1,
         [](__unused struct repeating_timer* t) -> bool {
-            ++g_clock;
-            ++g_debounce_clock;
-            ++g_rotary_state_clock;
-            ++g_measuring_clock;
+            g_clock = g_clock + 1;
+            g_debounce_clock = g_debounce_clock + 1;
+            g_rotary_state_clock = g_rotary_state_clock + 1;
+            g_measuring_clock = g_measuring_clock + 1;
             return true;
         },
         NULL, &timer);
