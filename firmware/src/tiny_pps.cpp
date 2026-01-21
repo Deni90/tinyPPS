@@ -8,12 +8,12 @@
 #include "main_screen.h"
 #include "menu_screen.h"
 
-static constexpr uint k_rot_enc_btn_pin = 15;
-static constexpr uint k_rot_enc_a_pin = 16;
-static constexpr uint k_rot_enc_b_pin = 17;
+static constexpr uint k_rot_enc_btn_pin = 11;
+static constexpr uint k_rot_enc_a_pin = 10;
+static constexpr uint k_rot_enc_b_pin = 9;
 
-static constexpr unsigned int k_i2c_sda_pin = 20;
-static constexpr unsigned int k_i2c_scl_pin = 21;
+static constexpr unsigned int k_i2c_sda_pin = 28;
+static constexpr unsigned int k_i2c_scl_pin = 29;
 
 static constexpr uint8_t k_ina226_addr = 0x40;
 
@@ -30,7 +30,7 @@ static volatile uint32_t g_measuring_clock = 0;
 
 TinyPPS::TinyPPS()
     : m_i2c(i2c0, k_i2c_sda_pin, k_i2c_scl_pin, 400),
-      m_ina226(&m_i2c, k_ina226_addr),   // TODO update shunt resistor value
+      m_ina226(&m_i2c, k_ina226_addr, 0.01),
       m_oled(&m_i2c, Ssd1306::Type::ssd1306_128x64),
       m_rot_enc_a_pin(k_rot_enc_a_pin), m_rot_enc_b_pin(k_rot_enc_b_pin),
       m_rot_enc_btn_pin(k_rot_enc_btn_pin),
@@ -62,8 +62,7 @@ bool TinyPPS::initialize() {
         std::make_pair("PPS: 3.3-20V 100-5000mA",
                        ConfigBuilder::buildPpsProfile(3300, 20000, 100, 5000)));
 
-    // TODO set this to 5A once the shunt is changed
-    if (!m_ina226.calibrate(0.5)) {
+    if (!m_ina226.calibrate(5)) {
         // Failed to calibrate INA226
         return false;
     }
