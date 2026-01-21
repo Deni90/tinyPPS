@@ -29,8 +29,7 @@ static volatile uint32_t g_rotary_state_clock = 0;
 static volatile uint32_t g_measuring_clock = 0;
 
 TinyPPS::TinyPPS()
-    : m_i2c(i2c0, k_i2c_sda_pin, k_i2c_scl_pin, 400),
-      m_ina226(&m_i2c, k_ina226_addr, 0.01),
+    : m_i2c(), m_ina226(&m_i2c, k_ina226_addr, 0.01),
       m_oled(&m_i2c, Ssd1306::Type::ssd1306_128x64),
       m_rot_enc_a_pin(k_rot_enc_a_pin), m_rot_enc_b_pin(k_rot_enc_b_pin),
       m_rot_enc_btn_pin(k_rot_enc_btn_pin),
@@ -63,6 +62,7 @@ bool TinyPPS::initialize() {
                        ConfigBuilder::buildPpsProfile(3300, 20000, 100, 5000)));
 
     m_rotary_encoder.initialize();
+    m_i2c.initialize(i2c0, k_i2c_sda_pin, k_i2c_scl_pin, 400);
     m_oled.initialize();
     if (!m_ina226.calibrate(5)) {
         // Failed to calibrate INA226

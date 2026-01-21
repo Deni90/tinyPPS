@@ -2,8 +2,10 @@
 
 #include "pico/stdlib.h"
 
-RpI2c::RpI2c(i2c_inst_t* i2c, unsigned int sda_pin,
-                     unsigned int scl_pin, unsigned int baudrate) {
+RpI2c::RpI2c() {}
+
+void RpI2c::initialize(i2c_inst_t* i2c, unsigned int sda_pin,
+                       unsigned int scl_pin, unsigned int baudrate) {
     i2c_init(i2c, baudrate * 1000);
     gpio_set_function(sda_pin, GPIO_FUNC_I2C);
     gpio_set_function(scl_pin, GPIO_FUNC_I2C);
