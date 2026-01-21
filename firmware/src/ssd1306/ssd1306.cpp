@@ -36,7 +36,9 @@ static constexpr uint8_t k_width = 128;
 static constexpr uint8_t k_page_height = 8;
 
 Ssd1306::Ssd1306(II2c* i2c, Ssd1306::Type oled_type)
-    : m_i2c(i2c), m_type(oled_type) {
+    : m_i2c(i2c), m_type(oled_type) {}
+
+void Ssd1306::initialize() {
     // Some of these commands are not strictly necessary as the reset
     // process defaults to some of these but they are shown here
     // to demonstrate what the initialization sequence looks like

@@ -13,7 +13,7 @@ class Ssd1306 {
     /**
      * @brief Enum representing various oled display sizes
      */
-    enum class Type { ssd1306_128x32, ssd1306_128x64};
+    enum class Type { ssd1306_128x32, ssd1306_128x64 };
 
     /**
      * @brief Constructor
@@ -22,6 +22,11 @@ class Ssd1306 {
      * @param[in] oled_type Type of the oled display
      */
     Ssd1306(II2c* i2c, Type oled_type);
+
+    /**
+     * @brief Initialize the module
+     */
+    void initialize();
 
     /**
      * @brief Send a buffer to display.
