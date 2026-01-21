@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <stdio.h>
 
+#include "loading_screen.h"
 #include "main_screen.h"
 #include "menu_screen.h"
 
@@ -68,6 +69,21 @@ bool TinyPPS::initialize() {
         // Failed to calibrate INA226
         return false;
     }
+
+    LoadingScreen loading_screen(m_oled.getWidth(), m_oled.getHeight());
+    m_oled.display(loading_screen.build());
+    g_clock = 0;
+
+    // TODO update values for number of iterations and delay
+    for (int i = 0; i < 10; ++i) {
+        while (g_clock < 300)
+            ;
+        g_clock = 0;
+        m_oled.display(loading_screen.updateProgress().build());
+    }
+
+    m_oled.display(loading_screen.setPdoProfileCount(0).build());
+    sleep_ms(1000);
 
     return true;
 }
