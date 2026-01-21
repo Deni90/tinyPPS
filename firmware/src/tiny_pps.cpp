@@ -62,6 +62,7 @@ bool TinyPPS::initialize() {
         std::make_pair("PPS: 3.3-20V 100-5000mA",
                        ConfigBuilder::buildPpsProfile(3300, 20000, 100, 5000)));
 
+    m_rotary_encoder.initialize();
     m_oled.initialize();
     if (!m_ina226.calibrate(5)) {
         // Failed to calibrate INA226

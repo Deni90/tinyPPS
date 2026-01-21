@@ -24,7 +24,7 @@ class RotaryEncoder {
     /**
      * @brief Constructor
      *
-     * Initialize rotary encoder with its pins and a clock used for debouncing
+     * Construct a rotary encoder object
      *
      * @param[in] a_gpio A pin of the rotary encoder
      * @param[in] b_gpio B pin of the rotary encoder
@@ -33,6 +33,11 @@ class RotaryEncoder {
      */
     RotaryEncoder(IPin* a_gpio, IPin* b_gpio, IPin* btn_gpio,
                   volatile uint32_t* clock);
+
+    /**
+     * @brief Initialize rotary encoder GPIO pins
+     */
+    void initialize();
 
     /**
      * @brief Handle function for the rotary encoder.
