@@ -30,7 +30,7 @@ static volatile uint32_t g_rotary_state_clock = 0;
 static volatile uint32_t g_measuring_clock = 0;
 
 TinyPPS::TinyPPS()
-    : m_i2c(), m_ina226(&m_i2c, k_ina226_addr, 0.01),
+    : m_i2c(), m_ina226(&m_i2c, k_ina226_addr),
       m_oled(&m_i2c, Ssd1306::Type::ssd1306_128x64),
       m_rot_enc_a_pin(k_rot_enc_a_pin), m_rot_enc_b_pin(k_rot_enc_b_pin),
       m_rot_enc_btn_pin(k_rot_enc_btn_pin),
@@ -65,7 +65,8 @@ bool TinyPPS::initialize() {
     m_rotary_encoder.initialize();
     m_i2c.initialize(i2c0, k_i2c_sda_pin, k_i2c_scl_pin, 400);
     m_oled.initialize();
-    if (!m_ina226.calibrate(5)) {
+    m_ina226.setAveragingMode(Ina226::AveragingMode::Samples128);
+    if (!m_ina226.calibrate(0.01, 0.25)) {
         // Failed to calibrate INA226
         return false;
     }
@@ -212,8 +213,10 @@ TinyPPS::State TinyPPS::handleMainState() {
 
             if (g_measuring_clock >= k_measuring_period) {
                 g_measuring_clock = 0;
-                main_screen.setMeasuredVoltage(m_ina226.readBusVoltage());
-                main_screen.setMeasuredCurrent(m_ina226.readCurrent());
+                main_screen.setMeasuredVoltage(
+                    static_cast<unsigned int>(m_ina226.getBusVoltage() * 1000));
+                main_screen.setMeasuredCurrent(
+                    static_cast<unsigned int>(m_ina226.getCurrent() * 1000));
                 m_oled.display(main_screen.build());
             }
         }
