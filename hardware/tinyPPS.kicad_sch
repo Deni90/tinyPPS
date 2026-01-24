@@ -6752,16 +6752,6 @@
 			(embedded_fonts no)
 		)
 	)
-	(text "6.4.2 Filtering and Input Considerations"
-		(exclude_from_sim no)
-		(at 342.9 67.056 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-		)
-		(uuid "024479b1-52a8-4866-bc45-fdb4a4bbb57d")
-	)
 	(text "Bidirectional level shifters for I2C pins"
 		(exclude_from_sim no)
 		(at 337.312 113.284 0)
@@ -7184,12 +7174,6 @@
 		(uuid "3a2bc93c-e4a0-4b9b-9160-d3ccac742110")
 	)
 	(junction
-		(at 346.71 53.34)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "3a80d610-8a12-467d-b926-cd26b1e7f548")
-	)
-	(junction
 		(at 129.54 137.16)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -7416,12 +7400,6 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "b74da842-12a9-4576-8b15-0b3cb10db1fe")
-	)
-	(junction
-		(at 346.71 63.5)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "b7fc86b9-3d36-4ca8-a8e4-07fd2f900b17")
 	)
 	(junction
 		(at 120.65 137.16)
@@ -7965,16 +7943,6 @@
 	)
 	(wire
 		(pts
-			(xy 346.71 62.23) (xy 346.71 63.5)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "105b1a2c-1960-4260-a628-4ba3b2260fa6")
-	)
-	(wire
-		(pts
 			(xy 223.52 77.47) (xy 223.52 78.74)
 		)
 		(stroke
@@ -8175,16 +8143,6 @@
 	)
 	(wire
 		(pts
-			(xy 356.87 53.34) (xy 356.87 60.96)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "228b4df2-93df-478f-b587-9d7d2851bfed")
-	)
-	(wire
-		(pts
 			(xy 45.72 57.15) (xy 45.72 58.42)
 		)
 		(stroke
@@ -8222,16 +8180,6 @@
 			(type default)
 		)
 		(uuid "243ccace-731b-4832-9409-683739ab178e")
-	)
-	(wire
-		(pts
-			(xy 346.71 63.5) (xy 359.41 63.5)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "24980b59-b3ba-4b75-857d-c0e966e46dd7")
 	)
 	(wire
 		(pts
@@ -8372,16 +8320,6 @@
 			(type default)
 		)
 		(uuid "2b0b7242-59f4-470a-b3bb-0a8d2085147a")
-	)
-	(wire
-		(pts
-			(xy 346.71 53.34) (xy 346.71 54.61)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "2c8a8fd9-3da6-4ee1-a847-3da237bd60af")
 	)
 	(wire
 		(pts
@@ -8825,7 +8763,7 @@
 	)
 	(wire
 		(pts
-			(xy 325.12 63.5) (xy 336.55 63.5)
+			(xy 347.98 63.5) (xy 359.41 63.5)
 		)
 		(stroke
 			(width 0)
@@ -8892,16 +8830,6 @@
 			(type default)
 		)
 		(uuid "4ee4150e-e35a-494f-9717-c24bb5644637")
-	)
-	(wire
-		(pts
-			(xy 344.17 53.34) (xy 346.71 53.34)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "4f310c20-32ff-4d63-8a3d-5281b6638c09")
 	)
 	(wire
 		(pts
@@ -9845,7 +9773,7 @@
 	)
 	(wire
 		(pts
-			(xy 325.12 53.34) (xy 336.55 53.34)
+			(xy 347.98 60.96) (xy 360.68 60.96)
 		)
 		(stroke
 			(width 0)
@@ -10012,16 +9940,6 @@
 			(type default)
 		)
 		(uuid "9d13fc6c-bd83-4733-8d61-5e89b62f4fd6")
-	)
-	(wire
-		(pts
-			(xy 346.71 53.34) (xy 356.87 53.34)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "9d3956d1-151d-4e6b-ba9f-d1005d966f76")
 	)
 	(wire
 		(pts
@@ -10222,16 +10140,6 @@
 			(type default)
 		)
 		(uuid "ab5415ab-1787-49ca-9e75-1cf8398b2411")
-	)
-	(wire
-		(pts
-			(xy 356.87 60.96) (xy 360.68 60.96)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "abc34151-bb8a-408c-9624-be7eadb7083b")
 	)
 	(wire
 		(pts
@@ -10482,16 +10390,6 @@
 			(type default)
 		)
 		(uuid "bc5ea507-ed57-46d6-b131-6083a286940d")
-	)
-	(wire
-		(pts
-			(xy 344.17 63.5) (xy 346.71 63.5)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "bc71c6d7-be04-4f75-8737-a303de3a080b")
 	)
 	(wire
 		(pts
@@ -11424,7 +11322,7 @@
 		(uuid "217ecd29-e9be-4ebd-ad76-b7c48d853247")
 	)
 	(label "VOUT_PD"
-		(at 325.12 63.5 0)
+		(at 347.98 63.5 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -11774,7 +11672,7 @@
 		(uuid "ae5cf87a-df44-4b51-a528-e283366c228a")
 	)
 	(label "VIN+"
-		(at 325.12 53.34 0)
+		(at 347.98 60.96 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -13818,81 +13716,6 @@
 			(project "tinyPPS"
 				(path "/c41d302b-f767-4883-953e-b7a7cbd91c7e"
 					(reference "#PWR069")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R")
-		(at 340.36 53.34 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "13c2d211-c4aa-4dbc-91e7-005cd227755c")
-		(property "Reference" "R19"
-			(at 340.36 48.514 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "10R"
-			(at 340.36 51.054 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 340.36 55.118 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 340.36 53.34 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor"
-			(at 340.36 53.34 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Sim.Pins" ""
-			(at 340.36 53.34 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "dd2244ba-0cb7-4bb8-a9b5-ba800ece2854")
-		)
-		(pin "2"
-			(uuid "b1b845be-93d4-47b3-872f-6d6e5385dc72")
-		)
-		(instances
-			(project "tinyPPS"
-				(path "/c41d302b-f767-4883-953e-b7a7cbd91c7e"
-					(reference "R19")
 					(unit 1)
 				)
 			)
@@ -20457,81 +20280,6 @@
 	)
 	(symbol
 		(lib_id "Device:R")
-		(at 340.36 63.5 90)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "dd05b555-b1fb-42ec-85b8-5932c2bce5e0")
-		(property "Reference" "R20"
-			(at 340.36 58.674 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "10R"
-			(at 340.36 61.214 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
-			(at 340.36 65.278 90)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 340.36 63.5 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Resistor"
-			(at 340.36 63.5 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Sim.Pins" ""
-			(at 340.36 63.5 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "68d79c20-62ea-4c49-bddd-a00f19498e53")
-		)
-		(pin "2"
-			(uuid "b276736a-251c-4f64-b0bb-2bac558523fa")
-		)
-		(instances
-			(project "tinyPPS"
-				(path "/c41d302b-f767-4883-953e-b7a7cbd91c7e"
-					(reference "R20")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:R")
 		(at 53.34 43.18 90)
 		(unit 1)
 		(exclude_from_sim no)
@@ -20875,83 +20623,6 @@
 			(project "tinyPPS"
 				(path "/c41d302b-f767-4883-953e-b7a7cbd91c7e"
 					(reference "#PWR079")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:C")
-		(at 346.71 58.42 0)
-		(unit 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(dnp no)
-		(uuid "dfefb328-4a6b-4af6-8c58-559285551ce5")
-		(property "Reference" "C25"
-			(at 350.012 57.15 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "100n"
-			(at 350.012 59.69 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
-			(at 347.6752 62.23 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Datasheet" "~"
-			(at 346.71 58.42 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Description" "Unpolarized capacitor"
-			(at 346.71 58.42 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(hide yes)
-			)
-		)
-		(property "Sim.Pins" ""
-			(at 346.71 58.42 0)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "f2bb3ca4-8a2f-430a-9fc2-95b43638b2ed")
-		)
-		(pin "2"
-			(uuid "053e07ae-7247-4c38-8da1-b08557f5e419")
-		)
-		(instances
-			(project "tinyPPS"
-				(path "/c41d302b-f767-4883-953e-b7a7cbd91c7e"
-					(reference "C25")
 					(unit 1)
 				)
 			)
