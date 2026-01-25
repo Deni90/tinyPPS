@@ -36,6 +36,7 @@ pico_sdk_init()
 # Add executable. Default name is the project name, version 0.1
 add_executable(TinyPPS src/main.cpp src/config.cpp src/tiny_pps.cpp)
 
+add_subdirectory(src/ap33772s)
 add_subdirectory(src/gui)
 add_subdirectory(src/hal)
 add_subdirectory(src/ina226)
@@ -54,6 +55,7 @@ pico_enable_stdio_usb(TinyPPS 1)
 target_link_libraries(TinyPPS
         hardware_i2c
         pico_stdlib
+        tinypps_ap33772s
         tinypps_gui
         tinypps_hal
         tinypps_ina226

@@ -36,7 +36,7 @@ TinyPPS::TinyPPS()
       m_rot_enc_btn_pin(k_rot_enc_btn_pin),
       m_rotary_encoder(&m_rot_enc_a_pin, &m_rot_enc_b_pin, &m_rot_enc_btn_pin,
                        &g_debounce_clock),
-      m_state(State::menu), m_active_config_index(0) {}
+      m_usb_pd(&m_i2c), m_state(State::menu), m_active_config_index(0) {}
 
 bool TinyPPS::initialize() {
     stdio_init_all();
@@ -53,17 +53,14 @@ bool TinyPPS::initialize() {
         },
         NULL, &timer);
 
-    m_configs.emplace_back(std::make_pair("None", Config()));
-    m_configs.emplace_back(std::make_pair(
-        "PDO: 5V 1000mA", ConfigBuilder::buildPdoProfile(5000, 1000)));
-    m_configs.emplace_back(std::make_pair(
-        "PDO: 12V 2000mA", ConfigBuilder::buildPdoProfile(12000, 2000)));
-    m_configs.emplace_back(
-        std::make_pair("PPS: 3.3-20V 100-5000mA",
-                       ConfigBuilder::buildPpsProfile(3300, 20000, 100, 5000)));
-
     m_rotary_encoder.initialize();
     m_i2c.initialize(i2c0, k_i2c_sda_pin, k_i2c_scl_pin, 400);
+    m_usb_pd.enableOutput(false);
+    // https://product.tdk.com/system/files/dam/doc/product/sensor/ntc/chip-ntc-thermistor/data_sheet/datasheet_ntcgs103jx103dt8.pdf
+    // based on B value:
+    //                  [at 25/50C] 3380K typ.
+    //                  [at 25/85C] 3435K+-0.7%
+    m_usb_pd.setNtc(10000, 4164, 1912, 987);
     m_oled.initialize();
     m_ina226.setAveragingMode(Ina226::AveragingMode::Samples128);
     if (!m_ina226.calibrate(0.01, 0.25)) {
@@ -71,20 +68,15 @@ bool TinyPPS::initialize() {
         return false;
     }
 
-    LoadingScreen loading_screen(m_oled.getWidth(), m_oled.getHeight());
-    m_oled.display(loading_screen.build());
-    g_clock = 0;
-
-    // TODO update values for number of iterations and delay
-    for (int i = 0; i < 10; ++i) {
-        while (g_clock < 300)
-            ;
-        g_clock = 0;
-        m_oled.display(loading_screen.updateProgress().build());
+    auto pdo_cnt = readPdos();
+    // TODO if no PDO profiles found, make a default one, activate it and switch
+    // to main state
+    if (pdo_cnt == 0) {
+        m_configs.emplace_back(std::make_pair("", Config()));
+        m_state = TinyPPS::State::main;
     }
-
-    m_oled.display(loading_screen.setPdoProfileCount(0).build());
-    sleep_ms(1000);
+    // TODO if there is only one PDO profile, activate it. There is no need to
+    // go to the menu
 
     return true;
 }
@@ -217,6 +209,7 @@ TinyPPS::State TinyPPS::handleMainState() {
                     static_cast<unsigned int>(m_ina226.getBusVoltage() * 1000));
                 main_screen.setMeasuredCurrent(
                     static_cast<unsigned int>(m_ina226.getCurrent() * 1000));
+                main_screen.setTemperature(m_usb_pd.getTemp());
                 m_oled.display(main_screen.build());
             }
         }
@@ -260,6 +253,7 @@ TinyPPS::State TinyPPS::handleMainState() {
                 selection = 0;
             }
             output_enable = !output_enable;
+            m_usb_pd.enableOutput(output_enable);
             main_screen.setOutputEnable(output_enable);
         } else if (m_rotary_encoder.getState() ==
                    RotaryEncoder::State::rot_dec) {
@@ -352,4 +346,27 @@ TinyPPS::State TinyPPS::handleMainState() {
         m_rotary_encoder.clearState();
     }
     return State::main;
+}
+
+int TinyPPS::readPdos() {
+    int pdo_cnt = 0;
+    LoadingScreen loading_screen(m_oled.getWidth(), m_oled.getHeight());
+    m_oled.display(loading_screen.build());
+    g_clock = 0;
+    // 1500ms should be enough to read PDOs
+    for (int i = 0; i < 10; ++i) {
+        sleep_ms(150);
+        if (m_usb_pd.isNewPdoAvailable()) {
+            sleep_ms(10);
+            pdo_cnt = m_usb_pd.getPDSourcePowerCapabilities();
+            // TODO fill in menu with PDOs
+            sleep_ms(1000);
+            break;
+        }
+        m_oled.display(loading_screen.updateProgress().build());
+    }
+    m_oled.display(loading_screen.setPdoProfileCount(pdo_cnt).build());
+    sleep_ms(1500);
+
+    return pdo_cnt;
 }

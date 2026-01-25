@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "ap33772s.h"
 #include "config.h"
 #include "ina226.h"
 #include "rotary_encoder.h"
@@ -48,11 +49,14 @@ class TinyPPS {
      */
     State handleMainState();
 
+    int readPdos();
+
     RpI2c m_i2c;
     Ina226 m_ina226;
     Ssd1306 m_oled;
     RpPin m_rot_enc_a_pin, m_rot_enc_b_pin, m_rot_enc_btn_pin;
     RotaryEncoder m_rotary_encoder;
+    Ap33772s m_usb_pd;
     State m_state;
     std::vector<std::pair<std::string, Config>> m_configs;
     unsigned int m_active_config_index;
