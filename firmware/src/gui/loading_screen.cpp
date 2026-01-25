@@ -10,14 +10,14 @@ uint8_t* LoadingScreen::build() {
     // of PDO profiles
     if (m_pdo_profile_count.has_value()) {
         std::string profiles_found_text =
-            std::to_string(m_pdo_profile_count.value()) + " PDO profiles found";
+            std::to_string(m_pdo_profile_count.value()) + " PDOs found";
         printString(m_width / 2, 48, profiles_found_text,
                     {.align = TextAlign::center});
     } else {
         std::string loading_text(m_progress, '.');
         printString(m_width / 2, 50, loading_text,
                     {.align = TextAlign::center, .size = FontSize::big});
-        printString(m_width / 2, 48, "Loading PDO profiles",
+        printString(m_width / 2, 48, "Loading PDOs",
                     {.align = TextAlign::center});
     }
 

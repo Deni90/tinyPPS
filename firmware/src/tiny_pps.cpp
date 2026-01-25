@@ -104,7 +104,7 @@ TinyPPS::State TinyPPS::handleMenuState() {
         profile_names.emplace_back(it.first);
     }
     static auto selected_menu_item = 0;
-    menu_screen.setTitle("PROFILES")
+    menu_screen.setTitle("Available PDOs")
         .setMenuItems(profile_names)
         .selectMenuItem(selected_menu_item);
     while (true) {
