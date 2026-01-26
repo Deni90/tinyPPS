@@ -2,21 +2,56 @@
 #define config_h
 
 /**
- * @brief Enum representing different supply profiles supported
+ * @brief Enumeration describing different PDO types
  */
-enum class SupplyProfile { unknown, pdo, pps };
+enum class PdoType { NONE, FIX, PPS, AVS };
+
+/**
+ * @brief Covert PdoType enum value to string
+ *
+ * @param type PdoType
+ */
+constexpr const char* pdoTypeToString(PdoType type) {
+    switch (type) {
+    case PdoType::FIX:
+        return "FIX";
+    case PdoType::PPS:
+        return "PPS";
+    case PdoType::AVS:
+        return "AVS";
+    case PdoType::NONE:
+    default:
+        return "N/A";
+    }
+    return "N/A";
+}
 
 /**
  * @brief Enum representing different supply modes
  */
-enum class SupplyMode { cv, cc };
+enum class SupplyMode { CV, CC };
+
+/**
+ * @brief Covert SupplyMode enum value to string
+ *
+ * @param mode SupplyMode
+ */
+constexpr const char* supplyModeToString(SupplyMode mode) {
+    switch (mode) {
+    case SupplyMode::CV:
+        return "CV";
+    case SupplyMode::CC:
+        return "CC";
+    }
+    return "N/A";
+}
 
 /**
  * @brief Struct containing configuration parameters describing a supply profile
  */
 struct Config {
-    SupplyProfile profile;
-    SupplyMode mode;
+    PdoType pdo_type;
+    SupplyMode supply_mode;
     int min_voltage;
     int max_voltage;
     int min_current;
@@ -37,13 +72,11 @@ struct Config {
  */
 struct ConfigBuilder {
     /**
-     * @brief Builds config for PDO profile
+     * @brief Builds default configuration with no PDO type
      *
-     * @param[in] max_voltage Maximum voltage supported by the PDO profile
-     * @param[in] max_current Maximum current supported by the PDO profile
      * @return Config object
      */
-    static Config buildPdoProfile(int max_voltage, int max_current);
+    static Config buildDefault();
 
     /**
      * @brief Builds config for PPS profile

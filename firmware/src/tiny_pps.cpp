@@ -142,23 +142,25 @@ TinyPPS::State TinyPPS::handleMainState() {
     int target_current = 0;
     Config& config = m_configs[m_active_config_index].second;
 
-    if (config.profile == SupplyProfile::pps) {
+    if (config.pdo_type == PdoType::FIX || config.pdo_type == PdoType::NONE) {
         target_voltage = 5000;
         target_current = 1000;
-    } else if (config.profile == SupplyProfile::pdo) {
+    } else if (config.pdo_type == PdoType::AVS ||
+               config.pdo_type == PdoType::PPS) {
         target_voltage = config.max_voltage;
         target_current = config.max_current;
     }
 
     MainScreen::Mode mode;
-    switch (config.profile) {
-    case SupplyProfile::pdo:
+    switch (config.pdo_type) {
+    case PdoType::FIX:
         mode = MainScreen::Mode::pdo;
         break;
-    case SupplyProfile::pps:
+    case PdoType::PPS:
+    case PdoType::AVS:
         mode = MainScreen::Mode::pps;
         break;
-    case SupplyProfile::unknown:
+    case PdoType::NONE:
     default:
         MainScreen::Mode::none;
     }
@@ -178,8 +180,8 @@ TinyPPS::State TinyPPS::handleMainState() {
         main_screen.setMode(mode)
             .setTargetVoltage(target_voltage)
             .setTargetCurrent(target_current)
-            .setCv(config.mode == SupplyMode::cv)
-            .setCc(config.mode == SupplyMode::cc);
+            .setCv(config.supply_mode == SupplyMode::CV)
+            .setCc(config.supply_mode == SupplyMode::CC);
         m_oled.display(main_screen.build());
         while (m_rotary_encoder.getState() == RotaryEncoder::State::idle ||
                m_rotary_encoder.getState() == RotaryEncoder::State::processed) {
@@ -331,7 +333,7 @@ TinyPPS::State TinyPPS::handleMainState() {
             }
             // handle rotary decrement while pressing a button
             // enable constant voltage mode when the enable output is false
-            config.mode = SupplyMode::cv;
+            config.supply_mode = SupplyMode::CV;
         } else if (m_rotary_encoder.getState() ==
                    RotaryEncoder::State::rot_inc_while_btn_press) {
             if (!config.is_editing_enabled) {
@@ -341,7 +343,7 @@ TinyPPS::State TinyPPS::handleMainState() {
             // handle rotary increment while pressing a button
             // enable constant current mode when the enable output is false
             // TODO check is it possible to select this mode
-            config.mode = SupplyMode::cc;
+            config.supply_mode = SupplyMode::CC;
         }
         m_rotary_encoder.clearState();
     }
