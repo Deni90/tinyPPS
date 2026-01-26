@@ -1,15 +1,11 @@
 #ifndef main_screen_h
 #define main_screen_h
 
+#include "config.h"
 #include "screen.h"
 
 class MainScreen : public Screen {
   public:
-    /**
-     * @brief Enumeration describing different display modes
-     */
-    enum class Mode { none, pdo, pps };
-
     /**
      * @brief Constructor
      *
@@ -32,28 +28,20 @@ class MainScreen : public Screen {
     virtual uint8_t* build() override;
 
     /**
-     * @brief Set Mode
+     * @brief Set PDO type
      *
-     * @param[in] value Mode
+     * @param[in] type PDO type
      * @return reference to this main screen object
      */
-    MainScreen& setMode(Mode value);
+    MainScreen& setPdoType(PdoType type);
 
     /**
-     * @brief Set constant voltage flag
+     * @brief Set Supply mode
      *
-     * @param[in] value Flag
+     * @param[in] mode Supply mode
      * @return reference to this main screen object
      */
-    MainScreen& setCv(bool value);
-
-    /**
-     * @brief Set constant current flag
-     *
-     * @param[in] value Flag
-     * @return reference to this main screen object
-     */
-    MainScreen& setCc(bool value);
+    MainScreen& setSupplyMode(SupplyMode mode);
 
     /**
      * @brief Set output enable flag
@@ -74,18 +62,18 @@ class MainScreen : public Screen {
     /**
      * @brief Set measured voltage
      *
-     * @param[in] value Voltage in mV
+     * @param[in] value Voltage in V
      * @return reference to this main screen object
      */
-    MainScreen& setMeasuredVoltage(unsigned int value);
+    MainScreen& setMeasuredVoltage(float value);
 
     /**
      * @brief Set measured current
      *
-     * @param[in] value Current in mA
+     * @param[in] value Current in A
      * @return reference to this main screen object
      */
-    MainScreen& setMeasuredCurrent(unsigned int value);
+    MainScreen& setMeasuredCurrent(float value);
 
     /**
      * @brief Set target voltage
@@ -120,13 +108,12 @@ class MainScreen : public Screen {
     MainScreen& selectTargetCurrent(bool value);
 
   private:
-    Mode m_mode;
-    bool m_is_cv;
-    bool m_is_cc;
+    PdoType m_pdo_type;
+    SupplyMode m_supply_mode;
     bool m_is_output_enabled;
     float m_temperature;
-    unsigned int m_measured_voltage;
-    unsigned int m_measured_current;
+    float m_measured_voltage;
+    float m_measured_current;
     unsigned int m_target_voltage;
     bool m_is_target_voltage_selected;
     unsigned int m_target_current;

@@ -4,29 +4,17 @@
 #include <sstream>
 
 MainScreen::MainScreen(uint16_t width, uint16_t height)
-    : Screen(width, height), m_mode(MainScreen::Mode::none), m_is_cc(false),
-      m_is_cv(false), m_is_output_enabled(false), m_temperature(0.0f),
-      m_measured_voltage(0), m_measured_current(0), m_target_voltage(0),
-      m_is_target_voltage_selected(false), m_target_current(0),
-      m_is_target_current_selected(false) {}
+    : Screen(width, height), m_pdo_type(PdoType::NONE),
+      m_supply_mode(SupplyMode::CV), m_is_output_enabled(false),
+      m_temperature(0.0f), m_measured_voltage(0), m_measured_current(0),
+      m_target_voltage(0), m_is_target_voltage_selected(false),
+      m_target_current(0), m_is_target_current_selected(false) {}
 
 uint8_t* MainScreen::build() {
     clear();
 
-    // Mode indicator
-    std::string mode_str;
-    switch (m_mode) {
-    case MainScreen::Mode::pdo:
-        mode_str = "PDO";
-        break;
-    case MainScreen::Mode::pps:
-        mode_str = "PPS";
-        break;
-    case MainScreen::Mode::none:
-    default:
-        mode_str = "N/A";
-    }
-    printString(0, 0, mode_str);
+    // PDO type
+    printString(0, 0, pdoTypeToString(m_pdo_type));
 
     // Temperature
     std::ostringstream temperature_stream;
@@ -34,11 +22,11 @@ uint8_t* MainScreen::build() {
     printString(m_width, 0, temperature_stream.str(),
                 {.align = TextAlign::right});
 
-    // Measured voltage. Convert mV to V.
+    // Measured voltage in V
     std::ostringstream measured_voltage_stream;
-    measured_voltage_stream
-        << std::fixed << std::setprecision(2) << std::setfill('0')
-        << std::setw(5) << static_cast<float>(m_measured_voltage) / 1000 << "V";
+    measured_voltage_stream << std::fixed << std::setprecision(2)
+                            << std::setfill('0') << std::setw(5)
+                            << m_measured_voltage << "V";
     printString(m_width / 2, 0, measured_voltage_stream.str(),
                 {.align = TextAlign::center, .size = FontSize::big});
 
@@ -51,11 +39,11 @@ uint8_t* MainScreen::build() {
                        {.invert = m_is_target_voltage_selected});
     printString(31 + len, 15, "mV");
 
-    // Measured current. Convert mA to A.
+    // Measured current in A
     std::ostringstream measured_current_stream;
-    measured_current_stream
-        << std::fixed << std::setprecision(2) << std::setfill('0')
-        << std::setw(5) << static_cast<float>(m_measured_current) / 1000 << "A";
+    measured_current_stream << std::fixed << std::setprecision(2)
+                            << std::setfill('0') << std::setw(5)
+                            << m_measured_current << "A";
     printString(m_width / 2, 25, measured_current_stream.str(),
                 {.align = TextAlign::center, .size = FontSize::big});
 
@@ -69,12 +57,14 @@ uint8_t* MainScreen::build() {
     printString(33 + len, 40, "mA");
 
     // Constant voltage indicator
-    drawRectangle(32, 53, 20, 11, m_is_cv);
-    printString(38, 54, "CV", {.invert = m_is_cv});
+    drawRectangle(32, 53, 20, 11, m_supply_mode == SupplyMode::CV);
+    printString(38, 54, supplyModeToString(SupplyMode::CV),
+                {.invert = m_supply_mode == SupplyMode::CV});
 
     // Constant current indicator
-    drawRectangle(53, 53, 20, 11, m_is_cc);
-    printString(59, 54, "CC", {.invert = m_is_cc});
+    drawRectangle(53, 53, 20, 11, m_supply_mode == SupplyMode::CC);
+    printString(59, 54, supplyModeToString(SupplyMode::CC),
+                {.invert = m_supply_mode == SupplyMode::CC});
 
     // Output enable indicator
     drawRectangle(74, 53, 20, 11, m_is_output_enabled);
@@ -83,18 +73,13 @@ uint8_t* MainScreen::build() {
     return m_frame_buffer;
 }
 
-MainScreen& MainScreen::setMode(MainScreen::Mode value) {
-    m_mode = value;
+MainScreen& MainScreen::setPdoType(PdoType type) {
+    m_pdo_type = type;
     return *this;
 }
 
-MainScreen& MainScreen::setCv(bool value) {
-    m_is_cv = value;
-    return *this;
-}
-
-MainScreen& MainScreen::setCc(bool value) {
-    m_is_cc = value;
+MainScreen& MainScreen::setSupplyMode(SupplyMode mode) {
+    m_supply_mode = mode;
     return *this;
 }
 
@@ -108,12 +93,12 @@ MainScreen& MainScreen::setTemperature(float value) {
     return *this;
 }
 
-MainScreen& MainScreen::setMeasuredVoltage(unsigned int value) {
+MainScreen& MainScreen::setMeasuredVoltage(float value) {
     m_measured_voltage = value;
     return *this;
 }
 
-MainScreen& MainScreen::setMeasuredCurrent(unsigned int value) {
+MainScreen& MainScreen::setMeasuredCurrent(float value) {
     m_measured_current = value;
     return *this;
 }

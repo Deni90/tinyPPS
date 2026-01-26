@@ -72,7 +72,8 @@ bool TinyPPS::initialize() {
     // TODO if no PDO profiles found, make a default one, activate it and switch
     // to main state
     if (pdo_cnt == 0) {
-        m_configs.emplace_back(std::make_pair("", Config()));
+        m_configs.emplace_back(
+            std::make_pair("", ConfigBuilder::buildDefault()));
         m_state = TinyPPS::State::main;
     }
     // TODO if there is only one PDO profile, activate it. There is no need to
@@ -133,37 +134,21 @@ TinyPPS::State TinyPPS::handleMenuState() {
 }
 
 TinyPPS::State TinyPPS::handleMainState() {
+    if (!m_configs.size()) {
+        // If no profile present, loop here
+        // FIXME this should be an error
+        return State::main;
+    }
+
     MainScreen main_screen(m_oled.getWidth(), m_oled.getHeight());
+    Config& config = m_configs[m_active_config_index].second;
+
     int8_t selection = 0;
     bool is_editing = false;
     bool blinking_state = true;
     bool output_enable = false;
-    int target_voltage = 5000;
-    int target_current = 0;
-    Config& config = m_configs[m_active_config_index].second;
-
-    if (config.pdo_type == PdoType::FIX || config.pdo_type == PdoType::NONE) {
-        target_voltage = 5000;
-        target_current = 1000;
-    } else if (config.pdo_type == PdoType::AVS ||
-               config.pdo_type == PdoType::PPS) {
-        target_voltage = config.max_voltage;
-        target_current = config.max_current;
-    }
-
-    MainScreen::Mode mode;
-    switch (config.pdo_type) {
-    case PdoType::FIX:
-        mode = MainScreen::Mode::pdo;
-        break;
-    case PdoType::PPS:
-    case PdoType::AVS:
-        mode = MainScreen::Mode::pps;
-        break;
-    case PdoType::NONE:
-    default:
-        MainScreen::Mode::none;
-    }
+    int target_voltage = config.max_voltage;
+    int target_current = config.max_current;
 
     while (true) {
         switch (selection) {
@@ -177,11 +162,10 @@ TinyPPS::State TinyPPS::handleMainState() {
             main_screen.selectTargetVoltage(false).selectTargetCurrent(true);
             break;
         }
-        main_screen.setMode(mode)
+        main_screen.setPdoType(config.pdo_type)
             .setTargetVoltage(target_voltage)
             .setTargetCurrent(target_current)
-            .setCv(config.supply_mode == SupplyMode::CV)
-            .setCc(config.supply_mode == SupplyMode::CC);
+            .setSupplyMode(config.supply_mode);
         m_oled.display(main_screen.build());
         while (m_rotary_encoder.getState() == RotaryEncoder::State::idle ||
                m_rotary_encoder.getState() == RotaryEncoder::State::processed) {
@@ -207,10 +191,8 @@ TinyPPS::State TinyPPS::handleMainState() {
 
             if (g_measuring_clock >= k_measuring_period) {
                 g_measuring_clock = 0;
-                main_screen.setMeasuredVoltage(
-                    static_cast<unsigned int>(m_ina226.getBusVoltage() * 1000));
-                main_screen.setMeasuredCurrent(
-                    static_cast<unsigned int>(m_ina226.getCurrent() * 1000));
+                main_screen.setMeasuredVoltage(m_ina226.getBusVoltage());
+                main_screen.setMeasuredCurrent(m_ina226.getCurrent());
                 main_screen.setTemperature(m_usb_pd.getTemp());
                 m_oled.display(main_screen.build());
             }
