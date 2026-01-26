@@ -34,7 +34,10 @@ project(TinyPPS C CXX ASM)
 pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
-add_executable(TinyPPS src/main.cpp src/config.cpp src/tiny_pps.cpp)
+add_executable(TinyPPS
+        src/main.cpp
+        src/tiny_pps.cpp
+)
 
 add_subdirectory(src/ap33772s)
 add_subdirectory(src/gui)
@@ -43,6 +46,7 @@ add_subdirectory(src/ina226)
 add_subdirectory(src/rotary_encoder)
 add_subdirectory(src/rp_imp)
 add_subdirectory(src/ssd1306)
+add_subdirectory(src/utils)
 
 pico_set_program_name(TinyPPS "TinyPPS")
 pico_set_program_version(TinyPPS "1.0")
@@ -62,6 +66,7 @@ target_link_libraries(TinyPPS
         tinypps_rotary_encoder
         tinypps_rp_imp
         tinypps_ssd1306
+        tinypps_utils
 )
 
 pico_add_extra_outputs(TinyPPS)
