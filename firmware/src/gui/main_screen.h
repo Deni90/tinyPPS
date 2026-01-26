@@ -1,6 +1,7 @@
 #ifndef main_screen_h
 #define main_screen_h
 
+#include "ap33772s.h"
 #include "config.h"
 #include "screen.h"
 
@@ -33,7 +34,7 @@ class MainScreen : public Screen {
      * @param[in] type PDO type
      * @return reference to this main screen object
      */
-    MainScreen& setPdoType(PdoType type);
+    MainScreen& setPdoType(Ap33772s::PdoType type);
 
     /**
      * @brief Set Supply mode
@@ -108,7 +109,7 @@ class MainScreen : public Screen {
     MainScreen& selectTargetCurrent(bool value);
 
   private:
-    PdoType m_pdo_type;
+    Ap33772s::PdoType m_pdo_type;
     SupplyMode m_supply_mode;
     bool m_is_output_enabled;
     float m_temperature;

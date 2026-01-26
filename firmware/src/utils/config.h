@@ -1,30 +1,7 @@
 #ifndef config_h
 #define config_h
 
-/**
- * @brief Enumeration describing different PDO types
- */
-enum class PdoType { NONE, FIX, PPS, AVS };
-
-/**
- * @brief Covert PdoType enum value to string
- *
- * @param type PdoType
- */
-constexpr const char* pdoTypeToString(PdoType type) {
-    switch (type) {
-    case PdoType::FIX:
-        return "FIX";
-    case PdoType::PPS:
-        return "PPS";
-    case PdoType::AVS:
-        return "AVS";
-    case PdoType::NONE:
-    default:
-        return "N/A";
-    }
-    return "N/A";
-}
+#include "ap33772s.h"
 
 /**
  * @brief Enum representing different supply modes
@@ -50,7 +27,7 @@ constexpr const char* supplyModeToString(SupplyMode mode) {
  * @brief Struct containing configuration parameters describing a supply profile
  */
 struct Config {
-    PdoType pdo_type;
+    Ap33772s::PdoType pdo_type;
     SupplyMode supply_mode;
     int min_voltage;
     int max_voltage;

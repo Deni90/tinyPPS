@@ -4,7 +4,7 @@
 #include <sstream>
 
 MainScreen::MainScreen(uint16_t width, uint16_t height)
-    : Screen(width, height), m_pdo_type(PdoType::NONE),
+    : Screen(width, height), m_pdo_type(Ap33772s::PdoType::NONE),
       m_supply_mode(SupplyMode::CV), m_is_output_enabled(false),
       m_temperature(0.0f), m_measured_voltage(0), m_measured_current(0),
       m_target_voltage(0), m_is_target_voltage_selected(false),
@@ -14,7 +14,7 @@ uint8_t* MainScreen::build() {
     clear();
 
     // PDO type
-    printString(0, 0, pdoTypeToString(m_pdo_type));
+    printString(0, 0, Ap33772s::pdoTypeToString(m_pdo_type));
 
     // Temperature
     std::ostringstream temperature_stream;
@@ -73,7 +73,7 @@ uint8_t* MainScreen::build() {
     return m_frame_buffer;
 }
 
-MainScreen& MainScreen::setPdoType(PdoType type) {
+MainScreen& MainScreen::setPdoType(Ap33772s::PdoType type) {
     m_pdo_type = type;
     return *this;
 }

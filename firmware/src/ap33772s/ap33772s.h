@@ -131,6 +131,31 @@ class Ap33772s {
 
   public:
     /**
+     * @brief Enumeration describing different PDO types
+     */
+    enum class PdoType { NONE, FIX, PPS, AVS };
+
+    /**
+     * @brief Covert PdoType enum value to string
+     *
+     * @param type PdoType
+     */
+    static constexpr const char* pdoTypeToString(PdoType type) {
+        switch (type) {
+        case PdoType::FIX:
+            return "FIX";
+        case PdoType::PPS:
+            return "PPS";
+        case PdoType::AVS:
+            return "AVS";
+        case PdoType::NONE:
+        default:
+            return "N/A";
+        }
+        return "N/A";
+    }
+
+    /**
      * @brief Constructor
      *
      * @param[in] i2c Pointer to i2c object
