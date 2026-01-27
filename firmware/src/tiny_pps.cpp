@@ -210,12 +210,13 @@ TinyPPS::State TinyPPS::handleMainState() {
                     is_editing = false;
                 }
             } else {
-                if (!config.is_menu_enabled) {
+                // when no item selected show menu on double click
+                // show menu only if menu is enabled and when the output is
+                // turned off
+                if (!config.is_menu_enabled || output_enable) {
                     m_rotary_encoder.clearState();
                     continue;
                 }
-                // no item selected
-                // show menu on double click
                 if (g_rotary_state_clock <= k_double_click_period) {
                     // Switch to menu g_state
                     m_rotary_encoder.clearState();
