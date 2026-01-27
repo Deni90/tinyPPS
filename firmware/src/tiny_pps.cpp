@@ -36,7 +36,8 @@ TinyPPS::TinyPPS()
       m_rot_enc_btn_pin(k_rot_enc_btn_pin),
       m_rotary_encoder(&m_rot_enc_a_pin, &m_rot_enc_b_pin, &m_rot_enc_btn_pin,
                        &g_debounce_clock),
-      m_usb_pd(&m_i2c), m_state(State::menu), m_active_config_index(0) {}
+      m_usb_pd(&m_i2c), m_state(State::menu), m_active_config_index(0),
+      m_is_menu_enabled(false) {}
 
 bool TinyPPS::initialize() {
     stdio_init_all();
@@ -68,16 +69,14 @@ bool TinyPPS::initialize() {
         return false;
     }
 
-    auto pdo_cnt = readPdos();
-    // TODO if no PDO profiles found, make a default one, activate it and switch
-    // to main state
-    if (pdo_cnt == 0) {
-        m_configs.emplace_back(
-            std::make_pair("", ConfigBuilder::buildDefault()));
+    // There is no need to show the menu if there is none or one PDO available.
+    // We can immediately switch to the main state
+    if (readPdos() <= 1) {
         m_state = TinyPPS::State::main;
+    } else {
+        m_state = TinyPPS::State::menu;
+        m_is_menu_enabled = true;
     }
-    // TODO if there is only one PDO profile, activate it. There is no need to
-    // go to the menu
 
     return true;
 }
@@ -135,9 +134,9 @@ TinyPPS::State TinyPPS::handleMenuState() {
 
 TinyPPS::State TinyPPS::handleMainState() {
     if (!m_configs.size()) {
-        // If no profile present, loop here
-        // FIXME this should be an error
-        return State::main;
+        // If no profile present, create a default one
+        m_configs.emplace_back(
+            std::make_pair("", ConfigBuilder::buildDefault()));
     }
 
     MainScreen main_screen(m_oled.getWidth(), m_oled.getHeight());
@@ -213,7 +212,7 @@ TinyPPS::State TinyPPS::handleMainState() {
                 // when no item selected show menu on double click
                 // show menu only if menu is enabled and when the output is
                 // turned off
-                if (!config.is_menu_enabled || output_enable) {
+                if (!m_is_menu_enabled || output_enable) {
                     m_rotary_encoder.clearState();
                     continue;
                 }

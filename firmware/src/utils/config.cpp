@@ -3,7 +3,7 @@
 Config::Config()
     : pdo_type(Ap33772s::PdoType::NONE), supply_mode(SupplyMode::CV),
       min_voltage(5000), max_voltage(5000), min_current(1000),
-      max_current(1000), is_menu_enabled(false), is_editing_enabled(false) {}
+      max_current(1000), is_editing_enabled(false) {}
 
 Config ConfigBuilder::buildDefault() { return Config(); }
 
@@ -17,6 +17,5 @@ Config ConfigBuilder::buildPpsProfile(int min_voltage, int max_voltage,
     c.min_current = min_current;
     c.max_current = max_current;
     c.is_editing_enabled = true;
-    c.is_menu_enabled = true;
     return c;
 }

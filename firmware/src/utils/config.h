@@ -33,7 +33,6 @@ struct Config {
     int max_voltage;
     int min_current;
     int max_current;
-    bool is_menu_enabled;
     bool is_editing_enabled;
     /**
      * @brief Default constructor

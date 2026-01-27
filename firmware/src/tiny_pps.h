@@ -60,6 +60,7 @@ class TinyPPS {
     State m_state;
     std::vector<std::pair<std::string, Config>> m_configs;
     unsigned int m_active_config_index;
+    bool m_is_menu_enabled;
 };
 
 #endif   // tiny_pps_h
