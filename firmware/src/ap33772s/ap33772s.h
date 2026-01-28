@@ -156,6 +156,25 @@ class Ap33772s {
     }
 
     /**
+     * @brief Definition of a PDO objet
+     *
+     * This struct is a more mainingful version of the SrcPdo union. It contains
+     * parsed values for PdoType, min, max and step values for current and
+     * voltage.
+     */
+    struct Pdo {
+        uint8_t index;
+        PdoType type;
+        uint16_t voltage_min;    // mV
+        uint16_t voltage_max;    // mV
+        uint16_t voltage_step;   // mV
+        uint16_t current_min;    // mV
+        uint16_t current_max;    // mA
+        uint16_t current_step;   // mA
+        Pdo();
+    };
+
+    /**
      * @brief Constructor
      *
      * @param[in] i2c Pointer to i2c object
@@ -199,11 +218,62 @@ class Ap33772s {
     bool setNtc(uint16_t tr25, uint16_t tr50, uint16_t tr75, uint16_t tr100);
 
     /**
+     * @brief Sets the minimum allowed output voltage selection.
+     *
+     * The VSELMIN register is defined as the Minimum Selection Voltage. If the
+     * VREQ voltage is more than or equal to the VSELMIN voltage, the VOUT MOS
+     * switches turn ON after the system is ready (STATUS.READY = 1).
+     *
+     * @param voltage Minimum output voltage in millivolts (mV).
+     *
+     * @return true  If the minimum voltage was successfully set.
+     * @return false If the voltage value is invalid or the operation failed.
+     *
+     * @note The voltage must be within the valid range supported by the
+     *       connected USB-PD controller.
+     */
+    bool setVselMin(uint16_t voltage);
+
+    /**
      * @brief Get all of the PD Source Power Capabilities
      *
      * @return The number of PD Source Power Capabilities available
      */
     uint8_t getPDSourcePowerCapabilities();
+
+    /**
+     * @brief Retrieves the Power Data Object (PDO) at the specified index.
+     *
+     * This function populates the provided `Pdo` structure with voltage,
+     * current, and other relevant data.
+     *
+     * @param index The PDO index to retrieve (starting from 0).
+     * @param[out] pdo Reference to a `Pdo` structure that will be filled with
+     * the retrieved data.
+     *
+     * @return true  If the PDO was successfully populated.
+     * @return false If the PDO index is invalid
+     */
+    bool getPdo(uint8_t index, Pdo& pdo);
+
+    /**
+     * @brief Selects a Power Data Object (PDO) and sets the output voltage and
+     * current.
+     *
+     * This function configures the power supply to use the specified PDO index
+     * and applies the requested voltage and current.
+     *
+     * @param index   The PDO index to select (starting from 0).
+     * @param voltage Desired output voltage in millivolts (mV).
+     * @param current Desired output current in milliamps (mA).
+     *
+     * @return true  If the PDO was successfully applied.
+     * @return false If the PDO selection or voltage/current setting failed.
+     *
+     * @note Ensure that the requested voltage and current are within the limits
+     *       of the selected PDO to prevent unexpected behavior.
+     */
+    bool setPdoOutput(uint8_t index, uint16_t voltage, uint16_t current);
 
     /**
      * @brief The maximum number of PD Source Power Capabilities

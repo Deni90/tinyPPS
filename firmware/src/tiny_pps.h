@@ -49,6 +49,16 @@ class TinyPPS {
      */
     State handleMainState();
 
+    /**
+     * @brief This function initializes the USB-PD controller
+     */
+    void usbPdInit();
+
+    /**
+     * @brief Handle PDO reading at startup
+     *
+     * @return The number of available PDOs
+     */
     int readPdos();
 
     RpI2c m_i2c;

@@ -8,6 +8,7 @@
 #include "loading_screen.h"
 #include "main_screen.h"
 #include "menu_screen.h"
+#include "pdo_helper.h"
 
 static constexpr uint k_rot_enc_btn_pin = 11;
 static constexpr uint k_rot_enc_a_pin = 10;
@@ -18,7 +19,6 @@ static constexpr unsigned int k_i2c_scl_pin = 29;
 
 static constexpr uint8_t k_ina226_addr = 0x40;
 
-static constexpr unsigned int k_step = 50;
 static constexpr unsigned int k_big_step_period = 75;         // ms
 static constexpr unsigned int k_blinking_period = 500;        // ms
 static constexpr unsigned int k_double_click_period = 1000;   // ms
@@ -56,12 +56,7 @@ bool TinyPPS::initialize() {
 
     m_rotary_encoder.initialize();
     m_i2c.initialize(i2c0, k_i2c_sda_pin, k_i2c_scl_pin, 400);
-    m_usb_pd.enableOutput(false);
-    // https://product.tdk.com/system/files/dam/doc/product/sensor/ntc/chip-ntc-thermistor/data_sheet/datasheet_ntcgs103jx103dt8.pdf
-    // based on B value:
-    //                  [at 25/50C] 3380K typ.
-    //                  [at 25/85C] 3435K+-0.7%
-    m_usb_pd.setNtc(10000, 4164, 1912, 987);
+    usbPdInit();
     m_oled.initialize();
     m_ina226.setAveragingMode(Ina226::AveragingMode::Samples128);
     if (!m_ina226.calibrate(0.01, 0.25)) {
@@ -146,8 +141,14 @@ TinyPPS::State TinyPPS::handleMainState() {
     bool is_editing = false;
     bool blinking_state = true;
     bool output_enable = false;
-    int target_voltage = config.max_voltage;
-    int target_current = config.max_current;
+
+    // Start with min values for current and voltage
+    uint16_t target_voltage = config.pdo.voltage_min;
+    uint16_t target_current = config.pdo.current_min;
+
+    // Request the min voltage and current for a selected PDO
+    m_usb_pd.setPdoOutput(m_active_config_index, target_voltage,
+                          target_current);
 
     while (true) {
         switch (selection) {
@@ -161,7 +162,7 @@ TinyPPS::State TinyPPS::handleMainState() {
             main_screen.selectTargetVoltage(false).selectTargetCurrent(true);
             break;
         }
-        main_screen.setPdoType(config.pdo_type)
+        main_screen.setPdoType(config.pdo.type)
             .setTargetVoltage(target_voltage)
             .setTargetCurrent(target_current)
             .setSupplyMode(config.supply_mode);
@@ -206,6 +207,8 @@ TinyPPS::State TinyPPS::handleMainState() {
                     is_editing = true;
                 } else {
                     // TODO set a value
+                    m_usb_pd.setPdoOutput(m_active_config_index, target_voltage,
+                                          target_current);
                     is_editing = false;
                 }
             } else {
@@ -248,21 +251,25 @@ TinyPPS::State TinyPPS::handleMainState() {
             // handle rotary decrement
             // select target voltage, target current or none
             if (is_editing) {
-                auto step = k_step;
+                bool big_step = false;
                 if (g_rotary_state_clock <= k_big_step_period) {
-                    step *= 10;
+                    big_step = true;
                 }
                 g_rotary_state_clock = 0;
                 switch (selection) {
                 case 1:
-                    target_voltage -= step;
-                    target_voltage = std::clamp(
-                        target_voltage, config.min_voltage, config.max_voltage);
+                    target_voltage -= big_step ? config.pdo.voltage_step * 5
+                                               : config.pdo.voltage_step;
+                    target_voltage = std::clamp<uint16_t>(
+                        target_voltage, config.pdo.voltage_min,
+                        config.pdo.voltage_max);
                     break;
                 case 2:
-                    target_current -= step;
-                    target_current = std::clamp(
-                        target_current, config.min_current, config.max_current);
+                    target_current -= big_step ? config.pdo.current_step * 4
+                                               : config.pdo.current_step;
+                    target_current = std::clamp<uint16_t>(
+                        target_current, config.pdo.current_min,
+                        config.pdo.current_max);
                     break;
                 }
             } else {
@@ -282,21 +289,24 @@ TinyPPS::State TinyPPS::handleMainState() {
             // handle rotary increment
             // select target voltage, target current or none
             if (is_editing) {
-                auto step = k_step;
+                bool big_step = false;
                 if (g_rotary_state_clock <= k_big_step_period) {
-                    step *= 10;
+                    big_step = true;
                 }
                 g_rotary_state_clock = 0;
                 switch (selection) {
                 case 1:
-                    target_voltage += step;
-                    target_voltage = std::clamp(
-                        target_voltage, config.min_voltage, config.max_voltage);
+                    target_voltage += big_step ? 1000 : config.pdo.voltage_step;
+                    target_voltage = std::clamp<uint16_t>(
+                        target_voltage, config.pdo.voltage_min,
+                        config.pdo.voltage_max);
                     break;
                 case 2:
-                    target_current += step;
-                    target_current = std::clamp(
-                        target_current, config.min_current, config.max_current);
+                    target_current += big_step ? config.pdo.current_step * 4
+                                               : config.pdo.current_step;
+                    target_current = std::clamp<uint16_t>(
+                        target_current, config.pdo.current_min,
+                        config.pdo.current_max);
                     break;
                 }
             } else {
@@ -314,8 +324,8 @@ TinyPPS::State TinyPPS::handleMainState() {
                 continue;
             }
             // handle rotary decrement while pressing a button
-            // enable constant voltage mode when the enable output is false
-            config.supply_mode = SupplyMode::CV;
+            // TODO implement constant current mode manualy for PPS/AVS PDOs
+            // switch to constant voltage mode when the enable output is false
         } else if (m_rotary_encoder.getState() ==
                    RotaryEncoder::State::rot_inc_while_btn_press) {
             if (!config.is_editing_enabled) {
@@ -323,13 +333,22 @@ TinyPPS::State TinyPPS::handleMainState() {
                 continue;
             }
             // handle rotary increment while pressing a button
-            // enable constant current mode when the enable output is false
-            // TODO check is it possible to select this mode
-            config.supply_mode = SupplyMode::CC;
+            // TODO implement constant current mode manualy for PPS/AVS PDOs
+            // switch to constant current mode when the enable output is false
         }
         m_rotary_encoder.clearState();
     }
     return State::main;
+}
+
+void TinyPPS::usbPdInit() {
+    m_usb_pd.enableOutput(false);
+    // https://product.tdk.com/system/files/dam/doc/product/sensor/ntc/chip-ntc-thermistor/data_sheet/datasheet_ntcgs103jx103dt8.pdf
+    // based on B value:
+    //                  [at 25/50C] 3380K typ.
+    //                  [at 25/85C] 3435K+-0.7%
+    m_usb_pd.setNtc(10000, 4164, 1912, 987);
+    m_usb_pd.setVselMin(3300);
 }
 
 int TinyPPS::readPdos() {
@@ -343,7 +362,14 @@ int TinyPPS::readPdos() {
         if (m_usb_pd.isNewPdoAvailable()) {
             sleep_ms(10);
             pdo_cnt = m_usb_pd.getPDSourcePowerCapabilities();
-            // TODO fill in menu with PDOs
+            // Fill in menu with PDOs
+            for (uint8_t i = 0; i < Ap33772s::k_max_pdo_entries; ++i) {
+                Ap33772s::Pdo pdo;
+                if (m_usb_pd.getPdo(i, pdo)) {
+                    m_configs.emplace_back(std::make_pair(
+                        pdoToString(pdo), ConfigBuilder::buildWithPdo(pdo)));
+                }
+            }
             sleep_ms(1000);
             break;
         }

@@ -49,6 +49,11 @@ static constexpr uint8_t k_voutctl_auto = 0;   // controlled by the AP33772S
 static constexpr uint8_t k_voutctl_off = 1;    // VOUT force OFF
 static constexpr uint8_t k_voutctl_on = 2;     // VOUT force ON
 
+Ap33772s::Pdo::Pdo()
+    : index(0), type(Ap33772s::PdoType::NONE), voltage_min(0),
+      voltage_max(5000), voltage_step(0), current_min(1000), current_max(1000),
+      current_step(0) {}
+
 Ap33772s::Ap33772s(II2c* i2c) : m_i2c(i2c) {
     memset(m_pdo_array, 0, k_max_pdo_entries * sizeof(SrcPdo));
 }
@@ -62,6 +67,13 @@ bool Ap33772s::enableOutput(bool enable) {
     system.voutctl = enable ? k_voutctl_auto : k_voutctl_off;
     setSystem(system);
     return true;
+}
+
+uint8_t Ap33772s::getTemp() {
+    uint8_t temp = 0;
+    m_i2c->writeTo(k_i2c_addr, &k_cmd_temp, 1);
+    m_i2c->readFrom(k_i2c_addr, &temp, 1);
+    return temp;
 }
 
 bool Ap33772s::setNtc(uint16_t tr25, uint16_t tr50, uint16_t tr75,
@@ -88,11 +100,9 @@ bool Ap33772s::setNtc(uint16_t tr25, uint16_t tr50, uint16_t tr75,
     return true;
 }
 
-uint8_t Ap33772s::getTemp() {
-    uint8_t temp = 0;
-    m_i2c->writeTo(k_i2c_addr, &k_cmd_temp, 1);
-    m_i2c->readFrom(k_i2c_addr, &temp, 1);
-    return temp;
+bool Ap33772s::setVselMin(uint16_t voltage) {
+    uint8_t buf[] = {k_cmd_vselmin, static_cast<uint8_t>(voltage / 200)};
+    return m_i2c->writeTo(k_i2c_addr, buf, sizeof(buf));
 }
 
 uint8_t Ap33772s::getPDSourcePowerCapabilities() {
@@ -109,6 +119,76 @@ uint8_t Ap33772s::getPDSourcePowerCapabilities() {
         }
     }
     return cnt;
+}
+
+bool Ap33772s::getPdo(uint8_t index, Pdo& pdo) {
+    if ((index >= k_max_pdo_entries) || (m_pdo_array[index].raw == 0)) {
+        return false;
+    }
+    pdo.index = index;
+    pdo.current_min = 1000;
+    pdo.current_step = 250;
+    pdo.current_max =
+        1000 +
+        m_pdo_array[index].fixed.current_max *
+            250;   // TODO this is not god enough cause the
+                   // m_pdo_array[index].fixed.current_max is giving ranges
+    bool is_epr = (index >= 7 && index <= 12);   // 1-6 for SPR, 7-12 for EPR
+    if (m_pdo_array[index].fixed.type == 0) {    // Fixed PDO
+        pdo.type = PdoType::FIX;
+        pdo.voltage_min =
+            m_pdo_array[index].fixed.voltage_max * (is_epr ? 200 : 100);
+        // for Fixed PDO set VOLTAGE_MIN = VOLTAGE_MAX
+        pdo.voltage_max = pdo.voltage_min;
+        pdo.voltage_step = 0;
+    } else {
+        pdo.type = is_epr ? PdoType::AVS : PdoType::PPS;
+        pdo.voltage_step = is_epr ? 200 : 100;
+        if (m_pdo_array[index].pps.voltage_min == 1) {
+            pdo.voltage_min = is_epr ? 15000 : 3300;
+        } else if (m_pdo_array[index].pps.voltage_min == 2) {
+            // In this case:
+            //               3.3V < VOLTAGE_MIN ≤ 5V for PPS
+            //               15V < VOLTAGE_MIN ≤ 20V for AVS
+            // To find the exact VOLTAGE_MIN it is needed to iterate through the
+            // voltage range and find the first voltage that is accepted by the
+            // source
+            const uint16_t v_min = is_epr ? 150 : 33;
+            const uint16_t v_max = is_epr ? 200 : 50;
+            for (uint16_t v = v_min; v <= v_max; v += pdo.voltage_step) {
+                if (setPdoOutput(index, v, 1000)) {
+                    pdo.voltage_min = v * pdo.voltage_step;
+                    break;
+                }
+            }
+        }
+        pdo.voltage_max =
+            m_pdo_array[index].pps.voltage_max * (is_epr ? 200 : 100);
+    }
+    return true;
+}
+
+bool Ap33772s::setPdoOutput(uint8_t index, uint16_t voltage, uint16_t current) {
+    if ((index >= k_max_pdo_entries) || (voltage < 3300) || (current < 1000)) {
+        return false;
+    }
+    bool is_epr = (index >= 7 && index <= 12);   // 1-6 for SPR, 7-12 for EPR
+    PdReqMsg req;
+    req.pdo_index = index + 1;
+    req.voltage_sel = voltage / (is_epr ? 200 : 100);
+    req.current_sel = (current / 250) - 4;
+
+    uint8_t buf[] = {k_cmd_pd_reqmsg, static_cast<uint8_t>(req.raw & 0xFF),
+                     static_cast<uint8_t>(req.raw >> 8)};
+    m_i2c->writeTo(k_i2c_addr, buf, 3);
+
+    PdMsgrlt res;
+    m_i2c->writeTo(k_i2c_addr, &k_cmd_pd_msgrlt, 1);
+    m_i2c->readFrom(k_i2c_addr, &res.raw, 1);
+    if (res.response == 1) {
+        return true;
+    }
+    return false;
 }
 
 Ap33772s::Status Ap33772s::getStatus() {

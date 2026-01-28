@@ -27,12 +27,8 @@ constexpr const char* supplyModeToString(SupplyMode mode) {
  * @brief Struct containing configuration parameters describing a supply profile
  */
 struct Config {
-    Ap33772s::PdoType pdo_type;
+    Ap33772s::Pdo pdo;
     SupplyMode supply_mode;
-    int min_voltage;
-    int max_voltage;
-    int min_current;
-    int max_current;
     bool is_editing_enabled;
     /**
      * @brief Default constructor
@@ -55,15 +51,11 @@ struct ConfigBuilder {
     static Config buildDefault();
 
     /**
-     * @brief Builds config for PPS profile
+     * @brief Builds config with PDO
      *
-     * @param[in] min_voltage Minimum voltage supported by the PPS profile
-     * @param[in] max_voltage Maximum voltage supported by the PPS profile
-     * @param[in] min_current Minimum current supported by the PDO profile
-     * @param[in] max_current Maximum current supported by the PDO profile
+     * @param[in] pdo PDO
      * @return Config object
      */
-    static Config buildPpsProfile(int min_voltage, int max_voltage,
-                                  int min_current, int max_current);
+    static Config buildWithPdo(const Ap33772s::Pdo& pdo);
 };
 #endif   // config_h
