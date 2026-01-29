@@ -71,3 +71,5 @@ target_link_libraries(TinyPPS
 
 pico_add_extra_outputs(TinyPPS)
 
+# disable warnings caused by using std::format
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-psabi")
