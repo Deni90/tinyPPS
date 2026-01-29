@@ -25,20 +25,26 @@ uint8_t* MainScreen::build() {
                 {.align = TextAlign::center, .size = FontSize::big});
 
     // Target voltage in mV
-    auto len = printString(31, 15, "TARGET ");
-    len += printString(31 + len, 15, std::format("{:05d}", m_target_voltage),
+    auto target_voltage_pos =
+        (m_width - printString(0, 0, "TARGET 00000mV", true)) / 2;
+    auto len = printString(target_voltage_pos, 16, "TARGET ");
+    len += printString(target_voltage_pos + len, 16,
+                       std::format("{:05d}", m_target_voltage),
                        {.invert = m_is_target_voltage_selected});
-    printString(31 + len, 15, "mV");
+    printString(target_voltage_pos + len, 16, "mV");
 
     // Measured current in A
     printString(m_width / 2, 25, std::format("{:05.2f}A", m_measured_current),
                 {.align = TextAlign::center, .size = FontSize::big});
 
     // Target current in mA
-    len = printString(33, 40, "TARGET ");
-    len += printString(33 + len, 40, std::format("{:04d}", m_target_current),
+    auto target_current_pos =
+        (m_width - printString(0, 0, "MAX 0000mA", true)) / 2;
+    len = printString(target_current_pos, 41, "MAX ");
+    len += printString(target_current_pos + len, 41,
+                       std::format("{:04d}", m_target_current),
                        {.invert = m_is_target_current_selected});
-    printString(33 + len, 40, "mA");
+    printString(target_current_pos + len, 41, "mA");
 
     // Constant voltage indicator
     drawRectangle(32, 53, 20, 11, m_supply_mode == SupplyMode::CV);
