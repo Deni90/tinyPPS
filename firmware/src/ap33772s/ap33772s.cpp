@@ -50,7 +50,7 @@ static constexpr uint8_t k_voutctl_off = 1;    // VOUT force OFF
 static constexpr uint8_t k_voutctl_on = 2;     // VOUT force ON
 
 Ap33772s::Pdo::Pdo()
-    : index(0), type(Ap33772s::PdoType::NONE), voltage_min(0),
+    : index(0), type(Ap33772s::PdoType::NONE), voltage_min(5000),
       voltage_max(5000), voltage_step(0), current_min(1000), current_max(1000),
       current_step(0) {}
 
