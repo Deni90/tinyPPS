@@ -1,6 +1,6 @@
 #include "menu_screen.h"
 
-#include <sstream>
+#include <format>
 
 MenuScreen::MenuScreen(uint16_t width, uint16_t height)
     : Screen(width, height), m_selected_menu_item(0) {}
@@ -32,9 +32,9 @@ MenuScreen& MenuScreen::selectMenuItem(uint8_t index) {
 uint8_t* MenuScreen::build() {
     clear();
     uint16_t y = 0;
-    std::stringstream ss;
-    ss << m_selected_menu_item + 1 << "/" << m_menu_items.size();
-    printString(0, y, ss.str());
+    printString(
+        0, y,
+        std::format("{}/{}", m_selected_menu_item + 1, m_menu_items.size()));
     printString(m_width / 2, y, m_title, {.align = TextAlign::center});
 
     y += 16;

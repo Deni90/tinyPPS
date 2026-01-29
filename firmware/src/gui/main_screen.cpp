@@ -1,7 +1,7 @@
 #include "main_screen.h"
 
+#include <format>
 #include <iomanip>
-#include <sstream>
 
 MainScreen::MainScreen(uint16_t width, uint16_t height)
     : Screen(width, height), m_pdo_type(Ap33772s::PdoType::NONE),
@@ -17,42 +17,26 @@ uint8_t* MainScreen::build() {
     printString(0, 0, Ap33772s::pdoTypeToString(m_pdo_type));
 
     // Temperature
-    std::ostringstream temperature_stream;
-    temperature_stream << m_temperature << "*C";
-    printString(m_width, 0, temperature_stream.str(),
+    printString(m_width, 0, std::format("{}*C", m_temperature),
                 {.align = TextAlign::right});
 
     // Measured voltage in V
-    std::ostringstream measured_voltage_stream;
-    measured_voltage_stream << std::fixed << std::setprecision(2)
-                            << std::setfill('0') << std::setw(5)
-                            << m_measured_voltage << "V";
-    printString(m_width / 2, 0, measured_voltage_stream.str(),
+    printString(m_width / 2, 0, std::format("{:05.2f}V", m_measured_voltage),
                 {.align = TextAlign::center, .size = FontSize::big});
 
     // Target voltage in mV
     auto len = printString(31, 15, "TARGET ");
-    std::ostringstream target_voltage_stream;
-    target_voltage_stream << std::setfill('0') << std::setw(5)
-                          << m_target_voltage;
-    len += printString(31 + len, 15, target_voltage_stream.str(),
+    len += printString(31 + len, 15, std::format("{:05d}", m_target_voltage),
                        {.invert = m_is_target_voltage_selected});
     printString(31 + len, 15, "mV");
 
     // Measured current in A
-    std::ostringstream measured_current_stream;
-    measured_current_stream << std::fixed << std::setprecision(2)
-                            << std::setfill('0') << std::setw(5)
-                            << m_measured_current << "A";
-    printString(m_width / 2, 25, measured_current_stream.str(),
+    printString(m_width / 2, 25, std::format("{:05.2f}A", m_measured_current),
                 {.align = TextAlign::center, .size = FontSize::big});
 
     // Target current in mA
     len = printString(33, 40, "TARGET ");
-    std::ostringstream target_current_stream;
-    target_current_stream << std::setfill('0') << std::setw(4)
-                          << m_target_current;
-    len += printString(33 + len, 40, target_current_stream.str(),
+    len += printString(33 + len, 40, std::format("{:04d}", m_target_current),
                        {.invert = m_is_target_current_selected});
     printString(33 + len, 40, "mA");
 
