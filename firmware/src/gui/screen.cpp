@@ -171,21 +171,26 @@ void Screen::draw(int16_t x, int16_t y, const uint8_t* object, uint16_t width,
     }
 }
 
-uint16_t Screen::printChar(int16_t x, int16_t y, char ch, bool invert) {
+uint16_t Screen::printChar(int16_t x, int16_t y, char ch, bool invert,
+                           bool dry_run) {
     auto char_width = 0;
     for (auto i = 0; i < k_font_width; i++) {
         if (k_font[(ch - ' ') * 5 + i] != k_unused) {
             ++char_width;
         }
     }
-    draw(x, y, &k_font[(ch - ' ') * k_font_width], char_width, k_font_height,
-         invert);   // draw the character
-    draw(x + char_width, y, 0x00, 1, k_font_height,
-         invert);            // add letter spacing
+    if (!dry_run) {
+        draw(x, y, &k_font[(ch - ' ') * k_font_width], char_width,
+             k_font_height,
+             invert);   // draw the character
+        draw(x + char_width, y, 0x00, 1, k_font_height,
+             invert);   // add letter spacing
+    }
     return char_width + 1;   // +1 is for letter spacing
 }
 
-uint16_t Screen::printCharBig(int16_t x, int16_t y, char ch, bool invert) {
+uint16_t Screen::printCharBig(int16_t x, int16_t y, char ch, bool invert,
+                              bool dry_run) {
     uint8_t font_element, big_font_element = 0x00, temp_col, temp_row;
     uint8_t char_width = 0;
     for (auto j = 0; j < k_font_width * 2; j++) {
@@ -203,7 +208,9 @@ uint16_t Screen::printCharBig(int16_t x, int16_t y, char ch, bool invert) {
                 big_font_element &= ~(1 << i);
             }
         }
-        draw(x + j, y, &big_font_element, 1, 8, invert);
+        if (!dry_run) {
+            draw(x + j, y, &big_font_element, 1, 8, invert);
+        }
         // interpolate the bottom part of the character element
         for (auto i = 0; i < 8; i++) {
             if ((1 << (4 + i / 2)) & font_element)
@@ -211,17 +218,20 @@ uint16_t Screen::printCharBig(int16_t x, int16_t y, char ch, bool invert) {
             else
                 big_font_element &= ~(1 << i);
         }
-        draw(x + j, y + 8, &big_font_element, 1, 8, invert);
+        if (!dry_run) {
+            draw(x + j, y + 8, &big_font_element, 1, 8, invert);
+        }
     }
     return char_width + 2;   // +2 is for letter spacing
 }
 
-uint16_t Screen::printString(int16_t x, int16_t y, const std::string& str) {
-    return printString(x, y, str, StringConfig());
+uint16_t Screen::printString(int16_t x, int16_t y, const std::string& str,
+                             bool dry_run) {
+    return printString(x, y, str, StringConfig(), dry_run);
 }
 
 uint16_t Screen::printString(int16_t x, int16_t y, const std::string& str,
-                             const StringConfig& config) {
+                             const StringConfig& config, bool dry_run) {
     auto text_width = 0;
     if (config.align == TextAlign::center || config.align == TextAlign::right) {
         // dry run to calculate width used for alignment
@@ -245,9 +255,9 @@ uint16_t Screen::printString(int16_t x, int16_t y, const std::string& str,
     }
     for (const auto& ch : str) {
         if (config.size == FontSize::big) {
-            xx += printCharBig(xx, y, ch, config.invert);
+            xx += printCharBig(xx, y, ch, config.invert, dry_run);
         } else {
-            xx += printChar(xx, y, ch, config.invert);
+            xx += printChar(xx, y, ch, config.invert, dry_run);
         }
     }
     return xx - x;

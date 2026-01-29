@@ -83,7 +83,8 @@ class Screen {
      * @param[in] y Y coordinate
      * @param[in] width Width of the image
      * @param[in] height Height of the image
-     * @param[in] fill A flag indicating whether to fill the rectangle. False by default
+     * @param[in] fill A flag indicating whether to fill the rectangle. False by
+     * default
      */
     void drawRectangle(int16_t x, int16_t y, uint16_t width, uint16_t height,
                        bool fill = false);
@@ -96,9 +97,12 @@ class Screen {
      * @param[in] ch Charater
      * @param[in] invert Flag indicating printing in inverted mode. It is false
      * by default.
+     * @param[in] dry_run If true, do not render the text; only compute the
+     * required width.
      * @return Return printed character width or 0 in case of error.
      */
-    uint16_t printChar(int16_t x, int16_t y, char ch, bool invert = false);
+    uint16_t printChar(int16_t x, int16_t y, char ch, bool invert = false,
+                       bool dry_run = false);
 
     /**
      * @brief Print a single character double in size
@@ -108,9 +112,12 @@ class Screen {
      * @param[in] ch Charater
      * @param[in] invert Flag indicating printing in inverted mode. It is false
      * by default.
+     * @param[in] dry_run If true, do not render the text; only compute the
+     * required width.
      * @return Return printed character width or 0 in case of error.
      */
-    uint16_t printCharBig(int16_t x, int16_t y, char ch, bool invert = false);
+    uint16_t printCharBig(int16_t x, int16_t y, char ch, bool invert = false,
+                          bool dry_run = false);
 
     /**
      * @brief Print a null terminated string to x, y coordinates
@@ -118,9 +125,12 @@ class Screen {
      * @param[in] x X coordianate
      * @param[in] y Y coordinate
      * @param[in] s String
+     * @param[in] dry_run If true, do not render the text; only compute the
+     * required width.
      * @return Return printed text width or 0 in case of error.
      */
-    uint16_t printString(int16_t x, int16_t y, const std::string& str);
+    uint16_t printString(int16_t x, int16_t y, const std::string& str,
+                         bool dry_run = false);
 
     /**
      * @brief Print a null terminated string to x, y coordinates
@@ -129,10 +139,12 @@ class Screen {
      * @param[in] y Y coordinate
      * @param[in] s String
      * @param[in] config Text config
+     * @param[in] dry_run If true, do not render the text; only compute the
+     * required width.
      * @return Return printed text width or 0 in case of error.
      */
     uint16_t printString(int16_t x, int16_t y, const std::string& str,
-                         const StringConfig& config);
+                         const StringConfig& config, bool dry_run = false);
 
     uint16_t m_width;
     uint16_t m_height;
