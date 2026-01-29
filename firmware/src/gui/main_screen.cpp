@@ -18,7 +18,7 @@ uint8_t* MainScreen::build() {
 
     // Temperature
     std::ostringstream temperature_stream;
-    temperature_stream << std::fixed << std::setprecision(1) << m_temperature;
+    temperature_stream << m_temperature << "*C";
     printString(m_width, 0, temperature_stream.str(),
                 {.align = TextAlign::right});
 
@@ -88,7 +88,7 @@ MainScreen& MainScreen::setOutputEnable(bool value) {
     return *this;
 }
 
-MainScreen& MainScreen::setTemperature(float value) {
+MainScreen& MainScreen::setTemperature(int value) {
     m_temperature = value;
     return *this;
 }

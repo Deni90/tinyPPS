@@ -58,7 +58,7 @@ class MainScreen : public Screen {
      * @param[in] value Temperature
      * @return reference to this main screen object
      */
-    MainScreen& setTemperature(float value);
+    MainScreen& setTemperature(int value);
 
     /**
      * @brief Set measured voltage
@@ -112,7 +112,7 @@ class MainScreen : public Screen {
     Ap33772s::PdoType m_pdo_type;
     SupplyMode m_supply_mode;
     bool m_is_output_enabled;
-    float m_temperature;
+    int m_temperature;
     float m_measured_voltage;
     float m_measured_current;
     unsigned int m_target_voltage;
