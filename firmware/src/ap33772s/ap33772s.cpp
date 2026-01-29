@@ -71,38 +71,22 @@ bool Ap33772s::enableOutput(bool enable) {
 
 uint8_t Ap33772s::getTemp() {
     uint8_t temp = 0;
-    m_i2c->writeTo(k_i2c_addr, &k_cmd_temp, 1);
-    m_i2c->readFrom(k_i2c_addr, &temp, 1);
+    readRegister(k_cmd_temp, temp);
     return temp;
 }
 
 bool Ap33772s::setNtc(uint16_t tr25, uint16_t tr50, uint16_t tr75,
                       uint16_t tr100) {
-    constexpr const uint8_t k_command_length = 3;
-    constexpr const uint8_t k_buffer_length = 4 * k_command_length;
-    uint8_t buffer[] = {k_cmd_tr25,
-                        static_cast<uint8_t>(tr25 & 0xFF),
-                        static_cast<uint8_t>(tr25 >> 8),
-                        k_cmd_tr50,
-                        static_cast<uint8_t>(tr50 & 0xFF),
-                        static_cast<uint8_t>(tr50 >> 8),
-                        k_cmd_tr75,
-                        static_cast<uint8_t>(tr75 & 0xFF),
-                        static_cast<uint8_t>(tr75 >> 8),
-                        k_cmd_tr100,
-                        static_cast<uint8_t>(tr100 & 0xFF),
-                        static_cast<uint8_t>(tr100 >> 8)};
-    for (int i = 0; i < k_buffer_length; i += k_command_length) {
-        if (!m_i2c->writeTo(k_i2c_addr, buffer + i, k_command_length)) {
-            return false;
-        }
+    if (!writeRegister(k_cmd_tr25, tr25) || !writeRegister(k_cmd_tr50, tr50) ||
+        !writeRegister(k_cmd_tr75, tr75) ||
+        !writeRegister(k_cmd_tr100, tr100)) {
+        return false;
     }
     return true;
 }
 
 bool Ap33772s::setVselMin(uint16_t voltage) {
-    uint8_t buf[] = {k_cmd_vselmin, static_cast<uint8_t>(voltage / 200)};
-    return m_i2c->writeTo(k_i2c_addr, buf, sizeof(buf));
+    return writeRegister(k_cmd_vselmin, static_cast<uint8_t>(voltage / 200));
 }
 
 uint8_t Ap33772s::getPDSourcePowerCapabilities() {
@@ -178,36 +162,60 @@ bool Ap33772s::setPdoOutput(uint8_t index, uint16_t voltage, uint16_t current) {
     req.voltage_sel = voltage / (is_epr ? 200 : 100);
     req.current_sel = (current / 250) - 4;
 
-    uint8_t buf[] = {k_cmd_pd_reqmsg, static_cast<uint8_t>(req.raw & 0xFF),
-                     static_cast<uint8_t>(req.raw >> 8)};
-    m_i2c->writeTo(k_i2c_addr, buf, 3);
-
+    if (!writeRegister(k_cmd_pd_reqmsg, req.raw)) {
+        return false;
+    }
     PdMsgrlt res;
-    m_i2c->writeTo(k_i2c_addr, &k_cmd_pd_msgrlt, 1);
-    m_i2c->readFrom(k_i2c_addr, &res.raw, 1);
+    if (!readRegister(k_cmd_pd_msgrlt, res.raw)) {
+        return false;
+    }
     if (res.response == 1) {
         return true;
     }
     return false;
 }
 
+bool Ap33772s::readRegister(uint8_t reg, uint8_t& value) {
+    if (m_i2c->writeTo(k_i2c_addr, &reg, 1) != 1)
+        return false;
+    if (m_i2c->readFrom(k_i2c_addr, &value, sizeof(value)) != sizeof(value))
+        return false;
+    return true;
+}
+
+bool Ap33772s::readRegister(uint8_t reg, uint16_t& value) {
+    if (m_i2c->writeTo(k_i2c_addr, &reg, 1) != 1)
+        return false;
+    uint8_t buf[2];
+    if (m_i2c->readFrom(k_i2c_addr, buf, sizeof(buf)) != sizeof(buf))
+        return false;
+    value = (buf[0] & 0xff) | (buf[1] << 8);
+    return true;
+}
+
+bool Ap33772s::writeRegister(uint8_t reg, uint8_t value) {
+    uint8_t buffer[2] = {reg, value};
+    return m_i2c->writeTo(k_i2c_addr, buffer, sizeof(buffer)) == sizeof(buffer);
+}
+
+bool Ap33772s::writeRegister(uint8_t reg, uint16_t value) {
+    uint8_t buffer[3] = {reg, static_cast<uint8_t>(value & 0xff),
+                         static_cast<uint8_t>(value >> 8)};
+    return m_i2c->writeTo(k_i2c_addr, buffer, sizeof(buffer)) == sizeof(buffer);
+}
+
 Ap33772s::Status Ap33772s::getStatus() {
     Status status;
     status.raw = 0;
-    m_i2c->writeTo(k_i2c_addr, &k_cmd_status, 1);
-    m_i2c->readFrom(k_i2c_addr, &status.raw, 1);
+    readRegister(k_cmd_status, status.raw);
     return status;
 }
 
 Ap33772s::System Ap33772s::getSystem() {
     Ap33772s::System system;
     system.raw = 0;
-    m_i2c->writeTo(k_i2c_addr, &k_cmd_system, 1);
-    m_i2c->readFrom(k_i2c_addr, &system.raw, 1);
+    readRegister(k_cmd_system, system.raw);
     return system;
 }
 
-void Ap33772s::setSystem(System s) {
-    uint8_t buf[2] = {k_cmd_system, s.raw};
-    m_i2c->writeTo(k_i2c_addr, buf, 2);
-}
+void Ap33772s::setSystem(System s) { writeRegister(k_cmd_system, s.raw); }

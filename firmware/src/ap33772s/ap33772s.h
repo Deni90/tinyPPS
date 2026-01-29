@@ -281,6 +281,12 @@ class Ap33772s {
     static constexpr uint8_t k_max_pdo_entries = 13;
 
   private:
+    // I2C helpers
+    bool readRegister(uint8_t reg, uint8_t& value);
+    bool readRegister(uint8_t reg, uint16_t& value);
+    bool writeRegister(uint8_t reg, uint8_t value);
+    bool writeRegister(uint8_t reg, uint16_t value);
+
     Status getStatus();
     System getSystem();
     void setSystem(System s);
