@@ -12,29 +12,22 @@ class PicoGpio : public IGpio {
      *
      * @param[in] io_pin RP's IO pin
      */
-    PicoGpio(unsigned int io_pin) : m_io_pin(io_pin) { gpio_init(m_io_pin); }
+    PicoGpio(unsigned int io_pin);
 
     /**
      * Implementation of II2c interface
      */
-    void pinMode(PinMode mode) override {
-        if (mode == IGpio::PinMode::input) {
-            gpio_set_dir(m_io_pin, GPIO_IN);
-        } else {
-            gpio_set_dir(m_io_pin, GPIO_OUT);
-        }
-    }
 
-    void pullUp() override { gpio_pull_up(m_io_pin); }
+    virtual ~PicoGpio() = default;
 
-    void pullDOwn() override { gpio_pull_down(m_io_pin); }
+    bool configure(Direction dir, Pull pull = Pull::None);
 
-    void write(bool value) override { gpio_put(m_io_pin, value); }
+    bool write(bool value) override;
 
-    bool read() override { return gpio_get(m_io_pin); }
+    bool read() override;
 
   private:
-    unsigned int m_io_pin;
+    unsigned int m_pin;
 };
 
 #endif   // pico_pin_h

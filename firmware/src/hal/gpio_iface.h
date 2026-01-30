@@ -4,33 +4,31 @@
 class IGpio {
   public:
     /**
-     * @brief Enumeration describing pin modes
+     * @brief GPIO direction.
      */
-    enum class PinMode { input, output };
+    enum class Direction { Input, Output };
 
     /**
-     * @brief Set pin mode of an IO pin. It can be input or output
+     * @brief Internal pull resistor configuration.
+     */
+    enum class Pull { None, Up, Down };
+
+    /**
+     * @brief Configure the GPIO pin.
      *
-     * @param[in] mode Flag for indicating pin mode (input or output)
+     * @param dir  Pin direction (input or output)
+     * @param pull Internal pull resistor configuration
+     *
+     * @return true on success, false on invalid configuration
      */
-    virtual void pinMode(PinMode mode) = 0;
-
-    /**
-     * @brief Pull up the pin
-     */
-    virtual void pullUp() = 0;
-
-    /**
-     * Pull down the pin
-     */
-    virtual void pullDOwn() = 0;
+    virtual bool configure(Direction dir, Pull pull = Pull::None) = 0;
 
     /**
      * @brief Write a value to a digital pin.
      *
      * @param[in] value true - high, false - low
      */
-    virtual void write(bool value) = 0;
+    virtual bool write(bool value) = 0;
 
     /**
      * @brief Reads the value from a specified digital pin.

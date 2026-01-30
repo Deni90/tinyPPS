@@ -1,6 +1,7 @@
 add_library(tinypps_pico_hal INTERFACE)
 
 target_sources(tinypps_pico_hal INTERFACE
+        ${CMAKE_CURRENT_LIST_DIR}/pico_gpio.cpp
         ${CMAKE_CURRENT_LIST_DIR}/pico_i2c.cpp
 )
 

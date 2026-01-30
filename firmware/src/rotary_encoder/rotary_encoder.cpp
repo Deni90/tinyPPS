@@ -10,14 +10,9 @@ RotaryEncoder::RotaryEncoder(IGpio* a_gpio, IGpio* b_gpio, IGpio* btn_gpio,
       m_btn_gpio(btn_gpio), m_clock(clock) {}
 
 void RotaryEncoder::initialize() {
-    m_a_gpio->pinMode(IGpio::PinMode::input);   // configure IO as input
-    m_a_gpio->pullUp();                        // pull up IO
-
-    m_b_gpio->pinMode(IGpio::PinMode::input);   // configure IO as input
-    m_b_gpio->pullUp();                        // pull up IO
-
-    m_btn_gpio->pinMode(IGpio::PinMode::input);   // configure IO as input
-    m_btn_gpio->pullUp();                        // pull up IO
+    m_a_gpio->configure(IGpio::Direction::Input, IGpio::Pull::Up);
+    m_b_gpio->configure(IGpio::Direction::Input, IGpio::Pull::Up);
+    m_btn_gpio->configure(IGpio::Direction::Input, IGpio::Pull::Up);
 }
 
 void RotaryEncoder::Handle() {
