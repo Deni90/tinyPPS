@@ -4,19 +4,19 @@
 static constexpr uint32_t k_debounce_time = 50;       // ms
 static constexpr uint32_t k_long_press_time = 1000;   // ms
 
-RotaryEncoder::RotaryEncoder(IPin* a_gpio, IPin* b_gpio, IPin* btn_gpio,
+RotaryEncoder::RotaryEncoder(IGpio* a_gpio, IGpio* b_gpio, IGpio* btn_gpio,
                              volatile uint32_t* clock)
     : m_state(RotaryEncoder::State::idle), m_a_gpio(a_gpio), m_b_gpio(b_gpio),
       m_btn_gpio(btn_gpio), m_clock(clock) {}
 
 void RotaryEncoder::initialize() {
-    m_a_gpio->pinMode(IPin::PinMode::input);   // configure IO as input
+    m_a_gpio->pinMode(IGpio::PinMode::input);   // configure IO as input
     m_a_gpio->pullUp();                        // pull up IO
 
-    m_b_gpio->pinMode(IPin::PinMode::input);   // configure IO as input
+    m_b_gpio->pinMode(IGpio::PinMode::input);   // configure IO as input
     m_b_gpio->pullUp();                        // pull up IO
 
-    m_btn_gpio->pinMode(IPin::PinMode::input);   // configure IO as input
+    m_btn_gpio->pinMode(IGpio::PinMode::input);   // configure IO as input
     m_btn_gpio->pullUp();                        // pull up IO
 }
 

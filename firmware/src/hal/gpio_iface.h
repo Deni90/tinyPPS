@@ -1,7 +1,7 @@
-#ifndef pin_iface_h
-#define pin_iface_h
+#ifndef gpio_iface_h
+#define gpio_iface_h
 
-class IPin {
+class IGpio {
   public:
     /**
      * @brief Enumeration describing pin modes
@@ -40,4 +40,4 @@ class IPin {
     virtual bool read() = 0;
 };
 
-#endif   // pin_iface_h
+#endif   // gpio_iface_h

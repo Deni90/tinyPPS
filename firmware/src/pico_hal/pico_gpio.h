@@ -3,22 +3,22 @@
 
 #include "pico/stdlib.h"
 
-#include "pin_iface.h"
+#include "gpio_iface.h"
 
-class PicoPin : public IPin {
+class PicoGpio : public IGpio {
   public:
     /**
      * @brief Constructor
      *
      * @param[in] io_pin RP's IO pin
      */
-    PicoPin(unsigned int io_pin) : m_io_pin(io_pin) { gpio_init(m_io_pin); }
+    PicoGpio(unsigned int io_pin) : m_io_pin(io_pin) { gpio_init(m_io_pin); }
 
     /**
      * Implementation of II2c interface
      */
     void pinMode(PinMode mode) override {
-        if (mode == IPin::PinMode::input) {
+        if (mode == IGpio::PinMode::input) {
             gpio_set_dir(m_io_pin, GPIO_IN);
         } else {
             gpio_set_dir(m_io_pin, GPIO_OUT);

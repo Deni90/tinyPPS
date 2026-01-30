@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-#include "pin_iface.h"
+#include "gpio_iface.h"
 
 class RotaryEncoder {
   public:
@@ -31,7 +31,7 @@ class RotaryEncoder {
      * @param[in] btn_gpio Button pin of the rotary encoder
      * @param[in] clock Pointer to a variable that is used for debouncing
      */
-    RotaryEncoder(IPin* a_gpio, IPin* b_gpio, IPin* btn_gpio,
+    RotaryEncoder(IGpio* a_gpio, IGpio* b_gpio, IGpio* btn_gpio,
                   volatile uint32_t* clock);
 
     /**
@@ -62,9 +62,9 @@ class RotaryEncoder {
   private:
     State m_state;
     volatile uint32_t* m_clock;
-    IPin* m_a_gpio;
-    IPin* m_b_gpio;
-    IPin* m_btn_gpio;
+    IGpio* m_a_gpio;
+    IGpio* m_b_gpio;
+    IGpio* m_btn_gpio;
 };
 
 #endif   // rotary_encoder_h
