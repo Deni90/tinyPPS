@@ -359,7 +359,7 @@ int TinyPPS::readPdos() {
     // 1500ms should be enough to read PDOs
     for (int i = 0; i < 10; ++i) {
         sleep_ms(150);
-        if (m_usb_pd.isNewPdoAvailable()) {
+        if (m_usb_pd.getStatus().newpdo) {
             sleep_ms(10);
             pdo_cnt = m_usb_pd.getPDSourcePowerCapabilities();
             // Fill in menu with PDOs

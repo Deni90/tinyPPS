@@ -10,43 +10,6 @@
 class Ap33772s {
   private:
     /**
-     * @brief Status register definition of AP33772S
-     */
-    union Status {
-        struct {
-            uint8_t started : 1;
-            uint8_t ready : 1;
-            uint8_t newpdo : 1;
-            uint8_t uvp : 1;
-            uint8_t ovp : 1;
-            uint8_t ocp : 1;
-            uint8_t otp : 1;
-            uint8_t : 1;
-        };
-        uint8_t raw;
-    };
-
-    /**
-     * @brief Mask register definition of AP33772S
-     *
-     * The MASK register defines the enable and disable of ON and OFF for
-     * various STATUS-defined events
-     */
-    union Mask {
-        struct {
-            uint8_t started_msk : 1;
-            uint8_t ready_msk : 1;
-            uint8_t newpdo_msk : 1;
-            uint8_t uvp_msk : 1;
-            uint8_t ovp_msk : 1;
-            uint8_t ocp_msk : 1;
-            uint8_t otp_msk : 1;
-            uint8_t : 1;
-        };
-        uint8_t raw;
-    };
-
-    /**
      * @brief System register definition of AP33772S
      *
      * The SYSTEM register is defined as the system information and control
@@ -156,6 +119,43 @@ class Ap33772s {
     }
 
     /**
+     * @brief Status register definition of AP33772S
+     */
+    union Status {
+        struct {
+            uint8_t started : 1;
+            uint8_t ready : 1;
+            uint8_t newpdo : 1;
+            uint8_t uvp : 1;
+            uint8_t ovp : 1;
+            uint8_t ocp : 1;
+            uint8_t otp : 1;
+            uint8_t : 1;
+        };
+        uint8_t raw;
+    };
+
+    /**
+     * @brief Mask register definition of AP33772S
+     *
+     * The MASK register defines the enable and disable of ON and OFF for
+     * various STATUS-defined events
+     */
+    union Mask {
+        struct {
+            uint8_t started_msk : 1;
+            uint8_t ready_msk : 1;
+            uint8_t newpdo_msk : 1;
+            uint8_t uvp_msk : 1;
+            uint8_t ovp_msk : 1;
+            uint8_t ocp_msk : 1;
+            uint8_t otp_msk : 1;
+            uint8_t : 1;
+        };
+        uint8_t raw;
+    };
+
+    /**
      * @brief Definition of a PDO objet
      *
      * This struct is a more mainingful version of the SrcPdo union. It contains
@@ -182,11 +182,20 @@ class Ap33772s {
     Ap33772s(II2c* i2c);
 
     /**
-     * @brief Check if new PDO is available
+     * @brief Get Status register values
      *
-     * @return True if available, otherwise false
+     * The STATUS register will be reset to 0 after a read operation.
+     *
+     * @return Status register
      */
-    bool isNewPdoAvailable();
+    Status getStatus();
+
+    /**
+     * @brief Set Mask, used for setting up interrupt events
+     *
+     * @return True if successfully set
+     */
+    bool setMask(const Mask& mask);
 
     /**
      * @brief Enable/Disable the output
@@ -287,7 +296,6 @@ class Ap33772s {
     bool writeRegister(uint8_t reg, uint8_t value);
     bool writeRegister(uint8_t reg, uint16_t value);
 
-    Status getStatus();
     System getSystem();
     void setSystem(System s);
 

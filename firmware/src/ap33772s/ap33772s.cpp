@@ -58,7 +58,16 @@ Ap33772s::Ap33772s(II2c* i2c) : m_i2c(i2c) {
     memset(m_pdo_array, 0, k_max_pdo_entries * sizeof(SrcPdo));
 }
 
-bool Ap33772s::isNewPdoAvailable() { return getStatus().newpdo; }
+Ap33772s::Status Ap33772s::getStatus() {
+    Status status;
+    status.raw = 0;
+    readRegister(k_cmd_status, status.raw);
+    return status;
+}
+
+bool Ap33772s::setMask(const Mask& mask) {
+    return writeRegister(k_cmd_mask, mask.raw);
+}
 
 bool Ap33772s::enableOutput(bool enable) {
     Ap33772s::System system;
@@ -202,13 +211,6 @@ bool Ap33772s::writeRegister(uint8_t reg, uint16_t value) {
     uint8_t buffer[3] = {reg, static_cast<uint8_t>(value & 0xff),
                          static_cast<uint8_t>(value >> 8)};
     return m_i2c->writeTo(k_i2c_addr, buffer, sizeof(buffer)) == sizeof(buffer);
-}
-
-Ap33772s::Status Ap33772s::getStatus() {
-    Status status;
-    status.raw = 0;
-    readRegister(k_cmd_status, status.raw);
-    return status;
 }
 
 Ap33772s::System Ap33772s::getSystem() {
