@@ -15,7 +15,7 @@ class PicoGpio : public IGpio {
     PicoGpio(unsigned int io_pin);
 
     /**
-     * Implementation of II2c interface
+     * Implementation of IGpio interface
      */
 
     virtual ~PicoGpio() = default;

@@ -1,7 +1,5 @@
 #include "tiny_pps.h"
 
-#include "pico/stdlib.h"
-
 #include <algorithm>
 #include <stdio.h>
 
@@ -40,19 +38,13 @@ TinyPPS::TinyPPS()
       m_is_menu_enabled(false) {}
 
 bool TinyPPS::initialize() {
-    stdio_init_all();
     // Initialize a timer to repeat every 1 ms
-    static struct repeating_timer timer;
-    add_repeating_timer_ms(
-        1,
-        [](__unused struct repeating_timer* t) -> bool {
-            g_clock = g_clock + 1;
-            g_debounce_clock = g_debounce_clock + 1;
-            g_rotary_state_clock = g_rotary_state_clock + 1;
-            g_measuring_clock = g_measuring_clock + 1;
-            return true;
-        },
-        NULL, &timer);
+    m_timer.start(1, []() {
+        g_clock = g_clock + 1;
+        g_debounce_clock = g_debounce_clock + 1;
+        g_rotary_state_clock = g_rotary_state_clock + 1;
+        g_measuring_clock = g_measuring_clock + 1;
+    });
 
     m_rotary_encoder.initialize();
     m_i2c.initialize(i2c0, k_i2c_sda_pin, k_i2c_scl_pin, 400);

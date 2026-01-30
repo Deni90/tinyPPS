@@ -7,9 +7,10 @@
 #include "ap33772s.h"
 #include "config.h"
 #include "ina226.h"
-#include "rotary_encoder.h"
 #include "pico_gpio.h"
 #include "pico_i2c.h"
+#include "pico_timer.h"
+#include "rotary_encoder.h"
 #include "ssd1306.h"
 
 class TinyPPS {
@@ -62,9 +63,10 @@ class TinyPPS {
     int readPdos();
 
     PicoI2c m_i2c;
+    PicoGpio m_rot_enc_a_pin, m_rot_enc_b_pin, m_rot_enc_btn_pin;
+    PicoRepeatingTimer m_timer;
     Ina226 m_ina226;
     Ssd1306 m_oled;
-    PicoGpio m_rot_enc_a_pin, m_rot_enc_b_pin, m_rot_enc_btn_pin;
     RotaryEncoder m_rotary_encoder;
     Ap33772s m_usb_pd;
     State m_state;
