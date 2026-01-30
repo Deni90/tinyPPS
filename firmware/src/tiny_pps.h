@@ -8,8 +8,8 @@
 #include "config.h"
 #include "ina226.h"
 #include "rotary_encoder.h"
-#include "rp_i2c.h"
-#include "rp_pin.h"
+#include "pico_i2c.h"
+#include "pico_pin.h"
 #include "ssd1306.h"
 
 class TinyPPS {
@@ -61,10 +61,10 @@ class TinyPPS {
      */
     int readPdos();
 
-    RpI2c m_i2c;
+    PicoI2c m_i2c;
     Ina226 m_ina226;
     Ssd1306 m_oled;
-    RpPin m_rot_enc_a_pin, m_rot_enc_b_pin, m_rot_enc_btn_pin;
+    PicoPin m_rot_enc_a_pin, m_rot_enc_b_pin, m_rot_enc_btn_pin;
     RotaryEncoder m_rotary_encoder;
     Ap33772s m_usb_pd;
     State m_state;

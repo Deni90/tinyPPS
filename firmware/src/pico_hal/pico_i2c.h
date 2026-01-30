@@ -1,16 +1,16 @@
-#ifndef rp_i2c_h
-#define rp_i2c_h
+#ifndef pico_i2c_h
+#define pico_i2c_h
 
 #include "hardware/i2c.h"
 #include "i2c_iface.h"
 #include <cstdint>
 
-class RpI2c : public II2c {
+class PicoI2c : public II2c {
   public:
     /**
      * @brief Create RP2040 I2C object instance
      */
-    RpI2c();
+    PicoI2c();
 
     /**
      * @brief Initialize the module
@@ -30,4 +30,4 @@ class RpI2c : public II2c {
     int readFrom(uint8_t addr, uint8_t* data, unsigned int len) override;
 };
 
-#endif   // rp_i2c_h
+#endif   // pico_i2c_h

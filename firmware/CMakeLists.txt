@@ -43,8 +43,8 @@ add_subdirectory(src/ap33772s)
 add_subdirectory(src/gui)
 add_subdirectory(src/hal)
 add_subdirectory(src/ina226)
+add_subdirectory(src/pico_hal)
 add_subdirectory(src/rotary_encoder)
-add_subdirectory(src/rp_imp)
 add_subdirectory(src/ssd1306)
 add_subdirectory(src/utils)
 
@@ -63,8 +63,8 @@ target_link_libraries(TinyPPS
         tinypps_gui
         tinypps_hal
         tinypps_ina226
+        tinypps_pico_hal
         tinypps_rotary_encoder
-        tinypps_rp_imp
         tinypps_ssd1306
         tinypps_utils
 )
