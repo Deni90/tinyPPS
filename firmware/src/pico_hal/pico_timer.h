@@ -9,10 +9,10 @@ class PicoRepeatingTimer final : public IRepeatingTimer {
     PicoRepeatingTimer();
     ~PicoRepeatingTimer();
 
-/**
+    /**
      * Implementation of IRepeatingTimer interface
      */
-    bool start(uint32_t period_ms, Callback cb) override;
+    bool start(uint32_t period_ms, Callback cb, void* ctx) override;
     void stop() override;
     bool isRunning() const override;
 
@@ -21,6 +21,7 @@ class PicoRepeatingTimer final : public IRepeatingTimer {
 
     repeating_timer_t m_timer;
     Callback m_callback;
+    void* m_ctx;
     bool m_running;
 };
 

@@ -22,29 +22,32 @@ static constexpr unsigned int k_blinking_period = 500;        // ms
 static constexpr unsigned int k_double_click_period = 1000;   // ms
 static constexpr unsigned int k_measuring_period = 200;       // ms
 
-static volatile uint32_t g_clock = 0;
-static volatile uint32_t g_debounce_clock = 0;
-static volatile uint32_t g_rotary_state_clock = 0;
-static volatile uint32_t g_measuring_clock = 0;
-
 TinyPPS::TinyPPS()
     : m_i2c(), m_ina226(&m_i2c, k_ina226_addr),
       m_oled(&m_i2c, Ssd1306::Type::ssd1306_128x64),
       m_rot_enc_a_pin(k_rot_enc_a_pin), m_rot_enc_b_pin(k_rot_enc_b_pin),
       m_rot_enc_btn_pin(k_rot_enc_btn_pin),
       m_rotary_encoder(&m_rot_enc_a_pin, &m_rot_enc_b_pin, &m_rot_enc_btn_pin,
-                       &g_debounce_clock),
+                       &m_debounce_clock),
       m_usb_pd(&m_i2c), m_state(State::menu), m_active_config_index(0),
-      m_is_menu_enabled(false) {}
+      m_is_menu_enabled(false), m_clock(0), m_debounce_clock(0),
+      m_rotary_state_clock(0), m_measuring_clock(0) {}
 
 bool TinyPPS::initialize() {
     // Initialize a timer to repeat every 1 ms
-    m_timer.start(1, []() {
-        g_clock = g_clock + 1;
-        g_debounce_clock = g_debounce_clock + 1;
-        g_rotary_state_clock = g_rotary_state_clock + 1;
-        g_measuring_clock = g_measuring_clock + 1;
-    });
+    m_timer.start(
+        1,
+        [](void* ctx) {
+            if (!ctx) {
+                return;
+            }
+            auto self = static_cast<TinyPPS*>(ctx);
+            self->m_clock = self->m_clock + 1;
+            self->m_debounce_clock = self->m_debounce_clock + 1;
+            self->m_rotary_state_clock = self->m_rotary_state_clock + 1;
+            self->m_measuring_clock = self->m_measuring_clock + 1;
+        },
+        this);
 
     m_rotary_encoder.initialize();
     m_i2c.initialize(i2c0, k_i2c_sda_pin, k_i2c_scl_pin, 400);
@@ -166,8 +169,8 @@ TinyPPS::State TinyPPS::handleMainState() {
             // the selected field should blink indicating the user the value
             // can be edited
             if (is_editing) {
-                if (g_clock >= k_blinking_period) {
-                    g_clock = 0;
+                if (m_clock >= k_blinking_period) {
+                    m_clock = 0;
                     blinking_state = !blinking_state;
                     switch (selection) {
                     case 1:
@@ -181,8 +184,8 @@ TinyPPS::State TinyPPS::handleMainState() {
                 }
             }
 
-            if (g_measuring_clock >= k_measuring_period) {
-                g_measuring_clock = 0;
+            if (m_measuring_clock >= k_measuring_period) {
+                m_measuring_clock = 0;
                 main_screen.setMeasuredVoltage(m_ina226.getBusVoltage());
                 main_screen.setMeasuredCurrent(m_ina226.getCurrent());
                 main_screen.setTemperature(m_usb_pd.getTemp());
@@ -211,12 +214,12 @@ TinyPPS::State TinyPPS::handleMainState() {
                     m_rotary_encoder.clearState();
                     continue;
                 }
-                if (g_rotary_state_clock <= k_double_click_period) {
+                if (m_rotary_state_clock <= k_double_click_period) {
                     // Switch to menu g_state
                     m_rotary_encoder.clearState();
                     return State::menu;
                 }
-                g_rotary_state_clock = 0;
+                m_rotary_state_clock = 0;
             }
             // if tv or tc is in editing mode set the value on button press
         } else if (m_rotary_encoder.getState() ==
@@ -244,10 +247,10 @@ TinyPPS::State TinyPPS::handleMainState() {
             // select target voltage, target current or none
             if (is_editing) {
                 bool big_step = false;
-                if (g_rotary_state_clock <= k_big_step_period) {
+                if (m_rotary_state_clock <= k_big_step_period) {
                     big_step = true;
                 }
-                g_rotary_state_clock = 0;
+                m_rotary_state_clock = 0;
                 switch (selection) {
                 case 1:
                     target_voltage -= big_step ? config.pdo.voltage_step * 5
@@ -282,10 +285,10 @@ TinyPPS::State TinyPPS::handleMainState() {
             // select target voltage, target current or none
             if (is_editing) {
                 bool big_step = false;
-                if (g_rotary_state_clock <= k_big_step_period) {
+                if (m_rotary_state_clock <= k_big_step_period) {
                     big_step = true;
                 }
-                g_rotary_state_clock = 0;
+                m_rotary_state_clock = 0;
                 switch (selection) {
                 case 1:
                     target_voltage += big_step ? 1000 : config.pdo.voltage_step;
@@ -347,7 +350,7 @@ int TinyPPS::readPdos() {
     int pdo_cnt = 0;
     LoadingScreen loading_screen(m_oled.getWidth(), m_oled.getHeight());
     m_oled.display(loading_screen.build());
-    g_clock = 0;
+    m_clock = 0;
     // 1500ms should be enough to read PDOs
     for (int i = 0; i < 10; ++i) {
         sleep_ms(150);

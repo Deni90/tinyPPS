@@ -5,7 +5,7 @@
 
 class IRepeatingTimer {
   public:
-    using Callback = void (*)(void);
+    using Callback = void (*)(void* ctx);
 
     /**
      * @brief Start a repeating timer.
@@ -18,11 +18,14 @@ class IRepeatingTimer {
      *
      * @param period_ms Timer period in milliseconds.
      * @param cb Callback function to be called on each timer expiration.
+     * @param ctx User-defined context pointer passed to the callback.
+     *            The pointed-to data must remain valid for the lifetime
+     *            of the timer.
      *
      * @return true  Timer was successfully started.
      * @return false Failed to start the timer.
      */
-    virtual bool start(uint32_t period_ms, Callback cb) = 0;
+    virtual bool start(uint32_t period_ms, Callback cb, void* ctx) = 0;
 
     /**
      * @brief Stop the repeating timer.

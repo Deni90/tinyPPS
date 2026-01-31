@@ -1,13 +1,15 @@
 #include "pico_timer.h"
 
-PicoRepeatingTimer::PicoRepeatingTimer() : m_running(false) {}
+PicoRepeatingTimer::PicoRepeatingTimer()
+    : m_callback(nullptr), m_ctx(nullptr), m_running(false) {}
 
 PicoRepeatingTimer::~PicoRepeatingTimer() { stop(); }
 
-bool PicoRepeatingTimer::start(uint32_t period_ms, Callback cb) {
+bool PicoRepeatingTimer::start(uint32_t period_ms, Callback cb, void* ctx) {
     stop();   // ensure clean restart
 
     m_callback = cb;
+    m_ctx = ctx;
 
     // Negative = periodic from now
     bool ok =
@@ -29,8 +31,8 @@ bool PicoRepeatingTimer::isRunning() const { return m_running; }
 
 bool PicoRepeatingTimer::timerThunk(repeating_timer_t* rt) {
     auto* self = static_cast<PicoRepeatingTimer*>(rt->user_data);
-    if (self && self->m_callback) {
-        self->m_callback();
+    if (self && self->m_callback && self->m_ctx) {
+        self->m_callback(self->m_ctx);
     }
     return true;   // keep repeating
 }
