@@ -31,7 +31,7 @@ TinyPPS::TinyPPS()
                        &m_debounce_clock),
       m_usb_pd(&m_i2c), m_state(State::menu), m_active_config_index(0),
       m_is_menu_enabled(false), m_clock(0), m_debounce_clock(0),
-      m_rotary_state_clock(0), m_measuring_clock(0) {}
+      m_rotary_state_clock(0), m_measuring_clock(0), m_output_enable(false) {}
 
 bool TinyPPS::initialize() {
     // Initialize a timer to repeat every 1 ms
@@ -135,7 +135,6 @@ TinyPPS::State TinyPPS::handleMainState() {
     int8_t selection = 0;
     bool is_editing = false;
     bool blinking_state = true;
-    bool output_enable = false;
 
     // Start with min values for current and voltage
     uint16_t target_voltage = config.pdo.voltage_min;
@@ -210,7 +209,7 @@ TinyPPS::State TinyPPS::handleMainState() {
                 // when no item selected show menu on double click
                 // show menu only if menu is enabled and when the output is
                 // turned off
-                if (!m_is_menu_enabled || output_enable) {
+                if (!m_is_menu_enabled || m_output_enable) {
                     m_rotary_encoder.clearState();
                     continue;
                 }
@@ -231,12 +230,12 @@ TinyPPS::State TinyPPS::handleMainState() {
                 continue;
             }
             // toggle output enable if all conditions are met
-            if (!output_enable) {
+            if (!m_output_enable) {
                 selection = 0;
             }
-            output_enable = !output_enable;
-            m_usb_pd.enableOutput(output_enable);
-            main_screen.setOutputEnable(output_enable);
+            m_output_enable = !m_output_enable;
+            m_usb_pd.enableOutput(m_output_enable);
+            main_screen.setOutputEnable(m_output_enable);
         } else if (m_rotary_encoder.getState() ==
                    RotaryEncoder::State::rot_dec) {
             if (!config.is_editing_enabled) {

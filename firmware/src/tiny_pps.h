@@ -77,6 +77,7 @@ class TinyPPS {
     volatile uint32_t m_debounce_clock;
     volatile uint32_t m_rotary_state_clock;
     volatile uint32_t m_measuring_clock;
+    bool m_output_enable;
 };
 
 #endif   // tiny_pps_h
