@@ -31,11 +31,14 @@ class Ssd1306 {
     /**
      * @brief Send a buffer to display.
      *
-     * @param[in] buffer Pointer to a buffer containing data meant to be shown
+     * Performs a partial display update using page-level dirty tracking.
+     * Instead of pushing the full buffer over I2C, this method only transmits
+     * 128-byte segments (pages) that actually contains changes.
+     *
+     * @param[in] fb Pointer to a buffer containing data meant to be shown
      * on the display
-     * @param[in] len Length of the buffer in bytes
      */
-    void display(const uint8_t* buffer);
+    void display(const uint8_t* fb);
 
     /**
      * @brief Return screen width
@@ -69,6 +72,7 @@ class Ssd1306 {
 
     II2c* m_i2c;
     Type m_type;
+    uint8_t m_old_fb[1024];
 };
 
 #endif   // ssd1306_h

@@ -94,30 +94,29 @@ void Ssd1306::initialize() {
     sendCommands(cmds, sizeof(cmds));
 }
 
-void Ssd1306::display(const uint8_t* buffer) {
-    // in horizontal addressing mode, the column address pointer auto-increments
-    // and then wraps around to the next page, so we can send the entire frame
-    // buffer in one gooooooo!
-
-    uint8_t page_end_addr = m_type == Type::ssd1306_128x64 ? 7 : 3;
-
-    // copy our frame buffer into a new buffer because we need to add the
-    // control byte to the beginning
-    uint8_t cmds[] = {
-        k_col_addr,
-        0x00,          // Column start address (0 = reset)
-        k_width - 1,   // Column end address (127 = reset)
-        k_page_addr,
-        0x00,           // Page start address (0 = reset)
-        page_end_addr   // Page end address
-    };
-    sendCommands(cmds, sizeof(cmds));
-
-    auto len = k_width * (m_type == Type::ssd1306_128x64 ? 8 : 4);
-    uint8_t temp_buf[len + 1];
-    temp_buf[0] = 0x40;
-    memcpy(temp_buf + 1, buffer, len);
-    m_i2c->writeTo(k_i2c_addr, temp_buf, len + 1);
+void Ssd1306::display(const uint8_t* fb) {
+    const uint8_t pages = (m_type == Type::ssd1306_128x64) ? 8 : 4;
+    for (uint8_t page = 0; page < pages; page++) {
+        int base = page * k_width;
+        if (memcmp(fb + base, m_old_fb + base, k_width) == 0) {
+            // new page is same as old, no update required
+            continue;
+        }
+        // Update only dirty pages
+        uint8_t cmds[] = {
+            0x00,
+            static_cast<uint8_t>(0xB0 |
+                                 page),   // Set target page (0xB0 to 0xB7)
+            0x00,                         // Set lower column start (0)
+            0x10                          // Set higher column start (0)
+        };
+        m_i2c->writeTo(k_i2c_addr, cmds, sizeof(cmds));
+        uint8_t temp_buf[k_width + 1];
+        temp_buf[0] = 0x40;
+        memcpy(temp_buf + 1, fb + base, k_width);
+        m_i2c->writeTo(k_i2c_addr, temp_buf, sizeof(temp_buf));
+    }
+    memcpy(m_old_fb, fb, pages * k_width);
 }
 
 uint16_t Ssd1306::getWidth() const { return k_width; }
