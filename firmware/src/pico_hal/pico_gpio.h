@@ -26,6 +26,11 @@ class PicoGpio : public IGpio {
 
     bool read() override;
 
+    bool attachInterrupt(Edge edge, IrqCallback cb,
+                         void* user = nullptr) override;
+
+    void enableInterrupt(bool enable) override;
+
   private:
     unsigned int m_pin;
 };
