@@ -64,6 +64,7 @@ class TinyPPS {
 
     PicoI2c m_i2c;
     PicoGpio m_rot_enc_a_pin, m_rot_enc_b_pin, m_rot_enc_btn_pin;
+    PicoGpio m_pd_int;
     PicoRepeatingTimer m_timer;
     Ina226 m_ina226;
     Ssd1306 m_oled;
@@ -73,10 +74,12 @@ class TinyPPS {
     std::vector<std::pair<std::string, Config>> m_configs;
     unsigned int m_active_config_index;
     bool m_is_menu_enabled;
+    bool m_is_fault_detected;
     volatile uint32_t m_clock;
     volatile uint32_t m_debounce_clock;
     volatile uint32_t m_rotary_state_clock;
     volatile uint32_t m_measuring_clock;
+    volatile uint32_t m_fault_clock;
 };
 
 #endif   // tiny_pps_h

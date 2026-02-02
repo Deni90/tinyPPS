@@ -15,23 +15,27 @@ static constexpr uint k_rot_enc_b_pin = 9;
 static constexpr unsigned int k_i2c_sda_pin = 28;
 static constexpr unsigned int k_i2c_scl_pin = 29;
 
+static constexpr unsigned int k_pd_int_pin = 25;
+
 static constexpr uint8_t k_ina226_addr = 0x40;
 
 static constexpr unsigned int k_big_step_period = 75;         // ms
 static constexpr unsigned int k_blinking_period = 500;        // ms
 static constexpr unsigned int k_double_click_period = 1000;   // ms
 static constexpr unsigned int k_measuring_period = 200;       // ms
+static constexpr unsigned int k_fault_check_period = 1000;    // ms
 
 TinyPPS::TinyPPS()
     : m_i2c(), m_ina226(&m_i2c, k_ina226_addr),
       m_oled(&m_i2c, Ssd1306::Type::ssd1306_128x64),
       m_rot_enc_a_pin(k_rot_enc_a_pin), m_rot_enc_b_pin(k_rot_enc_b_pin),
-      m_rot_enc_btn_pin(k_rot_enc_btn_pin),
+      m_rot_enc_btn_pin(k_rot_enc_btn_pin), m_pd_int(k_pd_int_pin),
       m_rotary_encoder(&m_rot_enc_a_pin, &m_rot_enc_b_pin, &m_rot_enc_btn_pin,
                        &m_debounce_clock),
       m_usb_pd(&m_i2c), m_state(State::menu), m_active_config_index(0),
-      m_is_menu_enabled(false), m_clock(0), m_debounce_clock(0),
-      m_rotary_state_clock(0), m_measuring_clock(0) {}
+      m_is_menu_enabled(false), m_is_fault_detected(false), m_clock(0),
+      m_debounce_clock(0), m_rotary_state_clock(0), m_measuring_clock(0),
+      m_fault_clock(0) {}
 
 bool TinyPPS::initialize() {
     // Initialize a timer to repeat every 1 ms
@@ -46,8 +50,25 @@ bool TinyPPS::initialize() {
             self->m_debounce_clock = self->m_debounce_clock + 1;
             self->m_rotary_state_clock = self->m_rotary_state_clock + 1;
             self->m_measuring_clock = self->m_measuring_clock + 1;
+            self->m_fault_clock = self->m_fault_clock + 1;
         },
         this);
+
+    m_pd_int.configure(IGpio::Direction::Input, IGpio::Pull::Down);
+    m_pd_int.attachInterrupt(
+        IGpio::Edge::Rising,
+        [](IGpio& gpio, void* user) {
+            if (!user) {
+                return;
+            }
+            auto self = static_cast<TinyPPS*>(user);
+            auto status = self->m_usb_pd.getStatus();
+            if (status.ocp || status.ovp || status.otp || status.uvp) {
+                self->m_is_fault_detected = true;
+            }
+        },
+        this);
+    m_pd_int.enableInterrupt(true);
 
     m_rotary_encoder.initialize();
     m_i2c.initialize(i2c0, k_i2c_sda_pin, k_i2c_scl_pin, 400);
@@ -191,6 +212,27 @@ TinyPPS::State TinyPPS::handleMainState() {
                 main_screen.setTemperature(m_usb_pd.getTemp());
                 m_oled.display(main_screen.build());
             }
+
+            if (m_is_fault_detected) {
+                // Disable output and update screen
+                output_enable = false;
+                m_usb_pd.enableOutput(output_enable);
+                main_screen.setOutputEnable(output_enable);
+                m_oled.display(main_screen.build());
+                // Periodically check if the fault is cleared
+                if (m_fault_clock >= k_fault_check_period) {
+                    m_fault_clock = 0;
+                    auto status = m_usb_pd.getStatus();
+                    if (!status.ocp && !status.ovp && !status.otp &&
+                        !status.uvp) {
+                        // Fault is cleared, re negotiate the selected power
+                        // profile
+                        m_is_fault_detected = false;
+                        m_usb_pd.setPdoOutput(m_active_config_index,
+                                              target_voltage, target_current);
+                    }
+                }
+            }
         }
 
         if (m_rotary_encoder.getState() ==
@@ -234,9 +276,12 @@ TinyPPS::State TinyPPS::handleMainState() {
             if (!output_enable) {
                 selection = 0;
             }
-            output_enable = !output_enable;
-            m_usb_pd.enableOutput(output_enable);
-            main_screen.setOutputEnable(output_enable);
+            // handle output only is no fault is detected
+            if (!m_is_fault_detected) {
+                output_enable = !output_enable;
+                m_usb_pd.enableOutput(output_enable);
+                main_screen.setOutputEnable(output_enable);
+            }
         } else if (m_rotary_encoder.getState() ==
                    RotaryEncoder::State::rot_dec) {
             if (!config.is_editing_enabled) {
@@ -344,6 +389,12 @@ void TinyPPS::usbPdInit() {
     //                  [at 25/85C] 3435K+-0.7%
     m_usb_pd.setNtc(10000, 4164, 1912, 987);
     m_usb_pd.setVselMin(3300);
+    Ap33772s::Mask mask;
+    mask.ocp_msk = 1;
+    mask.otp_msk = 1;
+    mask.ovp_msk = 1;
+    mask.uvp_msk = 1;
+    m_usb_pd.setMask(mask);
 }
 
 int TinyPPS::readPdos() {
