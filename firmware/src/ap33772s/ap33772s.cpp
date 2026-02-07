@@ -146,14 +146,8 @@ bool Ap33772s::getPdo(uint8_t index, Pdo& pdo) {
             // To find the exact VOLTAGE_MIN it is needed to iterate through the
             // voltage range and find the first voltage that is accepted by the
             // source
-            const uint16_t v_min = is_epr ? 150 : 33;
-            const uint16_t v_max = is_epr ? 200 : 50;
-            for (uint16_t v = v_min; v <= v_max; v += pdo.voltage_step) {
-                if (setPdoOutput(index, v, 1000)) {
-                    pdo.voltage_min = v * pdo.voltage_step;
-                    break;
-                }
-            }
+
+            // TODO implement this
         }
         pdo.voltage_max =
             m_pdo_array[index].pps.voltage_max * (is_epr ? 200 : 100);
