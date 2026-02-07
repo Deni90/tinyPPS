@@ -39,8 +39,8 @@ uint8_t* MainScreen::build() {
 
     // Target current in mA
     auto target_current_pos =
-        (m_width - printString(0, 0, "MAX 0000mA", true)) / 2;
-    len = printString(target_current_pos, 41, "MAX ");
+        (m_width - printString(0, 0, "LIMIT 0000mA", true)) / 2;
+    len = printString(target_current_pos, 41, "LIMIT ");
     len += printString(target_current_pos + len, 41,
                        std::format("{:04d}", m_target_current),
                        {.invert = m_is_target_current_selected});
