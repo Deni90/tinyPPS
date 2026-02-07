@@ -18,7 +18,7 @@ class TinyPPS {
     /**
      * Enumeration represending state machine states
      */
-    enum class State { menu, main };
+    enum class State { init, menu, main };
 
     /**
      * @brief Constructor
@@ -38,6 +38,12 @@ class TinyPPS {
     void handle();
 
   private:
+    /**
+     * @brief Function for handling the init state
+     * @return Return the next state
+     */
+    State handleInitState();
+
     /**
      * @brief Function for handling the menu state
      * @return Return the next state

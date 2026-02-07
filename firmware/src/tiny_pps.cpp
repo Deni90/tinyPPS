@@ -32,7 +32,7 @@ TinyPPS::TinyPPS()
       m_rot_enc_btn_pin(k_rot_enc_btn_pin), m_pd_int(k_pd_int_pin),
       m_rotary_encoder(&m_rot_enc_a_pin, &m_rot_enc_b_pin, &m_rot_enc_btn_pin,
                        &m_debounce_clock),
-      m_usb_pd(&m_i2c), m_state(State::menu), m_active_config_index(0),
+      m_usb_pd(&m_i2c), m_state(State::init), m_active_config_index(0),
       m_is_menu_enabled(false), m_is_fault_detected(false), m_clock(0),
       m_debounce_clock(0), m_rotary_state_clock(0), m_measuring_clock(0),
       m_fault_clock(0) {}
@@ -80,23 +80,27 @@ bool TinyPPS::initialize() {
         return false;
     }
 
-    // There is no need to show the menu if there is none or one PDO available.
-    // We can immediately switch to the main state
-    if (readPdos() <= 1) {
-        m_state = TinyPPS::State::main;
-    } else {
-        m_state = TinyPPS::State::menu;
-        m_is_menu_enabled = true;
-    }
-
     return true;
 }
 
 void TinyPPS::handle() {
-    if (m_state == TinyPPS::State::menu) {
+    if (m_state == TinyPPS::State::init) {
+        m_state = handleInitState();
+    } else if (m_state == TinyPPS::State::menu) {
         m_state = handleMenuState();
     } else if (m_state == TinyPPS::State::main) {
         m_state = handleMainState();
+    }
+}
+
+TinyPPS::State TinyPPS::handleInitState() {
+    // There is no need to show the menu if there is none or one PDO available.
+    // We can immediately switch to the main state
+    if (readPdos() <= 1) {
+        return TinyPPS::State::main;
+    } else {
+        m_is_menu_enabled = true;
+        return TinyPPS::State::menu;
     }
 }
 
