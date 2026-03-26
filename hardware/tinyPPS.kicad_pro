@@ -496,7 +496,18 @@
     "meta": {
       "version": 4
     },
-    "net_colors": null,
+    "net_colors": {
+      "+1V1": "rgb(252, 252, 153)",
+      "+3V3": "rgb(253, 150, 61)",
+      "/SCL": "rgb(255, 163, 214)",
+      "/SDA": "rgb(255, 163, 214)",
+      "/USB_D+": "rgb(161, 111, 221)",
+      "/USB_D-": "rgb(161, 111, 221)",
+      "/VIN+": "rgb(231, 52, 59)",
+      "/VOUT_PD": "rgb(231, 52, 59)",
+      "GND": "rgb(12, 192, 120)",
+      "VBUS": "rgb(231, 52, 59)"
+    },
     "netclass_assignments": null,
     "netclass_patterns": []
   },
