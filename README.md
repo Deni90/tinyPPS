@@ -6,9 +6,9 @@ TinyPPS is a pocket-sized programmable power supply built on the USB Power Deliv
 
 Key features:
 - Support for fixed PDO and PPS profiles
-- Operating VCC voltage range: 3 V to 31 V
+- Output voltage range: 3.3V to 28V
 - Fine-grained voltage adjustment via PPS negotiation (100mV steps)
-- Output current up to 5 A *(charger and cable dependent)*
+- Output current up to 5A *(charger and cable dependent)*
 - Programmable current limiting (250mA steps)
 - User-switchable output
 
