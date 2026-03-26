@@ -20,7 +20,7 @@
       "footprints": true,
       "graphics": true,
       "keepouts": true,
-      "lockedItems": false,
+      "lockedItems": true,
       "otherItems": true,
       "pads": true,
       "text": true,
@@ -48,7 +48,7 @@
       "conflict_shadows",
       "shapes"
     ],
-    "visible_layers": "00000000_00000000_00000000_82002227",
+    "visible_layers": "00000000_00000000_00000000_82002077",
     "zone_display_mode": 0
   },
   "git": {
@@ -95,7 +95,7 @@
       103,
       74,
       103,
-      10
+      103
     ],
     "custom_group_rules": [],
     "expanded_rows": [],
