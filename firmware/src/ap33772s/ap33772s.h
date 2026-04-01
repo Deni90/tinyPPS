@@ -289,6 +289,11 @@ class Ap33772s {
      */
     static constexpr uint8_t k_max_pdo_entries = 13;
 
+    /**
+     * @brief The I2C address of the device
+     */
+    static constexpr uint8_t k_i2c_addr = 0x52;
+
   private:
     // I2C helpers
     bool readRegister(uint8_t reg, uint8_t& value);

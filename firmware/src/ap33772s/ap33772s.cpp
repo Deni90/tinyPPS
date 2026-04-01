@@ -2,8 +2,6 @@
 
 #include <cstring>
 
-static constexpr uint8_t k_i2c_addr = 0x52;
-
 /// @brief AP33772s register commands
 static constexpr uint8_t k_cmd_status = 0x01;
 static constexpr uint8_t k_cmd_mask = 0x02;
