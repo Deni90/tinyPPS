@@ -38,7 +38,7 @@ uint8_t* MenuScreen::build() {
     printString(m_width / 2, y, m_title, {.align = TextAlign::center});
 
     y += 16;
-    auto max_menu_size = m_height / 8 - 1;
+    auto max_menu_size = m_height / 8 - 2;
 
     auto start_index = (m_selected_menu_item / max_menu_size) * max_menu_size;
     for (auto i = 0; i < max_menu_size; ++i) {
