@@ -80,7 +80,7 @@ class TinyPPS {
     std::vector<std::pair<std::string, Config>> m_configs;
     unsigned int m_active_config_index;
     bool m_is_menu_enabled;
-    bool m_is_fault_detected;
+    volatile bool m_is_fault_detected;
     volatile uint32_t m_clock;
     volatile uint32_t m_debounce_clock;
     volatile uint32_t m_rotary_state_clock;
