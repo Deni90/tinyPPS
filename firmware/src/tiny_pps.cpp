@@ -1,7 +1,6 @@
 #include "tiny_pps.h"
 
 #include <algorithm>
-#include <stdio.h>
 
 #include "loading_screen.h"
 #include "main_screen.h"
@@ -24,6 +23,23 @@ static constexpr unsigned int k_blinking_period = 500;        // ms
 static constexpr unsigned int k_double_click_period = 1000;   // ms
 static constexpr unsigned int k_measuring_period = 200;       // ms
 static constexpr unsigned int k_fault_check_period = 1000;    // ms
+
+enum MainScreenSelection { None, Voltage, Current, Count };
+
+inline MainScreenSelection& operator++(MainScreenSelection& s) {
+    using T = std::underlying_type_t<MainScreenSelection>;
+    s = static_cast<MainScreenSelection>(
+        (static_cast<T>(s) + 1) % static_cast<T>(MainScreenSelection::Count));
+    return s;
+}
+
+inline MainScreenSelection& operator--(MainScreenSelection& s) {
+    int prev = (static_cast<int>(s) - 1 +
+                static_cast<int>(MainScreenSelection::Count)) %
+               static_cast<int>(MainScreenSelection::Count);
+    s = static_cast<MainScreenSelection>(prev);
+    return s;
+}
 
 TinyPPS::TinyPPS()
     : m_i2c(), m_ina226(&m_i2c, k_ina226_addr),
@@ -157,7 +173,7 @@ TinyPPS::State TinyPPS::handleMainState() {
     MainScreen main_screen(m_oled.getWidth(), m_oled.getHeight());
     Config& config = m_configs[m_active_config_index].second;
 
-    int8_t selection = 0;
+    MainScreenSelection selection = None;
     bool is_editing = false;
     bool blinking_state = true;
     bool output_enable = false;
@@ -172,14 +188,17 @@ TinyPPS::State TinyPPS::handleMainState() {
 
     while (true) {
         switch (selection) {
-        case 0:
+        case None:
             main_screen.selectTargetVoltage(false).selectTargetCurrent(false);
             break;
-        case 1:
+        case Voltage:
             main_screen.selectTargetVoltage(true).selectTargetCurrent(false);
             break;
-        case 2:
+        case Current:
             main_screen.selectTargetVoltage(false).selectTargetCurrent(true);
+            break;
+        case Count:
+        default:
             break;
         }
         main_screen.setPdoType(config.pdo.type)
@@ -198,11 +217,15 @@ TinyPPS::State TinyPPS::handleMainState() {
                     m_clock = 0;
                     blinking_state = !blinking_state;
                     switch (selection) {
-                    case 1:
+                    case Voltage:
                         main_screen.selectTargetVoltage(blinking_state);
                         break;
-                    case 2:
+                    case Current:
                         main_screen.selectTargetCurrent(blinking_state);
+                        break;
+                    case None:
+                    case Count:
+                    default:
                         break;
                     }
                     m_oled.display(main_screen.build());
@@ -243,7 +266,7 @@ TinyPPS::State TinyPPS::handleMainState() {
             RotaryEncoder::State::btn_short_press) {
             // handle short button press
             // if tv or tc is selected enter editing mode of the value
-            if (selection > 0) {
+            if (selection > None) {
                 if (!is_editing) {
                     is_editing = true;
                 } else {
@@ -276,11 +299,10 @@ TinyPPS::State TinyPPS::handleMainState() {
                 m_rotary_encoder.clearState();
                 continue;
             }
-            // toggle output enable if all conditions are met
             if (!output_enable) {
-                selection = 0;
+                selection = None;
             }
-            // handle output only is no fault is detected
+            // toggle output only is no fault is detected
             if (!m_is_fault_detected) {
                 output_enable = !output_enable;
                 m_usb_pd.enableOutput(output_enable);
@@ -301,27 +323,27 @@ TinyPPS::State TinyPPS::handleMainState() {
                 }
                 m_rotary_state_clock = 0;
                 switch (selection) {
-                case 1:
+                case Voltage:
                     target_voltage -= big_step ? config.pdo.voltage_step * 5
                                                : config.pdo.voltage_step;
                     target_voltage = std::clamp<uint16_t>(
                         target_voltage, config.pdo.voltage_min,
                         config.pdo.voltage_max);
                     break;
-                case 2:
+                case Current:
                     target_current -= big_step ? config.pdo.current_step * 4
                                                : config.pdo.current_step;
                     target_current = std::clamp<uint16_t>(
                         target_current, config.pdo.current_min,
                         config.pdo.current_max);
                     break;
+                case None:
+                case Count:
+                default:
+                    break;
                 }
             } else {
-                if (selection) {
-                    --selection;
-                } else {
-                    selection = 2;
-                }
+                --selection;
             }
             // decrement tv or tc in value editing mode
         } else if (m_rotary_encoder.getState() ==
@@ -339,26 +361,26 @@ TinyPPS::State TinyPPS::handleMainState() {
                 }
                 m_rotary_state_clock = 0;
                 switch (selection) {
-                case 1:
+                case Voltage:
                     target_voltage += big_step ? 1000 : config.pdo.voltage_step;
                     target_voltage = std::clamp<uint16_t>(
                         target_voltage, config.pdo.voltage_min,
                         config.pdo.voltage_max);
                     break;
-                case 2:
+                case Current:
                     target_current += big_step ? config.pdo.current_step * 4
                                                : config.pdo.current_step;
                     target_current = std::clamp<uint16_t>(
                         target_current, config.pdo.current_min,
                         config.pdo.current_max);
                     break;
+                case None:
+                case Count:
+                default:
+                    break;
                 }
             } else {
-                if (selection < 2) {
-                    ++selection;
-                } else {
-                    selection = 0;
-                }
+                ++selection;
             }
             // increment tv or tc in value editing mode
         } else if (m_rotary_encoder.getState() ==
