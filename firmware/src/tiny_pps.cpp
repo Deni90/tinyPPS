@@ -49,7 +49,7 @@ TinyPPS::TinyPPS()
       m_rotary_encoder(&m_rot_enc_a_pin, &m_rot_enc_b_pin, &m_rot_enc_btn_pin,
                        &m_debounce_clock),
       m_usb_pd(&m_i2c), m_state(State::init), m_active_config_index(0),
-      m_is_menu_enabled(false), m_is_fault_detected(false), m_clock(0),
+      m_is_menu_enabled(false), m_is_pd_interrupt_pending(false), m_clock(0),
       m_debounce_clock(0), m_rotary_state_clock(0), m_measuring_clock(0),
       m_fault_clock(0) {}
 
@@ -78,10 +78,7 @@ bool TinyPPS::initialize() {
                 return;
             }
             auto self = static_cast<TinyPPS*>(user);
-            auto status = self->m_usb_pd.getStatus();
-            if (status.ocp || status.ovp || status.otp || status.uvp) {
-                self->m_is_fault_detected = true;
-            }
+            self->m_is_pd_interrupt_pending = true;
         },
         this);
     m_pd_int.enableInterrupt(true);
@@ -177,6 +174,7 @@ TinyPPS::State TinyPPS::handleMainState() {
     bool is_editing = false;
     bool blinking_state = true;
     bool output_enable = false;
+    bool is_fault_detected = false;
 
     // Start with min values for current and voltage
     uint16_t target_voltage = config.pdo.voltage_min;
@@ -209,6 +207,17 @@ TinyPPS::State TinyPPS::handleMainState() {
         while (m_rotary_encoder.getState() == RotaryEncoder::State::idle ||
                m_rotary_encoder.getState() == RotaryEncoder::State::processed) {
             m_rotary_encoder.Handle();
+
+            // Check is there an interrupt triggered
+            if (m_is_pd_interrupt_pending) {
+                m_is_pd_interrupt_pending = false;
+                auto status = m_usb_pd.getStatus();
+                // Check is the interrupt caused by some protection
+                if (status.ocp || status.ovp || status.otp || status.uvp) {
+                    is_fault_detected = true;
+                }
+            }
+
             // handle value editing mode
             // the selected field should blink indicating the user the value
             // can be edited
@@ -240,7 +249,7 @@ TinyPPS::State TinyPPS::handleMainState() {
                 m_oled.display(main_screen.build());
             }
 
-            if (m_is_fault_detected) {
+            if (is_fault_detected) {
                 // Disable output and update screen
                 output_enable = false;
                 m_usb_pd.enableOutput(output_enable);
@@ -254,7 +263,7 @@ TinyPPS::State TinyPPS::handleMainState() {
                         !status.uvp) {
                         // Fault is cleared, re negotiate the selected power
                         // profile
-                        m_is_fault_detected = false;
+                        is_fault_detected = false;
                         m_usb_pd.setPdoOutput(m_active_config_index,
                                               target_voltage, target_current);
                     }
@@ -303,7 +312,7 @@ TinyPPS::State TinyPPS::handleMainState() {
                 selection = None;
             }
             // toggle output only is no fault is detected
-            if (!m_is_fault_detected) {
+            if (!is_fault_detected) {
                 output_enable = !output_enable;
                 m_usb_pd.enableOutput(output_enable);
                 main_screen.setOutputEnable(output_enable);
