@@ -27,6 +27,11 @@ class IGpio {
     using IrqCallback = void (*)(IGpio& gpio, void* user);
 
     /**
+     * @brief Destructor for the interface.
+     */
+    virtual ~IGpio() = default;
+
+    /**
      * @brief Configure the GPIO pin.
      *
      * @param dir  Pin direction (input or output)

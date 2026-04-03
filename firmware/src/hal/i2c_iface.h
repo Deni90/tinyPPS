@@ -6,6 +6,11 @@
 class II2c {
   public:
     /**
+     * @brief Destructor for the interface.
+     */
+     virtual ~II2c() = default;
+
+    /**
      *  @brief Attempt to write specified number of bytes to address
      *
      * @param addr 7-bit address of device to write to

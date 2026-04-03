@@ -8,6 +8,11 @@ class IRepeatingTimer {
     using Callback = void (*)(void* ctx);
 
     /**
+     * @brief Destructor for the interface.
+     */
+    virtual ~IRepeatingTimer() = default;
+
+    /**
      * @brief Start a repeating timer.
      *
      * Starts the timer so that the provided callback is invoked
