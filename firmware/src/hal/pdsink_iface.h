@@ -44,15 +44,14 @@ class IPdSink {
      * voltage.
      */
     struct Pdo {
-        uint8_t index;
-        PdoType type;
-        uint16_t voltage_min;    // mV
-        uint16_t voltage_max;    // mV
-        uint16_t voltage_step;   // mV
-        uint16_t current_min;    // mV
-        uint16_t current_max;    // mA
-        uint16_t current_step;   // mA
-        Pdo();
+        uint8_t index = 0;
+        PdoType type = PdoType::NONE;
+        uint16_t voltage_min = 5000;   // mV
+        uint16_t voltage_max = 5000;   // mV
+        uint16_t voltage_step = 0;     // mV
+        uint16_t current_min = 1000;   // mV
+        uint16_t current_max = 1000;   // mA
+        uint16_t current_step = 0;     // mA
     };
 
     /**

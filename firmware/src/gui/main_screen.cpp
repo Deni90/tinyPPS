@@ -1,10 +1,11 @@
 #include "main_screen.h"
+#include "pdsink_iface.h"
 
 #include <format>
 #include <iomanip>
 
 MainScreen::MainScreen(uint16_t width, uint16_t height)
-    : Screen(width, height), m_pdo_type(Ap33772s::PdoType::NONE),
+    : Screen(width, height), m_pdo_type(IPdSink::PdoType::NONE),
       m_supply_mode(SupplyMode::CV), m_is_output_enabled(false),
       m_temperature(0.0f), m_measured_voltage(0), m_measured_current(0),
       m_target_voltage(0), m_is_target_voltage_selected(false),
@@ -14,7 +15,7 @@ uint8_t* MainScreen::build() {
     clear();
 
     // PDO type
-    printString(0, 0, Ap33772s::pdoTypeToString(m_pdo_type));
+    printString(0, 0, IPdSink::pdoTypeToString(m_pdo_type));
 
     // Temperature
     printString(m_width, 0, std::format("{}*C", m_temperature),
@@ -63,7 +64,7 @@ uint8_t* MainScreen::build() {
     return m_frame_buffer;
 }
 
-MainScreen& MainScreen::setPdoType(Ap33772s::PdoType type) {
+MainScreen& MainScreen::setPdoType(IPdSink::PdoType type) {
     m_pdo_type = type;
     return *this;
 }

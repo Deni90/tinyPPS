@@ -12,6 +12,7 @@
 #include "pico_timer.h"
 #include "rotary_encoder.h"
 #include "ssd1306.h"
+#include "pdsink_iface.h"
 
 class TinyPPS {
   public:
@@ -57,9 +58,11 @@ class TinyPPS {
     State handleMainState();
 
     /**
-     * @brief This function initializes the USB-PD controller
+     * @brief This function initializes the PD Sink controller
+     @return true when the PD sink is successfully initialized
+     @return false  when the PD sink is not initialized
      */
-    void usbPdInit();
+    bool pdSinkInit();
 
     /**
      * @brief Handle PDO reading at startup
@@ -75,7 +78,8 @@ class TinyPPS {
     Ina226 m_ina226;
     Ssd1306 m_oled;
     RotaryEncoder m_rotary_encoder;
-    Ap33772s m_usb_pd;
+    Ap33772s m_ap33772s;
+    IPdSink* m_pd_sink;
     State m_state;
     std::vector<std::pair<std::string, Config>> m_configs;
     unsigned int m_active_config_index;

@@ -1,7 +1,7 @@
 #ifndef config_h
 #define config_h
 
-#include "ap33772s.h"
+#include "pdsink_iface.h"
 
 /**
  * @brief Enum representing different supply modes
@@ -27,7 +27,7 @@ constexpr const char* supplyModeToString(SupplyMode mode) {
  * @brief Struct containing configuration parameters describing a supply profile
  */
 struct Config {
-    Ap33772s::Pdo pdo;
+    IPdSink::Pdo pdo;
     SupplyMode supply_mode;
     bool is_editing_enabled;
     /**
@@ -56,6 +56,6 @@ struct ConfigBuilder {
      * @param[in] pdo PDO
      * @return Config object
      */
-    static Config buildWithPdo(const Ap33772s::Pdo& pdo);
+    static Config buildWithPdo(const IPdSink::Pdo& pdo);
 };
 #endif   // config_h

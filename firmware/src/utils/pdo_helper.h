@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "ap33772s.h"
+#include "pdsink_iface.h"
 
 /**
  * @brief Convert a PDO to string
@@ -12,6 +12,6 @@
  * @return A string representation od a PDO containing the type, voltage and
  * current range(s)
  */
-std::string pdoToString(const Ap33772s::Pdo& pdo);
+std::string pdoToString(const IPdSink::Pdo& pdo);
 
 #endif   // pdo_helper_h

@@ -34,7 +34,7 @@ class MainScreen : public Screen {
      * @param[in] type PDO type
      * @return reference to this main screen object
      */
-    MainScreen& setPdoType(Ap33772s::PdoType type);
+    MainScreen& setPdoType(IPdSink::PdoType type);
 
     /**
      * @brief Set Supply mode
@@ -109,7 +109,7 @@ class MainScreen : public Screen {
     MainScreen& selectTargetCurrent(bool value);
 
   private:
-    Ap33772s::PdoType m_pdo_type;
+    IPdSink::PdoType m_pdo_type;
     SupplyMode m_supply_mode;
     bool m_is_output_enabled;
     int m_temperature;

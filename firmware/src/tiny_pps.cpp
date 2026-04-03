@@ -2,10 +2,12 @@
 
 #include <algorithm>
 
+#include "ap33772s.h"
 #include "loading_screen.h"
 #include "main_screen.h"
 #include "menu_screen.h"
 #include "pdo_helper.h"
+#include "pdsink_iface.h"
 
 static constexpr uint k_rot_enc_btn_pin = 11;
 static constexpr uint k_rot_enc_a_pin = 10;
@@ -48,10 +50,10 @@ TinyPPS::TinyPPS()
       m_rot_enc_btn_pin(k_rot_enc_btn_pin), m_pd_int(k_pd_int_pin),
       m_rotary_encoder(&m_rot_enc_a_pin, &m_rot_enc_b_pin, &m_rot_enc_btn_pin,
                        &m_debounce_clock),
-      m_usb_pd(&m_i2c), m_state(State::init), m_active_config_index(0),
-      m_is_menu_enabled(false), m_is_pd_interrupt_pending(false), m_clock(0),
-      m_debounce_clock(0), m_rotary_state_clock(0), m_measuring_clock(0),
-      m_fault_clock(0) {}
+      m_ap33772s(&m_i2c), m_pd_sink(nullptr), m_state(State::init),
+      m_active_config_index(0), m_is_menu_enabled(false),
+      m_is_pd_interrupt_pending(false), m_clock(0), m_debounce_clock(0),
+      m_rotary_state_clock(0), m_measuring_clock(0), m_fault_clock(0) {}
 
 bool TinyPPS::initialize() {
     // Initialize a timer to repeat every 1 ms
@@ -85,8 +87,10 @@ bool TinyPPS::initialize() {
 
     m_rotary_encoder.initialize();
     m_i2c.initialize(i2c0, k_i2c_sda_pin, k_i2c_scl_pin, 400);
-    usbPdInit();
     m_oled.initialize();
+    if (!pdSinkInit()) {
+        return false;
+    }
     m_ina226.setAveragingMode(Ina226::AveragingMode::Samples128);
     if (!m_ina226.calibrate(0.01, 0.25)) {
         // Failed to calibrate INA226
@@ -181,8 +185,8 @@ TinyPPS::State TinyPPS::handleMainState() {
     uint16_t target_current = config.pdo.current_min;
 
     // Request the min voltage and current for a selected PDO
-    m_usb_pd.setPdoOutput(m_active_config_index, target_voltage,
-                          target_current);
+    m_pd_sink->setPdoOutput(m_active_config_index, target_voltage,
+                            target_current);
 
     while (true) {
         switch (selection) {
@@ -208,14 +212,11 @@ TinyPPS::State TinyPPS::handleMainState() {
                m_rotary_encoder.getState() == RotaryEncoder::State::processed) {
             m_rotary_encoder.Handle();
 
-            // Check is there an interrupt triggered
+            // Handle pending interrupt
             if (m_is_pd_interrupt_pending) {
                 m_is_pd_interrupt_pending = false;
-                auto status = m_usb_pd.getStatus();
                 // Check is the interrupt caused by some protection
-                if (status.ocp || status.ovp || status.otp || status.uvp) {
-                    is_fault_detected = true;
-                }
+                is_fault_detected = m_pd_sink->getStatus().has_fault;
             }
 
             // handle value editing mode
@@ -245,27 +246,25 @@ TinyPPS::State TinyPPS::handleMainState() {
                 m_measuring_clock = 0;
                 main_screen.setMeasuredVoltage(m_ina226.getBusVoltage());
                 main_screen.setMeasuredCurrent(m_ina226.getCurrent());
-                main_screen.setTemperature(m_usb_pd.getTemp());
+                main_screen.setTemperature(m_pd_sink->getTemp());
                 m_oled.display(main_screen.build());
             }
 
             if (is_fault_detected) {
                 // Disable output and update screen
                 output_enable = false;
-                m_usb_pd.enableOutput(output_enable);
+                m_pd_sink->enableOutput(output_enable);
                 main_screen.setOutputEnable(output_enable);
                 m_oled.display(main_screen.build());
                 // Periodically check if the fault is cleared
                 if (m_fault_clock >= k_fault_check_period) {
                     m_fault_clock = 0;
-                    auto status = m_usb_pd.getStatus();
-                    if (!status.ocp && !status.ovp && !status.otp &&
-                        !status.uvp) {
+                    if (!m_pd_sink->getStatus().has_fault) {
                         // Fault is cleared, re negotiate the selected power
                         // profile
                         is_fault_detected = false;
-                        m_usb_pd.setPdoOutput(m_active_config_index,
-                                              target_voltage, target_current);
+                        m_pd_sink->setPdoOutput(m_active_config_index,
+                                                target_voltage, target_current);
                     }
                 }
             }
@@ -280,8 +279,8 @@ TinyPPS::State TinyPPS::handleMainState() {
                     is_editing = true;
                 } else {
                     // TODO set a value
-                    m_usb_pd.setPdoOutput(m_active_config_index, target_voltage,
-                                          target_current);
+                    m_pd_sink->setPdoOutput(m_active_config_index,
+                                            target_voltage, target_current);
                     is_editing = false;
                 }
             } else {
@@ -314,7 +313,7 @@ TinyPPS::State TinyPPS::handleMainState() {
             // toggle output only is no fault is detected
             if (!is_fault_detected) {
                 output_enable = !output_enable;
-                m_usb_pd.enableOutput(output_enable);
+                m_pd_sink->enableOutput(output_enable);
                 main_screen.setOutputEnable(output_enable);
             }
         } else if (m_rotary_encoder.getState() ==
@@ -416,20 +415,28 @@ TinyPPS::State TinyPPS::handleMainState() {
     return State::main;
 }
 
-void TinyPPS::usbPdInit() {
-    m_usb_pd.enableOutput(false);
-    // https://product.tdk.com/system/files/dam/doc/product/sensor/ntc/chip-ntc-thermistor/data_sheet/datasheet_ntcgs103jx103dt8.pdf
-    // based on B value:
-    //                  [at 25/50C] 3380K typ.
-    //                  [at 25/85C] 3435K+-0.7%
-    m_usb_pd.setNtc(10000, 4164, 1912, 987);
-    m_usb_pd.setVselMin(3300);
-    Ap33772s::Mask mask;
-    mask.ocp_msk = 1;
-    mask.otp_msk = 1;
-    mask.ovp_msk = 1;
-    mask.uvp_msk = 1;
-    m_usb_pd.setMask(mask);
+bool TinyPPS::pdSinkInit() {
+    if (m_ap33772s.probe()) {
+        m_pd_sink = &m_ap33772s;
+        // https://product.tdk.com/system/files/dam/doc/product/sensor/ntc/chip-ntc-thermistor/data_sheet/datasheet_ntcgs103jx103dt8.pdf
+        // based on B value:
+        //                  [at 25/50C] 3380K typ.
+        //                  [at 25/85C] 3435K+-0.7%
+        m_ap33772s.setNtc(10000, 4164, 1912, 987);
+        m_ap33772s.setVselMin(3300);
+        Ap33772s::MaskReg mask;
+        mask.ocp_msk = 1;
+        mask.otp_msk = 1;
+        mask.ovp_msk = 1;
+        mask.uvp_msk = 1;
+        m_ap33772s.setMask(mask);
+    } else {
+        return false;
+    }
+
+    m_pd_sink->enableOutput(false);
+
+    return true;
 }
 
 int TinyPPS::readPdos() {
@@ -440,13 +447,13 @@ int TinyPPS::readPdos() {
     // 1500ms should be enough to read PDOs
     for (int i = 0; i < 10; ++i) {
         sleep_ms(150);
-        if (m_usb_pd.getStatus().newpdo) {
+        if (m_pd_sink->getStatus().caps_received) {
             sleep_ms(10);
-            pdo_cnt = m_usb_pd.getPDSourcePowerCapabilities();
+            pdo_cnt = m_pd_sink->getPDSourcePowerCapabilities();
             // Fill in menu with PDOs
             for (uint8_t i = 0; i < Ap33772s::k_max_pdo_entries; ++i) {
-                Ap33772s::Pdo pdo;
-                if (m_usb_pd.getPdo(i, pdo)) {
+                IPdSink::Pdo pdo;
+                if (m_pd_sink->getPdo(i, pdo)) {
                     m_configs.emplace_back(std::make_pair(
                         pdoToString(pdo), ConfigBuilder::buildWithPdo(pdo)));
                 }

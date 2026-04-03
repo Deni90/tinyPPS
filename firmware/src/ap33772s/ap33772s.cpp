@@ -1,5 +1,6 @@
 #include "ap33772s.h"
 
+#include <cstdint>
 #include <cstring>
 
 /// @brief AP33772s register commands
@@ -47,53 +48,64 @@ static constexpr uint8_t k_voutctl_auto = 0;   // controlled by the AP33772S
 static constexpr uint8_t k_voutctl_off = 1;    // VOUT force OFF
 static constexpr uint8_t k_voutctl_on = 2;     // VOUT force ON
 
-Ap33772s::Pdo::Pdo()
-    : index(0), type(Ap33772s::PdoType::NONE), voltage_min(5000),
-      voltage_max(5000), voltage_step(0), current_min(1000), current_max(1000),
-      current_step(0) {}
-
-Ap33772s::Ap33772s(II2c* i2c) : m_i2c(i2c) {
-    memset(m_pdo_array, 0, k_max_pdo_entries * sizeof(SrcPdo));
+Ap33772s::Ap33772s(II2c* i2c) : m_i2c(i2c), m_status(0) {
+    memset(m_pdo_array, 0, k_max_pdo_entries * sizeof(SrcPdoReg));
 }
 
-Ap33772s::Status Ap33772s::getStatus() {
-    Status status;
-    status.raw = 0;
-    readRegister(k_cmd_status, status.raw);
-    return status;
-}
-
-bool Ap33772s::setMask(const Mask& mask) {
-    return writeRegister(k_cmd_mask, mask.raw);
+bool Ap33772s::probe() {
+    return writeRegister(0x00, static_cast<uint8_t>(0x00));
 }
 
 bool Ap33772s::enableOutput(bool enable) {
-    Ap33772s::System system;
+    SystemReg system;
     // When enable is true, set VOUTCTL to Auto VOUT Control to have OVP, UVP,
     // ... protections active. With VOUT force ON they won't work.
     system.voutctl = enable ? k_voutctl_auto : k_voutctl_off;
-    setSystem(system);
+    setSystemReg(system);
     return true;
+}
+
+IPdSink::Status Ap33772s::getStatus() {
+    m_status = getStatusReg();
+    IPdSink::Status status;
+    if (m_status.ready) {
+        status.is_ready = true;
+    }
+    if (m_status.newpdo) {
+        status.caps_received = true;
+    }
+    if (m_status.raw & 0x78) {
+        status.has_fault = true;
+    }
+    return status;
+}
+
+void Ap33772s::clearStatus() {
+    // Do nothing
+    // AP22772s is clearing the status register after reading it.
+}
+
+IPdSink::Faults Ap33772s::getFaultDetails() {
+    IPdSink::Faults fault;
+    if (m_status.ovp) {
+        fault.over_voltage = true;
+    }
+    if (m_status.uvp) {
+        fault.under_voltage = true;
+    }
+    if (m_status.ocp) {
+        fault.over_current = true;
+    }
+    if (m_status.otp) {
+        fault.over_temperature = true;
+    }
+    return fault;
 }
 
 uint8_t Ap33772s::getTemp() {
     uint8_t temp = 0;
     readRegister(k_cmd_temp, temp);
     return temp;
-}
-
-bool Ap33772s::setNtc(uint16_t tr25, uint16_t tr50, uint16_t tr75,
-                      uint16_t tr100) {
-    if (!writeRegister(k_cmd_tr25, tr25) || !writeRegister(k_cmd_tr50, tr50) ||
-        !writeRegister(k_cmd_tr75, tr75) ||
-        !writeRegister(k_cmd_tr100, tr100)) {
-        return false;
-    }
-    return true;
-}
-
-bool Ap33772s::setVselMin(uint16_t voltage) {
-    return writeRegister(k_cmd_vselmin, static_cast<uint8_t>(voltage / 200));
 }
 
 uint8_t Ap33772s::getPDSourcePowerCapabilities() {
@@ -158,7 +170,7 @@ bool Ap33772s::setPdoOutput(uint8_t index, uint16_t voltage, uint16_t current) {
         return false;
     }
     bool is_epr = (index >= 7 && index <= 12);   // 1-6 for SPR, 7-12 for EPR
-    PdReqMsg req;
+    PdReqMsgReg req;
     req.pdo_index = index + 1;
     req.voltage_sel = voltage / (is_epr ? 200 : 100);
     req.current_sel = (current / 250) - 4;
@@ -166,7 +178,7 @@ bool Ap33772s::setPdoOutput(uint8_t index, uint16_t voltage, uint16_t current) {
     if (!writeRegister(k_cmd_pd_reqmsg, req.raw)) {
         return false;
     }
-    PdMsgrlt res;
+    PdMsgrltReg res;
     if (!readRegister(k_cmd_pd_msgrlt, res.raw)) {
         return false;
     }
@@ -174,6 +186,31 @@ bool Ap33772s::setPdoOutput(uint8_t index, uint16_t voltage, uint16_t current) {
         return true;
     }
     return false;
+}
+
+Ap33772s::StatusReg Ap33772s::getStatusReg() {
+    StatusReg status;
+    status.raw = 0;
+    readRegister(k_cmd_status, status.raw);
+    return status;
+}
+
+bool Ap33772s::setMask(const MaskReg& mask) {
+    return writeRegister(k_cmd_mask, mask.raw);
+}
+
+bool Ap33772s::setNtc(uint16_t tr25, uint16_t tr50, uint16_t tr75,
+                      uint16_t tr100) {
+    if (!writeRegister(k_cmd_tr25, tr25) || !writeRegister(k_cmd_tr50, tr50) ||
+        !writeRegister(k_cmd_tr75, tr75) ||
+        !writeRegister(k_cmd_tr100, tr100)) {
+        return false;
+    }
+    return true;
+}
+
+bool Ap33772s::setVselMin(uint16_t voltage) {
+    return writeRegister(k_cmd_vselmin, static_cast<uint8_t>(voltage / 200));
 }
 
 bool Ap33772s::readRegister(uint8_t reg, uint8_t& value) {
@@ -205,11 +242,11 @@ bool Ap33772s::writeRegister(uint8_t reg, uint16_t value) {
     return m_i2c->writeTo(k_i2c_addr, buffer, sizeof(buffer)) == sizeof(buffer);
 }
 
-Ap33772s::System Ap33772s::getSystem() {
-    Ap33772s::System system;
+Ap33772s::SystemReg Ap33772s::getSystemReg() {
+    SystemReg system;
     system.raw = 0;
     readRegister(k_cmd_system, system.raw);
     return system;
 }
 
-void Ap33772s::setSystem(System s) { writeRegister(k_cmd_system, s.raw); }
+void Ap33772s::setSystemReg(SystemReg s) { writeRegister(k_cmd_system, s.raw); }

@@ -6,9 +6,27 @@
 #include <string>
 
 #include "i2c_iface.h"
+#include "pdsink_iface.h"
 
-class Ap33772s {
-  private:
+class Ap33772s : public IPdSink {
+  protected:
+    /**
+     * @brief Status register definition of AP33772S
+     */
+    union StatusReg {
+        struct {
+            uint8_t started : 1;
+            uint8_t ready : 1;
+            uint8_t newpdo : 1;
+            uint8_t uvp : 1;
+            uint8_t ovp : 1;
+            uint8_t ocp : 1;
+            uint8_t otp : 1;
+            uint8_t : 1;
+        };
+        uint8_t raw;
+    };
+
     /**
      * @brief System register definition of AP33772S
      *
@@ -17,7 +35,7 @@ class Ap33772s {
      * switches are controlled by the AP33772S. Writing the VOUTCTL parameter
      * can force the VOUT MOS switches to turn OFF/ON.
      */
-    union System {
+    union SystemReg {
         struct {
             uint8_t voutctl : 2;
             uint8_t : 2;
@@ -33,7 +51,7 @@ class Ap33772s {
      * This union is created based on SRC_SPRandEPR_PDO_Fields struct from I˝C
      * Master Sample Code for AP33772
      */
-    union SrcPdo {
+    union SrcPdoReg {
         struct {
             uint16_t voltage_max : 8;    // Bits 7:0, VOLTAGE_MAX field
             uint16_t peak_current : 2;   // Bits 9:8, PEAK_CURRENT field
@@ -68,7 +86,7 @@ class Ap33772s {
      * The PD_REQMSG register is defined as the request message format to
      * initiate negotiation with the PD source.
      */
-    union PdReqMsg {
+    union PdReqMsgReg {
         struct {
             uint16_t voltage_sel : 8;   // Bits 7:0  VOLTAGE_SEL filed
             uint16_t current_sel : 4;   // Bits 8:11 CURRENT_SEL field
@@ -85,63 +103,44 @@ class Ap33772s {
      * response made by the AP33772S, based on the interaction result with the
      * PD source.
      */
-    union PdMsgrlt {
+    union PdMsgrltReg {
         struct {
             uint8_t response : 2;
         };
         uint8_t raw;
     };
 
-  public:
     /**
-     * @brief Enumeration describing different PDO types
-     */
-    enum class PdoType { NONE, FIX, PPS, AVS };
-
-    /**
-     * @brief Covert PdoType enum value to string
+     * @brief Get Syetem register values
      *
-     * @param type PdoType
+     * @return System register
      */
-    static constexpr const char* pdoTypeToString(PdoType type) {
-        switch (type) {
-        case PdoType::FIX:
-            return "FIX";
-        case PdoType::PPS:
-            return "PPS";
-        case PdoType::AVS:
-            return "AVS";
-        case PdoType::NONE:
-        default:
-            return "N/A";
-        }
-        return "N/A";
-    }
+    SystemReg getSystemReg();
 
     /**
-     * @brief Status register definition of AP33772S
+     * @brief Set Syetem register values
+     *
+     * @param[in] s System register
      */
-    union Status {
-        struct {
-            uint8_t started : 1;
-            uint8_t ready : 1;
-            uint8_t newpdo : 1;
-            uint8_t uvp : 1;
-            uint8_t ovp : 1;
-            uint8_t ocp : 1;
-            uint8_t otp : 1;
-            uint8_t : 1;
-        };
-        uint8_t raw;
-    };
+    void setSystemReg(SystemReg s);
 
+    /**
+     * @brief Get Status register values
+     *
+     * The STATUS register will be reset to 0 after a read operation.
+     *
+     * @return Status register
+     */
+    StatusReg getStatusReg();
+
+  public:
     /**
      * @brief Mask register definition of AP33772S
      *
      * The MASK register defines the enable and disable of ON and OFF for
      * various STATUS-defined events
      */
-    union Mask {
+    union MaskReg {
         struct {
             uint8_t started_msk : 1;
             uint8_t ready_msk : 1;
@@ -156,25 +155,6 @@ class Ap33772s {
     };
 
     /**
-     * @brief Definition of a PDO objet
-     *
-     * This struct is a more mainingful version of the SrcPdo union. It contains
-     * parsed values for PdoType, min, max and step values for current and
-     * voltage.
-     */
-    struct Pdo {
-        uint8_t index;
-        PdoType type;
-        uint16_t voltage_min;    // mV
-        uint16_t voltage_max;    // mV
-        uint16_t voltage_step;   // mV
-        uint16_t current_min;    // mV
-        uint16_t current_max;    // mA
-        uint16_t current_step;   // mA
-        Pdo();
-    };
-
-    /**
      * @brief Constructor
      *
      * @param[in] i2c Pointer to i2c object
@@ -182,20 +162,11 @@ class Ap33772s {
     Ap33772s(II2c* i2c);
 
     /**
-     * @brief Get Status register values
+     * @brief Checks the I2C bus to see if the specific chip is present.
      *
-     * The STATUS register will be reset to 0 after a read operation.
-     *
-     * @return Status register
+     * @return true if the expected hardware is detected, false otherwise.
      */
-    Status getStatus();
-
-    /**
-     * @brief Set Mask, used for setting up interrupt events
-     *
-     * @return True if successfully set
-     */
-    bool setMask(const Mask& mask);
+    virtual bool probe() override;
 
     /**
      * @brief Enable/Disable the output
@@ -206,14 +177,87 @@ class Ap33772s {
      * @param enable Boolean value used to enable/disable the output
      * @return True if the output is successfully enabled/disabled
      */
-    bool enableOutput(bool enable);
+    virtual bool enableOutput(bool enable) override;
+
+    /**
+     * @brief Get status of the PD sink
+     *
+     * @return A Status structure
+     */
+    virtual IPdSink::Status getStatus() override;
+
+    /**
+     * @brief Resets the current fault flags and clears the status of the PD
+     * Sink.
+     *
+     * This should be called after a fault has been handled to resume normal
+     * operation.
+     */
+    virtual void clearStatus() override;
+
+    /**
+     * @brief Retrieves detailed hardware fault flags from the PD Sink.
+     *
+     * @return Faults structure containing the current state of all monitored
+     * fault conditions.
+     */
+    virtual Faults getFaultDetails() override;
 
     /**
      * @brief Get the temperature read from NTC
      *
      * @return Temperature [Celsius]
      */
-    uint8_t getTemp();
+    virtual uint8_t getTemp() override;
+
+    /**
+     * @brief Get all of the PD Source Power Capabilities
+     *
+     * @return The number of PD Source Power Capabilities available
+     */
+    uint8_t getPDSourcePowerCapabilities() override;
+
+    /**
+     * @brief Retrieves the Power Data Object (PDO) at the specified index.
+     *
+     * This function populates the provided `Pdo` structure with voltage,
+     * current, and other relevant data.
+     *
+     * @param index The PDO index to retrieve (starting from 0).
+     * @param[out] pdo Reference to a `Pdo` structure that will be filled with
+     * the retrieved data.
+     *
+     * @return true  If the PDO was successfully populated.
+     * @return false If the PDO index is invalid
+     */
+    virtual bool getPdo(uint8_t index, Pdo& pdo) override;
+
+    /**
+     * @brief Selects a Power Data Object (PDO) and sets the output voltage and
+     * current.
+     *
+     * This function configures the power supply to use the specified PDO index
+     * and applies the requested voltage and current.
+     *
+     * @param index   The PDO index to select (starting from 0).
+     * @param voltage Desired output voltage in millivolts (mV).
+     * @param current Desired output current in milliamps (mA).
+     *
+     * @return true  If the PDO was successfully applied.
+     * @return false If the PDO selection or voltage/current setting failed.
+     *
+     * @note Ensure that the requested voltage and current are within the limits
+     *       of the selected PDO to prevent unexpected behavior.
+     */
+    virtual bool setPdoOutput(uint8_t index, uint16_t voltage,
+                              uint16_t current) override;
+
+    /**
+     * @brief Set Mask, used for setting up interrupt events
+     *
+     * @return True if successfully set
+     */
+    bool setMask(const MaskReg& mask);
 
     /**
      * @brief  NTC resistance values for selected temperatures
@@ -244,47 +288,6 @@ class Ap33772s {
     bool setVselMin(uint16_t voltage);
 
     /**
-     * @brief Get all of the PD Source Power Capabilities
-     *
-     * @return The number of PD Source Power Capabilities available
-     */
-    uint8_t getPDSourcePowerCapabilities();
-
-    /**
-     * @brief Retrieves the Power Data Object (PDO) at the specified index.
-     *
-     * This function populates the provided `Pdo` structure with voltage,
-     * current, and other relevant data.
-     *
-     * @param index The PDO index to retrieve (starting from 0).
-     * @param[out] pdo Reference to a `Pdo` structure that will be filled with
-     * the retrieved data.
-     *
-     * @return true  If the PDO was successfully populated.
-     * @return false If the PDO index is invalid
-     */
-    bool getPdo(uint8_t index, Pdo& pdo);
-
-    /**
-     * @brief Selects a Power Data Object (PDO) and sets the output voltage and
-     * current.
-     *
-     * This function configures the power supply to use the specified PDO index
-     * and applies the requested voltage and current.
-     *
-     * @param index   The PDO index to select (starting from 0).
-     * @param voltage Desired output voltage in millivolts (mV).
-     * @param current Desired output current in milliamps (mA).
-     *
-     * @return true  If the PDO was successfully applied.
-     * @return false If the PDO selection or voltage/current setting failed.
-     *
-     * @note Ensure that the requested voltage and current are within the limits
-     *       of the selected PDO to prevent unexpected behavior.
-     */
-    bool setPdoOutput(uint8_t index, uint16_t voltage, uint16_t current);
-
-    /**
      * @brief The maximum number of PD Source Power Capabilities
      */
     static constexpr uint8_t k_max_pdo_entries = 13;
@@ -301,11 +304,9 @@ class Ap33772s {
     bool writeRegister(uint8_t reg, uint8_t value);
     bool writeRegister(uint8_t reg, uint16_t value);
 
-    System getSystem();
-    void setSystem(System s);
-
     II2c* m_i2c;
-    SrcPdo m_pdo_array[k_max_pdo_entries];
+    SrcPdoReg m_pdo_array[k_max_pdo_entries];
+    StatusReg m_status;
 };
 
 #endif   // ap33772s_h
