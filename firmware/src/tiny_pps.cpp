@@ -50,8 +50,8 @@ TinyPPS::TinyPPS()
       m_rot_enc_btn_pin(k_rot_enc_btn_pin), m_pd_int(k_pd_int_pin),
       m_rotary_encoder(&m_rot_enc_a_pin, &m_rot_enc_b_pin, &m_rot_enc_btn_pin,
                        &m_debounce_clock),
-      m_ap33772s(&m_i2c), m_pd_sink(nullptr), m_state(State::init),
-      m_active_config_index(0), m_is_menu_enabled(false),
+      m_ap33772(&m_i2c), m_ap33772s(&m_i2c), m_pd_sink(nullptr),
+      m_state(State::init), m_active_config_index(0), m_is_menu_enabled(false),
       m_is_pd_interrupt_pending(false), m_clock(0), m_debounce_clock(0),
       m_rotary_state_clock(0), m_measuring_clock(0), m_fault_clock(0) {}
 
@@ -416,7 +416,19 @@ TinyPPS::State TinyPPS::handleMainState() {
 }
 
 bool TinyPPS::pdSinkInit() {
-    if (m_ap33772s.probe()) {
+    if (m_ap33772.probe()) {
+        m_pd_sink = &m_ap33772;
+        // https://product.tdk.com/system/files/dam/doc/product/sensor/ntc/chip-ntc-thermistor/data_sheet/datasheet_ntcgs103jx103dt8.pdf
+        // based on B value:
+        //                  [at 25/50C] 3380K typ.
+        //                  [at 25/85C] 3435K+-0.7%
+        m_ap33772.setNtc(10000, 4164, 1912, 987);
+        Ap33772::MaskReg mask;
+        mask.ocp_en = 1;
+        mask.otp_en = 1;
+        mask.ovp_en = 1;
+        m_ap33772.setMask(mask);
+    } else if (m_ap33772s.probe()) {
         m_pd_sink = &m_ap33772s;
         // https://product.tdk.com/system/files/dam/doc/product/sensor/ntc/chip-ntc-thermistor/data_sheet/datasheet_ntcgs103jx103dt8.pdf
         // based on B value:

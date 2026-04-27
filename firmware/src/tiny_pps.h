@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "ap33772.h"
 #include "ap33772s.h"
 #include "config.h"
 #include "ina226.h"
@@ -78,6 +79,7 @@ class TinyPPS {
     Ina226 m_ina226;
     Ssd1306 m_oled;
     RotaryEncoder m_rotary_encoder;
+    Ap33772 m_ap33772;
     Ap33772s m_ap33772s;
     IPdSink* m_pd_sink;
     State m_state;
