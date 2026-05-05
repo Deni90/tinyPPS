@@ -86,14 +86,6 @@ class IPdSink {
     virtual bool probe() = 0;
 
     /**
-     * @brief Enable/Disable the output
-     *
-     * @param enable Boolean value used to enable/disable the output
-     * @return True if the output is successfully enabled/disabled
-     */
-    virtual bool enableOutput(bool enable) = 0;
-
-    /**
      * @brief Get status of the PD sink
      *
      * @return A Status structure

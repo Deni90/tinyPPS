@@ -32,8 +32,6 @@ bool Ap33772::probe() {
     return writeRegister(0x00, static_cast<uint8_t>(0x00));
 }
 
-bool Ap33772::enableOutput(bool enable) { return false; }
-
 IPdSink::Status Ap33772::getStatus() {
     m_status = getStatusReg();
     IPdSink::Status status;

@@ -56,15 +56,6 @@ bool Ap33772s::probe() {
     return writeRegister(0x00, static_cast<uint8_t>(0x00));
 }
 
-bool Ap33772s::enableOutput(bool enable) {
-    SystemReg system;
-    // When enable is true, set VOUTCTL to Auto VOUT Control to have OVP, UVP,
-    // ... protections active. With VOUT force ON they won't work.
-    system.voutctl = enable ? k_voutctl_auto : k_voutctl_off;
-    setSystemReg(system);
-    return true;
-}
-
 IPdSink::Status Ap33772s::getStatus() {
     m_status = getStatusReg();
     IPdSink::Status status;

@@ -169,17 +169,6 @@ class Ap33772s : public IPdSink {
     virtual bool probe() override;
 
     /**
-     * @brief Enable/Disable the output
-     *
-     * This function controls the NMOS switch. If enable is set to true, the
-     * NMOS switch will be turned on.
-     *
-     * @param enable Boolean value used to enable/disable the output
-     * @return True if the output is successfully enabled/disabled
-     */
-    virtual bool enableOutput(bool enable) override;
-
-    /**
      * @brief Get status of the PD sink
      *
      * @return A Status structure

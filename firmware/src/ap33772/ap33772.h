@@ -129,15 +129,6 @@ class Ap33772 : public IPdSink {
     virtual bool probe() override;
 
     /**
-     * @brief Enable/Disable the output
-     *
-     * @param enable Boolean value used to enable/disable the output
-     * @return False, since the function is not implemented
-     * @note AP33772 has no support for controlling the output
-     */
-    virtual bool enableOutput(bool enable) override;
-
-    /**
      * @brief Get status of the PD sink
      *
      * @return A Status structure

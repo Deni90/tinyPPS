@@ -72,9 +72,17 @@ class TinyPPS {
      */
     int readPdos();
 
+    /**
+    * @brief Enable/Disable the output
+    *
+    * * @param enable Boolean value used to enable/disable the output
+    */
+    void enableOutput(bool enable);
+
     PicoI2c m_i2c;
     PicoGpio m_rot_enc_a_pin, m_rot_enc_b_pin, m_rot_enc_btn_pin;
     PicoGpio m_pd_int;
+    PicoGpio m_output_enable;
     PicoRepeatingTimer m_timer;
     Ina226 m_ina226;
     Ssd1306 m_oled;

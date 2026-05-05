@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "ap33772s.h"
+#include "gpio_iface.h"
 #include "loading_screen.h"
 #include "main_screen.h"
 #include "menu_screen.h"
@@ -17,6 +18,7 @@ static constexpr unsigned int k_i2c_sda_pin = 28;
 static constexpr unsigned int k_i2c_scl_pin = 29;
 
 static constexpr unsigned int k_pd_int_pin = 25;
+static constexpr unsigned int k_output_enable_pin = 17;
 
 static constexpr uint8_t k_ina226_addr = 0x40;
 
@@ -48,6 +50,7 @@ TinyPPS::TinyPPS()
       m_oled(&m_i2c, Ssd1306::Type::ssd1306_128x64),
       m_rot_enc_a_pin(k_rot_enc_a_pin), m_rot_enc_b_pin(k_rot_enc_b_pin),
       m_rot_enc_btn_pin(k_rot_enc_btn_pin), m_pd_int(k_pd_int_pin),
+      m_output_enable(k_output_enable_pin),
       m_rotary_encoder(&m_rot_enc_a_pin, &m_rot_enc_b_pin, &m_rot_enc_btn_pin,
                        &m_debounce_clock),
       m_ap33772(&m_i2c), m_ap33772s(&m_i2c), m_pd_sink(nullptr),
@@ -84,6 +87,8 @@ bool TinyPPS::initialize() {
         },
         this);
     m_pd_int.enableInterrupt(true);
+
+    m_output_enable.configure(IGpio::Direction::Output, IGpio::Pull::Down);
 
     m_rotary_encoder.initialize();
     m_i2c.initialize(i2c0, k_i2c_sda_pin, k_i2c_scl_pin, 400);
@@ -253,7 +258,7 @@ TinyPPS::State TinyPPS::handleMainState() {
             if (is_fault_detected) {
                 // Disable output and update screen
                 output_enable = false;
-                m_pd_sink->enableOutput(output_enable);
+                enableOutput(output_enable);
                 main_screen.setOutputEnable(output_enable);
                 m_oled.display(main_screen.build());
                 // Periodically check if the fault is cleared
@@ -313,7 +318,7 @@ TinyPPS::State TinyPPS::handleMainState() {
             // toggle output only is no fault is detected
             if (!is_fault_detected) {
                 output_enable = !output_enable;
-                m_pd_sink->enableOutput(output_enable);
+                enableOutput(output_enable);
                 main_screen.setOutputEnable(output_enable);
             }
         } else if (m_rotary_encoder.getState() ==
@@ -446,7 +451,7 @@ bool TinyPPS::pdSinkInit() {
         return false;
     }
 
-    m_pd_sink->enableOutput(false);
+    enableOutput(false);
 
     return true;
 }
@@ -480,3 +485,5 @@ int TinyPPS::readPdos() {
 
     return pdo_cnt;
 }
+
+void TinyPPS::enableOutput(bool enable) { m_output_enable.write(enable); }
