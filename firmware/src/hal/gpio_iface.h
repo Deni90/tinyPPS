@@ -39,21 +39,21 @@ class IGpio {
      *
      * @return true on success, false on invalid configuration
      */
-    virtual bool configure(Direction dir, Pull pull = Pull::None) = 0;
+    virtual auto configure(Direction dir, Pull pull = Pull::None) -> bool = 0;
 
     /**
      * @brief Write a value to a digital pin.
      *
      * @param[in] value true - high, false - low
      */
-    virtual bool write(bool value) = 0;
+    virtual auto write(bool value) -> bool = 0;
 
     /**
      * @brief Reads the value from a specified digital pin.
      *
      * @return true - high, false - low
      */
-    virtual bool read() = 0;
+    virtual auto read() -> bool = 0;
 
     /**
      * @brief Attach an interrupt callback to the GPIO pin.
@@ -64,20 +64,20 @@ class IGpio {
      * @warning The callback must be fast and must not block.
      *
      * @param edge Interrupt trigger edge
-     * @param cb   Callback function
+     * @param callback   Callback function
      * @param user Optional user-defined context pointer
      *
      * @return true on success, false if the interrupt could not be configured
      */
-    virtual bool attachInterrupt(Edge edge, IrqCallback cb,
-                                 void* user = nullptr) = 0;
+    virtual auto attachInterrupt(Edge edge, IrqCallback callback,
+                                 void* user = nullptr) -> bool = 0;
 
     /**
      * @brief Enable or disable the GPIO interrupt.
      *
      * @param enable true to enable the interrupt, false to disable it
      */
-    virtual void enableInterrupt(bool enable) = 0;
+    virtual auto enableInterrupt(bool enable) -> void = 0;
 };
 
 #endif   // gpio_iface_h

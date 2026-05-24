@@ -22,7 +22,7 @@ class IRepeatingTimer {
      * should stop the timer and restart it with the new parameters.
      *
      * @param period_ms Timer period in milliseconds.
-     * @param cb Callback function to be called on each timer expiration.
+     * @param callback Callback function to be called on each timer expiration.
      * @param ctx User-defined context pointer passed to the callback.
      *            The pointed-to data must remain valid for the lifetime
      *            of the timer.
@@ -30,7 +30,8 @@ class IRepeatingTimer {
      * @return true  Timer was successfully started.
      * @return false Failed to start the timer.
      */
-    virtual bool start(uint32_t period_ms, Callback cb, void* ctx) = 0;
+    virtual auto start(uint32_t period_ms, Callback callback, void* ctx)
+        -> bool = 0;
 
     /**
      * @brief Stop the repeating timer.
@@ -38,7 +39,7 @@ class IRepeatingTimer {
      * Stops the timer if it is currently running.
      * After calling this function, the callback will no longer be invoked.
      */
-    virtual void stop() = 0;
+    virtual auto stop() -> void = 0;
 
     /**
      * @brief Check whether the timer is running.
@@ -46,7 +47,7 @@ class IRepeatingTimer {
      * @return true  Timer is running.
      * @return false Timer is stopped.
      */
-    virtual bool isRunning() const = 0;
+    [[nodiscard]] virtual auto isRunning() const -> bool = 0;
 };
 
 #endif   // timer_iface_h

@@ -8,7 +8,7 @@ class II2c {
     /**
      * @brief Destructor for the interface.
      */
-     virtual ~II2c() = default;
+    virtual ~II2c() = default;
 
     /**
      *  @brief Attempt to write specified number of bytes to address
@@ -18,8 +18,8 @@ class II2c {
      * @param len Length of data in bytes to send
      * @return Number of bytes written, or error
      */
-    virtual int writeTo(uint8_t addr, const uint8_t* data,
-                        unsigned int len) = 0;
+    virtual auto writeTo(uint8_t addr, const uint8_t* data, unsigned int len)
+        -> int = 0;
 
     /**
      * @brief Attempt to read specified number of bytes from address
@@ -29,7 +29,8 @@ class II2c {
      * @param len Length of data in bytes to receive
      * @return Number of bytes read, or error
      */
-    virtual int readFrom(uint8_t addr, uint8_t* data, unsigned int len) = 0;
+    virtual auto readFrom(uint8_t addr, uint8_t* data, unsigned int len)
+        -> int = 0;
 };
 
 #endif   // i2c_iface_h

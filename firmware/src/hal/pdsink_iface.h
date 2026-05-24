@@ -83,14 +83,14 @@ class IPdSink {
      *
      * @return true if the expected hardware is detected, false otherwise.
      */
-    virtual bool probe() = 0;
+    virtual auto probe() -> bool = 0;
 
     /**
      * @brief Get status of the PD sink
      *
      * @return A Status structure
      */
-    virtual Status getStatus() = 0;
+    virtual auto getStatus() -> Status = 0;
 
     /**
      * @brief Resets the current fault flags and clears the status of the PD
@@ -107,21 +107,21 @@ class IPdSink {
      * @return Faults structure containing the current state of all monitored
      * fault conditions.
      */
-    virtual Faults getFaultDetails() = 0;
+    virtual auto getFaultDetails() -> Faults = 0;
 
     /**
      * @brief Get the temperature read from NTC
      *
      * @return Temperature [Celsius]
      */
-    virtual uint8_t getTemp() = 0;
+    virtual auto getTemp() -> uint8_t = 0;
 
     /**
      * @brief Get all of the PD Source Power Capabilities
      *
      * @return The number of PD Source Power Capabilities available
      */
-    virtual uint8_t getPDSourcePowerCapabilities() = 0;
+    virtual auto getPDSourcePowerCapabilities() -> uint8_t = 0;
 
     /**
      * @brief Retrieves the Power Data Object (PDO) at the specified index.
@@ -136,7 +136,7 @@ class IPdSink {
      * @return true  If the PDO was successfully populated.
      * @return false If the PDO index is invalid
      */
-    virtual bool getPdo(uint8_t index, Pdo& pdo) = 0;
+    virtual auto getPdo(uint8_t index, Pdo& pdo) -> bool = 0;
 
     /**
      * @brief Selects a Power Data Object (PDO) and sets the output voltage and
@@ -155,8 +155,8 @@ class IPdSink {
      * @note Ensure that the requested voltage and current are within the limits
      *       of the selected PDO to prevent unexpected behavior.
      */
-    virtual bool setPdoOutput(uint8_t index, uint16_t voltage,
-                              uint16_t current) = 0;
+    virtual auto setPdoOutput(uint8_t index, uint16_t voltage, uint16_t current)
+        -> bool = 0;
 };
 
 #endif   // pdsink_iface_h
