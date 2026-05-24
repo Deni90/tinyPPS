@@ -3,7 +3,7 @@
 /* RP2040 GPIO IRQ demux table */
 struct IrqEntry {
     IGpio* gpio;
-    IGpio::IrqCallback cb;
+    IGpio::IrqCallback callback;
     void* user;
     uint32_t events;
 };
@@ -11,7 +11,7 @@ struct IrqEntry {
 static IrqEntry irq_table[NUM_BANK0_GPIOS];
 static bool irq_callback_installed = false;
 
-static uint32_t edgeToPico(IGpio::Edge edge) {
+static auto edgeToPico(IGpio::Edge edge) -> uint32_t {
     switch (edge) {
     case IGpio::Edge::Rising:
         return GPIO_IRQ_EDGE_RISE;
@@ -31,19 +31,20 @@ static uint32_t edgeToPico(IGpio::Edge edge) {
  * This function demultiplexes interrupts to the correct Gpio instance.
  */
 static void gpioIrqDispatch(uint gpio, uint32_t events) {
-    if (gpio >= NUM_BANK0_GPIOS)
+    if (gpio >= NUM_BANK0_GPIOS) {
         return;
+    }
 
-    IrqEntry& e = irq_table[gpio];
+    IrqEntry& entry = irq_table[gpio];
 
-    if (e.cb && (events & e.events)) {
-        e.cb(*e.gpio, e.user);
+    if (entry.callback && (events & entry.events)) {
+        entry.callback(*entry.gpio, entry.user);
     }
 }
 
 PicoGpio::PicoGpio(unsigned int io_pin) : m_pin(io_pin) { gpio_init(m_pin); }
 
-bool PicoGpio::configure(Direction dir, Pull pull) {
+auto PicoGpio::configure(Direction dir, Pull pull) -> bool {
     if (m_pin >= NUM_BANK0_GPIOS) {
         return false;
     }
@@ -52,7 +53,7 @@ bool PicoGpio::configure(Direction dir, Pull pull) {
     return true;
 }
 
-bool PicoGpio::write(bool value) {
+auto PicoGpio::write(bool value) -> bool {
     if (m_pin >= NUM_BANK0_GPIOS) {
         return false;
     }
@@ -60,38 +61,41 @@ bool PicoGpio::write(bool value) {
     return true;
 }
 
-bool PicoGpio::read() {
+auto PicoGpio::read() -> bool {
     if (m_pin >= NUM_BANK0_GPIOS) {
         return false;
     }
     return gpio_get(m_pin);
 }
 
-bool PicoGpio::attachInterrupt(Edge edge, IrqCallback cb, void* user) {
-    if (m_pin >= NUM_BANK0_GPIOS || cb == nullptr)
+auto PicoGpio::attachInterrupt(Edge edge, IrqCallback callback, void* user)
+    -> bool {
+    if (m_pin >= NUM_BANK0_GPIOS || callback == nullptr) {
         return false;
+    }
 
-    IrqEntry& e = irq_table[m_pin];
-    e.gpio = this;
-    e.cb = cb;
-    e.user = user;
-    e.events = edgeToPico(edge);
+    IrqEntry& entry = irq_table[m_pin];
+    entry.gpio = this;
+    entry.callback = callback;
+    entry.user = user;
+    entry.events = edgeToPico(edge);
 
     if (!irq_callback_installed) {
         /* First IRQ installs the global dispatcher */
-        gpio_set_irq_enabled_with_callback(m_pin, e.events, true,
+        gpio_set_irq_enabled_with_callback(m_pin, entry.events, true,
                                            &gpioIrqDispatch);
         irq_callback_installed = true;
     } else {
-        gpio_set_irq_enabled(m_pin, e.events, true);
+        gpio_set_irq_enabled(m_pin, entry.events, true);
     }
 
     return true;
 }
 
-void PicoGpio::enableInterrupt(bool enable) {
-    if (m_pin >= NUM_BANK0_GPIOS)
+auto PicoGpio::enableInterrupt(bool enable) -> void {
+    if (m_pin >= NUM_BANK0_GPIOS) {
         return;
+    }
 
     gpio_set_irq_enabled(m_pin, irq_table[m_pin].events, enable);
 }

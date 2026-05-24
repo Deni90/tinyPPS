@@ -20,14 +20,14 @@ class PicoGpio : public IGpio {
 
     virtual ~PicoGpio() = default;
 
-    bool configure(Direction dir, Pull pull = Pull::None);
+    auto configure(Direction dir, Pull pull = Pull::None) -> bool;
 
-    bool write(bool value) override;
+    auto write(bool value) -> bool override;
 
-    bool read() override;
+    auto read() -> bool override;
 
-    bool attachInterrupt(Edge edge, IrqCallback cb,
-                         void* user = nullptr) override;
+    auto attachInterrupt(Edge edge, IrqCallback callback, void* user = nullptr)
+        -> bool override;
 
     void enableInterrupt(bool enable) override;
 

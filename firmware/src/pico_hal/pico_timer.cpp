@@ -1,38 +1,38 @@
 #include "pico_timer.h"
 
-PicoRepeatingTimer::PicoRepeatingTimer()
-    : m_callback(nullptr), m_ctx(nullptr), m_running(false) {}
-
 PicoRepeatingTimer::~PicoRepeatingTimer() { stop(); }
 
-bool PicoRepeatingTimer::start(uint32_t period_ms, Callback cb, void* ctx) {
+auto PicoRepeatingTimer::start(uint32_t period_ms, Callback callback,
+                               void* context) -> bool {
     stop();   // ensure clean restart
 
-    m_callback = cb;
-    m_ctx = ctx;
+    m_callback = callback;
+    m_context = context;
 
     // Negative = periodic from now
-    bool ok =
+    //
+    bool is_ok =
         add_repeating_timer_ms(static_cast<int32_t>(period_ms),
                                &PicoRepeatingTimer::timerThunk, this, &m_timer);
 
-    m_running = ok;
-    return ok;
+    m_running = is_ok;
+    return is_ok;
 }
 
-void PicoRepeatingTimer::stop() {
+auto PicoRepeatingTimer::stop() -> void {
     if (m_running) {
         cancel_repeating_timer(&m_timer);
         m_running = false;
     }
 }
 
-bool PicoRepeatingTimer::isRunning() const { return m_running; }
+auto PicoRepeatingTimer::isRunning() const -> bool { return m_running; }
 
-bool PicoRepeatingTimer::timerThunk(repeating_timer_t* rt) {
-    auto* self = static_cast<PicoRepeatingTimer*>(rt->user_data);
-    if (self && self->m_callback && self->m_ctx) {
-        self->m_callback(self->m_ctx);
+auto PicoRepeatingTimer::timerThunk(repeating_timer_t* repeating_timer)
+    -> bool {
+    auto* self = static_cast<PicoRepeatingTimer*>(repeating_timer->user_data);
+    if (self && self->m_callback && self->m_context) {
+        self->m_callback(self->m_context);
     }
     return true;   // keep repeating
 }

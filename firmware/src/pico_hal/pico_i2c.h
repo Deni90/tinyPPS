@@ -20,14 +20,16 @@ class PicoI2c : public II2c {
      * @param[in] scl_pin GPIO pin for SCL
      * @param[in] baudrate I2C baudrate in kHz
      */
-    void initialize(i2c_inst_t* i2c, unsigned int sda_pin, unsigned int scl_pin,
-                    unsigned int baudrate);
+    auto initialize(i2c_inst_t* i2c, unsigned int sda_pin, unsigned int scl_pin,
+                    unsigned int baudrate) -> void;
 
     /**
      * Implementation of II2c interface
      */
-    int writeTo(uint8_t addr, const uint8_t* data, unsigned int len) override;
-    int readFrom(uint8_t addr, uint8_t* data, unsigned int len) override;
+    auto writeTo(uint8_t addr, const uint8_t* data, unsigned int len)
+        -> int override;
+    auto readFrom(uint8_t addr, uint8_t* data, unsigned int len)
+        -> int override;
 };
 
 #endif   // pico_i2c_h
