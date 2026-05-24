@@ -1,18 +1,12 @@
 #include "config.h"
 #include "pdsink_iface.h"
 
-Config::Config() : supply_mode(SupplyMode::CV), is_editing_enabled(false) {}
+auto ConfigBuilder::buildDefault() -> Config { return Config(); }
 
-Config ConfigBuilder::buildDefault() { return Config(); }
-
-Config ConfigBuilder::buildWithPdo(const IPdSink::Pdo& pdo) {
-    Config c;
-    c.pdo = pdo;
-    c.supply_mode = SupplyMode::CV;
-    if (pdo.type == IPdSink::PdoType::NONE) {
-        c.is_editing_enabled = false;
-    } else {
-        c.is_editing_enabled = true;
-    }
-    return c;
+auto ConfigBuilder::buildWithPdo(const IPdSink::Pdo& pdo) -> Config {
+    Config config;
+    config.pdo = pdo;
+    config.supply_mode = SupplyMode::CV;
+    config.is_editing_enabled = !(pdo.type == IPdSink::PdoType::NONE);
+    return config;
 }

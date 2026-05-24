@@ -13,7 +13,7 @@ enum class SupplyMode { CV, CC };
  *
  * @param mode SupplyMode
  */
-constexpr const char* supplyModeToString(SupplyMode mode) {
+constexpr auto supplyModeToString(SupplyMode mode) -> const char* {
     switch (mode) {
     case SupplyMode::CV:
         return "CV";
@@ -28,12 +28,12 @@ constexpr const char* supplyModeToString(SupplyMode mode) {
  */
 struct Config {
     IPdSink::Pdo pdo;
-    SupplyMode supply_mode;
-    bool is_editing_enabled;
+    SupplyMode supply_mode{SupplyMode::CV};
+    bool is_editing_enabled{false};
     /**
      * @brief Default constructor
      */
-    Config();
+    Config() = default;
 };
 
 /**
@@ -48,7 +48,7 @@ struct ConfigBuilder {
      *
      * @return Config object
      */
-    static Config buildDefault();
+    static auto buildDefault() -> Config;
 
     /**
      * @brief Builds config with PDO
@@ -56,6 +56,6 @@ struct ConfigBuilder {
      * @param[in] pdo PDO
      * @return Config object
      */
-    static Config buildWithPdo(const IPdSink::Pdo& pdo);
+    static auto buildWithPdo(const IPdSink::Pdo& pdo) -> Config;
 };
 #endif   // config_h

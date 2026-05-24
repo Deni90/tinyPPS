@@ -12,6 +12,6 @@
  * @return A string representation od a PDO containing the type, voltage and
  * current range(s)
  */
-std::string pdoToString(const IPdSink::Pdo& pdo);
+auto pdoToString(const IPdSink::Pdo& pdo) -> std::string;
 
 #endif   // pdo_helper_h
