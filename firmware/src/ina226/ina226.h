@@ -91,35 +91,35 @@ class Ina226 {
      * default = 0
      * @param[in] bus_v_scaling_e4 Bus Voltage Scaling Factor, default = 10000
      */
-    bool calibrate(float shunt = 0.1, float current_lsb_ma = 0.1,
+    auto calibrate(float shunt = 0.1, float current_lsb_ma = 0.1,
                    float current_zero_offset_ma = 0,
-                   uint16_t bus_v_scaling_e4 = 10000);
+                   uint16_t bus_v_scaling_e4 = 10000) -> bool;
 
     /**
      * @brief Read bus voltage
      *
      * @return voltage [V]
      */
-    float getBusVoltage();
+    auto getBusVoltage() -> float;
 
     /**
      * @brief Read shunt voltage
      *
      * @return voltage [V]
      */
-    float getShuntVoltage();
+    auto getShuntVoltage() -> float;
 
     /**
      * @brief Read current
      *
      * @return Current [A]
      */
-    float getCurrent();
+    auto getCurrent() -> float;
 
     /**
      * @brief reset configuration
      */
-    bool reset();
+    auto reset() -> bool;
 
     /**
      * @brief Get Averaging Mode
@@ -130,7 +130,7 @@ class Ina226 {
      * @param[out] avg Reference to averaging mode
      * @return True if the config paramer is correctly read
      */
-    bool getAveragingMode(AveragingMode& avg);
+    auto getAveragingMode(AveragingMode& avg) -> bool;
 
     /**
      * @brief Set Averaging Mode
@@ -141,7 +141,7 @@ class Ina226 {
      * @param[in] avg Averaging mode. Default is 1 sample.
      * @return True if the config paramer is correctly set
      */
-    bool setAveragingMode(AveragingMode avg = AveragingMode::Samples1);
+    auto setAveragingMode(AveragingMode avg = AveragingMode::Samples1) -> bool;
 
     /**
      * @brief Get Bus Voltage Conversion Time
@@ -152,7 +152,7 @@ class Ina226 {
      * @param[out] bvct Reference to Bus Voltage Conversion Time
      * @return True if the config paramer is correctly read
      */
-    bool getBusVoltageConversionTime(VoltageConversionTime& bvct);
+    auto getBusVoltageConversionTime(VoltageConversionTime& bvct) -> bool;
 
     /**
      * @brief Set Bus Voltage Conversion Time
@@ -163,8 +163,9 @@ class Ina226 {
      * @param[in] bvct  Bus Voltage Conversion Time. Default is 1.1ms
      * @return True if the config paramer is correctly read
      */
-    bool setBusVoltageConversionTime(
-        VoltageConversionTime bvct = VoltageConversionTime::Time1100_us);
+    auto setBusVoltageConversionTime(
+        VoltageConversionTime bvct = VoltageConversionTime::Time1100_us)
+        -> bool;
 
     /**
      * @brief Get Shunt Voltage Conversion Time
@@ -175,7 +176,7 @@ class Ina226 {
      * @param[out] bvct Reference to Shunt Voltage Conversion Tim
      * @return True if the config paramer is correctly read
      */
-    bool getShuntVoltageConversionTime(VoltageConversionTime& svct);
+    auto getShuntVoltageConversionTime(VoltageConversionTime& svct) -> bool;
 
     /**
      * @brief Set Shunt Voltage Conversion Time
@@ -186,8 +187,9 @@ class Ina226 {
      * @param[in] bvct  Shunt Voltage Conversion Time. Default is 1.1ms
      * @return True if the config paramer is correctly read
      */
-    bool setShuntVoltageConversionTime(
-        VoltageConversionTime svct = VoltageConversionTime::Time1100_us);
+    auto setShuntVoltageConversionTime(
+        VoltageConversionTime svct = VoltageConversionTime::Time1100_us)
+        -> bool;
 
     /**
      * @brief Get Operating Mode
@@ -195,7 +197,7 @@ class Ina226 {
      * @param[out] mode Reference to Operating Mode
      * @return True if the config paramer is correctly read
      */
-    bool getMode(Mode& mode);
+    auto getMode(Mode& mode) -> bool;
 
     /**
      * @brief Set Operating Mode
@@ -203,21 +205,21 @@ class Ina226 {
      * @param[out] mode Operating Mode
      * @return True if the config paramer is correctly read
      */
-    bool setMode(Mode mode = Mode::ShuntBusContinuous);
+    auto setMode(Mode mode = Mode::ShuntBusContinuous) -> bool;
 
     /**
      * @brief Get Manufacturer ID
      *
      * @return Manufacturer ID
      */
-    uint16_t getManufacturerID();
+    auto getManufacturerID() -> uint16_t;
 
     /**
      * @brief Get Die ID
      *
      * @return Die ID
      */
-    uint16_t getDieID();
+    auto getDieID() -> uint16_t;
 
     /**
      * Expected Manufacturer ID of INA226
@@ -230,11 +232,11 @@ class Ina226 {
     static const uint16_t k_die_id = 0x2260;
 
   private:
-    template <typename T> const T& min(const T& a, const T& b) {
-        return (b < a) ? b : a;   // Returns the first if equal
+    template <typename T> auto min(const T& left, const T& right) -> const T& {
+        return (right < left) ? right : left;   // Returns the first if equal
     }
-    bool readRegister(uint8_t reg, uint16_t& value);
-    bool writeRegister(uint8_t reg, uint16_t value);
+    auto readRegister(uint8_t reg, uint16_t& value) -> bool;
+    auto writeRegister(uint8_t reg, uint16_t value) -> bool;
 
     II2c* m_i2c;
     uint8_t m_addr;
