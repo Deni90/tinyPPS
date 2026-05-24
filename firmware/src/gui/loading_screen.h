@@ -18,7 +18,7 @@ class LoadingScreen : public Screen {
     /**
      * @brief Destructor
      */
-    ~LoadingScreen() = default;
+    ~LoadingScreen() override = default;
 
     /**
      * @brief Build the loading screen based on data provided by user
@@ -26,7 +26,7 @@ class LoadingScreen : public Screen {
      * @return An array containing the loading screen matching the screen
      * dimensions
      */
-    virtual uint8_t* build() override;
+    auto build() -> uint8_t* override;
 
     /**
      * @brief Update the progress bar
@@ -35,17 +35,17 @@ class LoadingScreen : public Screen {
      * function is called the prorgess will be updated with dots, from zero ("")
      * to three ("...").
      */
-    LoadingScreen& updateProgress();
+    auto updateProgress() -> LoadingScreen&;
 
     /**
      * @brief Set the PDO profile count once the negotiation is completed
      *
      * @param count Number of PDO profiles
      */
-    LoadingScreen& setPdoProfileCount(uint8_t count);
+    auto setPdoProfileCount(uint8_t count) -> LoadingScreen&;
 
   private:
-    uint8_t m_progress;
+    uint8_t m_progress{0};
     std::optional<uint8_t> m_pdo_profile_count;
 };
 

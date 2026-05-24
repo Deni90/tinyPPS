@@ -1,5 +1,7 @@
 #include "loading_screen.h"
 
+#include <array>
+
 constexpr uint8_t k_logo[] = {
     0xE0, 0xE0, 0xE0, 0xFE, 0xFE, 0xFE, 0xE0, 0xE0, 0xE0, 0x00, 0x00, 0x00,
     0x00, 0xE0, 0xEE, 0xEE, 0xEE, 0x00, 0x00, 0x00, 0x00, 0xE0, 0xE0, 0xE0,
@@ -28,9 +30,9 @@ constexpr uint8_t k_logo_width = 91;
 constexpr uint8_t k_logo_height = 19;
 
 LoadingScreen::LoadingScreen(uint16_t width, uint16_t height)
-    : Screen(width, height), m_progress(0) {}
+    : Screen(width, height) {}
 
-uint8_t* LoadingScreen::build() {
+auto LoadingScreen::build() -> uint8_t* {
     clear();
     // Logo
     draw((m_width - k_logo_width) / 2, (m_height - k_logo_height) / 2, k_logo,
@@ -53,12 +55,12 @@ uint8_t* LoadingScreen::build() {
     return m_frame_buffer;
 }
 
-LoadingScreen& LoadingScreen::updateProgress() {
+auto LoadingScreen::updateProgress() -> LoadingScreen& {
     m_progress = ++m_progress % 4;
     return *this;
 }
 
-LoadingScreen& LoadingScreen::setPdoProfileCount(uint8_t count) {
+auto LoadingScreen::setPdoProfileCount(uint8_t count) -> LoadingScreen& {
     m_pdo_profile_count = count;
     return *this;
 }

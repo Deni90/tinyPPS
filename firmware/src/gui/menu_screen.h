@@ -19,14 +19,14 @@ class MenuScreen : public Screen {
     /**
      * @brief Destructor
      */
-    ~MenuScreen() = default;
+    ~MenuScreen() override = default;
 
     /**
      * @brief Get the menu title
      *
      * @return Menu title
      */
-    std::string getTitle() const;
+    [[nodiscard]] auto getTitle() const -> std::string;
 
     /**
      * @brief Set menu title
@@ -34,29 +34,30 @@ class MenuScreen : public Screen {
      * @param[in] title Title
      * @return reference to this menu screen object
      */
-    MenuScreen& setTitle(const std::string& title);
+    auto setTitle(const std::string& title) -> MenuScreen&;
 
     /**
      * @brief Get menu items
      *
      * @return Vector containing menu items
      */
-    std::vector<std::string> getMenuItems() const;
+    [[nodiscard]] auto getMenuItems() const -> std::vector<std::string>;
 
-        /**
-         * @brief Populate menu with menu items
-         *
-         * @param[in] Vector containing menu items
-         * @return reference to this menu screen object
-         */
-        MenuScreen& setMenuItems(const std::vector<std::string>& menu_items);
+    /**
+     * @brief Populate menu with menu items
+     *
+     * @param[in] Vector containing menu items
+     * @return reference to this menu screen object
+     */
+    auto setMenuItems(const std::vector<std::string>& menu_items)
+        -> MenuScreen&;
 
     /**
      * @brief Get the index of the selected menu item
      *
      * @return Index of the selected menu item
      */
-    uint8_t getSelectedMenuItem() const;
+    [[nodiscard]] auto getSelectedMenuItem() const -> uint8_t;
 
     /**
      * @brief Select a menu item
@@ -64,7 +65,7 @@ class MenuScreen : public Screen {
      * @param[in] index Index of the selected menu item
      * @return reference to this menu screen object
      */
-    MenuScreen& selectMenuItem(uint8_t index);
+    [[nodiscard]] auto selectMenuItem(uint8_t index) -> MenuScreen&;
 
     /**
      * @brief Build the menu screen based on data provided by user
@@ -72,12 +73,12 @@ class MenuScreen : public Screen {
      * @return An array containing the menu screen matching the screen
      * dimensions
      */
-    virtual uint8_t* build() override;
+    auto build() -> uint8_t* override;
 
   private:
     std::string m_title;
     std::vector<std::string> m_menu_items;
-    uint8_t m_selected_menu_item;
+    uint8_t m_selected_menu_item{0};
 };
 
 #endif   // menu_screen_h

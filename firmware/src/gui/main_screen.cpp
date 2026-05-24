@@ -5,13 +5,9 @@
 #include <iomanip>
 
 MainScreen::MainScreen(uint16_t width, uint16_t height)
-    : Screen(width, height), m_pdo_type(IPdSink::PdoType::NONE),
-      m_supply_mode(SupplyMode::CV), m_is_output_enabled(false),
-      m_temperature(0.0f), m_measured_voltage(0), m_measured_current(0),
-      m_target_voltage(0), m_is_target_voltage_selected(false),
-      m_target_current(0), m_is_target_current_selected(false) {}
+    : Screen(width, height) {}
 
-uint8_t* MainScreen::build() {
+auto MainScreen::build() -> uint8_t* {
     clear();
 
     // PDO type
@@ -64,52 +60,52 @@ uint8_t* MainScreen::build() {
     return m_frame_buffer;
 }
 
-MainScreen& MainScreen::setPdoType(IPdSink::PdoType type) {
+auto MainScreen::setPdoType(IPdSink::PdoType type) -> MainScreen& {
     m_pdo_type = type;
     return *this;
 }
 
-MainScreen& MainScreen::setSupplyMode(SupplyMode mode) {
+auto MainScreen::setSupplyMode(SupplyMode mode) -> MainScreen& {
     m_supply_mode = mode;
     return *this;
 }
 
-MainScreen& MainScreen::setOutputEnable(bool value) {
+auto MainScreen::setOutputEnable(bool value) -> MainScreen& {
     m_is_output_enabled = value;
     return *this;
 }
 
-MainScreen& MainScreen::setTemperature(int value) {
+auto MainScreen::setTemperature(int value) -> MainScreen& {
     m_temperature = value;
     return *this;
 }
 
-MainScreen& MainScreen::setMeasuredVoltage(float value) {
+auto MainScreen::setMeasuredVoltage(float value) -> MainScreen& {
     m_measured_voltage = value;
     return *this;
 }
 
-MainScreen& MainScreen::setMeasuredCurrent(float value) {
+auto MainScreen::setMeasuredCurrent(float value) -> MainScreen& {
     m_measured_current = value;
     return *this;
 }
 
-MainScreen& MainScreen::setTargetVoltage(unsigned int value) {
+auto MainScreen::setTargetVoltage(unsigned int value) -> MainScreen& {
     m_target_voltage = value;
     return *this;
 }
 
-MainScreen& MainScreen::selectTargetVoltage(bool value) {
+auto MainScreen::selectTargetVoltage(bool value) -> MainScreen& {
     m_is_target_voltage_selected = value;
     return *this;
 }
 
-MainScreen& MainScreen::setTargetCurrent(unsigned int value) {
+auto MainScreen::setTargetCurrent(unsigned int value) -> MainScreen& {
     m_target_current = value;
     return *this;
 }
 
-MainScreen& MainScreen::selectTargetCurrent(bool value) {
+auto MainScreen::selectTargetCurrent(bool value) -> MainScreen& {
     m_is_target_current_selected = value;
     return *this;
 }

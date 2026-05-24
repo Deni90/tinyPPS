@@ -28,7 +28,7 @@ class Screen {
      * @return Return the buffer containing the screen. Buffer size is always
      * width * height / 8.
      */
-    virtual uint8_t* build() = 0;
+    virtual auto build() -> uint8_t* = 0;
 
   protected:
     /**
@@ -53,98 +53,100 @@ class Screen {
     /**
      * Clear the frame buffer
      */
-    void clear();
+    auto clear() -> void;
 
     /**
-     * @brief Set, turn on pixel on desired x, y coordinates
+     * @brief Set, turn on pixel on desired x_pos, y_pos coordinates
      *
-     * @param[in] x X coordianate
-     * @param[in] y Y coordinate
+     * @param[in] x_pos X coordianate
+     * @param[in] y_pos Y coordinate
      */
-    void setPixel(int16_t x, int16_t y);
+    auto setPixel(int16_t x_pos, int16_t y_pos) -> void;
 
     /**
      * @brief A generic function for drawing an image (or whatever buffer) on
-     * desired x, y coordianates
+     * desired x_pos, y_pos coordianates
      *
-     * @param[in] x X coordianate
-     * @param[in] y Y coordinate
-     * @param[in] image Buffer containing the image
+     * @param[in] x_pos X coordianate
+     * @param[in] y_pos Y coordinate
+     * @param[in] object Buffer containing the object/image
      * @param[in] width Width of the image
      * @param[in] height Height of the image
      */
-    void draw(int16_t x, int16_t y, const uint8_t* image, uint16_t width,
-              uint16_t height, bool invert = false);
+    auto draw(int16_t x_pos, int16_t y_pos, const uint8_t* object,
+              uint16_t width, uint16_t height, bool invert = false) -> void;
 
     /**
-     * @brief A function for drawing a rectange on desired x, y coordinates
+     * @brief A function for drawing a rectange on desired x_pos, y_pos
+     * coordinates
      *
-     * * @param[in] x X coordianate
-     * @param[in] y Y coordinate
+     * * @param[in] x_pos X coordianate
+     * @param[in] y_pos Y coordinate
      * @param[in] width Width of the image
      * @param[in] height Height of the image
      * @param[in] fill A flag indicating whether to fill the rectangle. False by
      * default
      */
-    void drawRectangle(int16_t x, int16_t y, uint16_t width, uint16_t height,
-                       bool fill = false);
+    auto drawRectangle(int16_t x_pos, int16_t y_pos, uint16_t width,
+                       uint16_t height, bool fill = false) -> void;
 
     /**
-     * @brief Print a single character on desired x, y coordinates
+     * @brief Print a single character on desired x_pos, y_pos coordinates
      *
-     * @param[in] x X coordianate
-     * @param[in] y Y coordinate
-     * @param[in] ch Charater
+     * @param[in] x_pos X coordianate
+     * @param[in] y_pos Y coordinate
+     * @param[in] character Charater
      * @param[in] invert Flag indicating printing in inverted mode. It is false
      * by default.
      * @param[in] dry_run If true, do not render the text; only compute the
      * required width.
      * @return Return printed character width or 0 in case of error.
      */
-    uint16_t printChar(int16_t x, int16_t y, char ch, bool invert = false,
-                       bool dry_run = false);
+    auto printChar(int16_t x_pos, int16_t y_pos, char character,
+                   bool invert = false, bool dry_run = false) -> uint16_t;
 
     /**
      * @brief Print a single character double in size
      *
-     * @param[in] x X coordianate
-     * @param[in] y Y coordinate
-     * @param[in] ch Charater
+     * @param[in] x_pos X coordianate
+     * @param[in] y_pos Y coordinate
+     * @param[in] character Charater
      * @param[in] invert Flag indicating printing in inverted mode. It is false
      * by default.
      * @param[in] dry_run If true, do not render the text; only compute the
      * required width.
      * @return Return printed character width or 0 in case of error.
      */
-    uint16_t printCharBig(int16_t x, int16_t y, char ch, bool invert = false,
-                          bool dry_run = false);
+    auto printCharBig(int16_t x_pos, int16_t y_pos, char character,
+                      bool invert = false, bool dry_run = false) -> uint16_t;
 
     /**
-     * @brief Print a null terminated string to x, y coordinates
+     * @brief Print a null terminated string to x_pos, y_pos coordinates
      *
-     * @param[in] x X coordianate
-     * @param[in] y Y coordinate
+     * @param[in] x_pos X coordianate
+     * @param[in] y_pos Y coordinate
      * @param[in] s String
      * @param[in] dry_run If true, do not render the text; only compute the
      * required width.
      * @return Return printed text width or 0 in case of error.
      */
-    uint16_t printString(int16_t x, int16_t y, const std::string& str,
-                         bool dry_run = false);
+    auto printString(int16_t x_pos, int16_t y_pos, const std::string& str,
+                     bool dry_run = false) -> uint16_t;
 
     /**
-     * @brief Print a null terminated string to x, y coordinates
+     * @brief Print a null terminated string to x_pos, y_pos coordinates
      *
-     * @param[in] x X coordianate
-     * @param[in] y Y coordinate
+     * @param[in] x_pos X coordianate
+     * @param[in] y_pos Y coordinate
      * @param[in] s String
      * @param[in] config Text config
      * @param[in] dry_run If true, do not render the text; only compute the
      * required width.
      * @return Return printed text width or 0 in case of error.
      */
-    uint16_t printString(int16_t x, int16_t y, const std::string& str,
-                         const StringConfig& config, bool dry_run = false);
+    auto printString(int16_t x_pos, int16_t y_pos, const std::string& str,
+                     const StringConfig& config, bool dry_run = false)
+        -> uint16_t;
 
     uint16_t m_width;
     uint16_t m_height;

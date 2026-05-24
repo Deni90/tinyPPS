@@ -1,8 +1,8 @@
 #ifndef main_screen_h
 #define main_screen_h
 
-#include "ap33772s.h"
 #include "config.h"
+#include "pdsink_iface.h"
 #include "screen.h"
 
 class MainScreen : public Screen {
@@ -18,7 +18,7 @@ class MainScreen : public Screen {
     /**
      * @brief Destructor
      */
-    ~MainScreen() = default;
+    ~MainScreen() override = default;
 
     /**
      * @brief Build main screen based on data provided by user
@@ -26,7 +26,7 @@ class MainScreen : public Screen {
      * @return An array containing the main screen matching the screen
      * dimensions
      */
-    virtual uint8_t* build() override;
+    auto build() -> uint8_t* override;
 
     /**
      * @brief Set PDO type
@@ -34,7 +34,7 @@ class MainScreen : public Screen {
      * @param[in] type PDO type
      * @return reference to this main screen object
      */
-    MainScreen& setPdoType(IPdSink::PdoType type);
+    auto setPdoType(IPdSink::PdoType type) -> MainScreen&;
 
     /**
      * @brief Set Supply mode
@@ -42,7 +42,7 @@ class MainScreen : public Screen {
      * @param[in] mode Supply mode
      * @return reference to this main screen object
      */
-    MainScreen& setSupplyMode(SupplyMode mode);
+    auto setSupplyMode(SupplyMode mode) -> MainScreen&;
 
     /**
      * @brief Set output enable flag
@@ -50,7 +50,7 @@ class MainScreen : public Screen {
      * @param[in] value Flag
      * @return reference to this main screen object
      */
-    MainScreen& setOutputEnable(bool value);
+    auto setOutputEnable(bool value) -> MainScreen&;
 
     /**
      * @brief Set temperature
@@ -58,7 +58,7 @@ class MainScreen : public Screen {
      * @param[in] value Temperature
      * @return reference to this main screen object
      */
-    MainScreen& setTemperature(int value);
+    auto setTemperature(int value) -> MainScreen&;
 
     /**
      * @brief Set measured voltage
@@ -66,7 +66,7 @@ class MainScreen : public Screen {
      * @param[in] value Voltage in V
      * @return reference to this main screen object
      */
-    MainScreen& setMeasuredVoltage(float value);
+    auto setMeasuredVoltage(float value) -> MainScreen&;
 
     /**
      * @brief Set measured current
@@ -74,7 +74,7 @@ class MainScreen : public Screen {
      * @param[in] value Current in A
      * @return reference to this main screen object
      */
-    MainScreen& setMeasuredCurrent(float value);
+    auto setMeasuredCurrent(float value) -> MainScreen&;
 
     /**
      * @brief Set target voltage
@@ -82,7 +82,7 @@ class MainScreen : public Screen {
      * @param[in] value Voltage in mV
      * @return reference to this main screen object
      */
-    MainScreen& setTargetVoltage(unsigned int value);
+    auto setTargetVoltage(unsigned int value) -> MainScreen&;
 
     /**
      * @brief Invert target voltage to mark it selected
@@ -90,7 +90,7 @@ class MainScreen : public Screen {
      * @param[in] value Flag
      * @return reference to this main screen object
      */
-    MainScreen& selectTargetVoltage(bool value);
+    auto selectTargetVoltage(bool value) -> MainScreen&;
 
     /**
      * @brief Set target current
@@ -98,7 +98,7 @@ class MainScreen : public Screen {
      * @param[in] value Current in mA
      * @return reference to this main screen object
      */
-    MainScreen& setTargetCurrent(unsigned int value);
+    auto setTargetCurrent(unsigned int value) -> MainScreen&;
 
     /**
      * @brief Invert target current to mark it selected
@@ -106,19 +106,19 @@ class MainScreen : public Screen {
      * @param[in] value Flag
      * @return reference to this main screen object
      */
-    MainScreen& selectTargetCurrent(bool value);
+    auto selectTargetCurrent(bool value) -> MainScreen&;
 
   private:
-    IPdSink::PdoType m_pdo_type;
-    SupplyMode m_supply_mode;
-    bool m_is_output_enabled;
-    int m_temperature;
-    float m_measured_voltage;
-    float m_measured_current;
-    unsigned int m_target_voltage;
-    bool m_is_target_voltage_selected;
-    unsigned int m_target_current;
-    bool m_is_target_current_selected;
+    IPdSink::PdoType m_pdo_type{IPdSink::PdoType::NONE};
+    SupplyMode m_supply_mode{SupplyMode::CV};
+    bool m_is_output_enabled{false};
+    int m_temperature{0};
+    float m_measured_voltage{0.0F};
+    float m_measured_current{0.0F};
+    unsigned int m_target_voltage{0};
+    bool m_is_target_voltage_selected{false};
+    unsigned int m_target_current{0};
+    bool m_is_target_current_selected{false};
 };
 
 #endif   // main_screen_h
