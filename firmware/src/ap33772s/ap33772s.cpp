@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <utility>
 
 /// @brief AP33772s register commands
 static constexpr uint8_t k_cmd_status = 0x01;
@@ -48,15 +49,18 @@ static constexpr uint8_t k_voutctl_auto = 0;   // controlled by the AP33772S
 static constexpr uint8_t k_voutctl_off = 1;    // VOUT force OFF
 static constexpr uint8_t k_voutctl_on = 2;     // VOUT force ON
 
-Ap33772s::Ap33772s(II2c* i2c) : m_i2c(i2c), m_status(0) {
-    memset(m_pdo_array, 0, k_max_pdo_entries * sizeof(SrcPdoReg));
-}
+static constexpr uint8_t k_fault_mask = 0x78;   // OVP, OCP, OTP & UVP
 
-bool Ap33772s::probe() {
+static constexpr uint16_t k_current_min = 1000;   // mA
+static constexpr uint16_t k_voltage_min = 3300;   // mV
+
+Ap33772s::Ap33772s(II2c* i2c) : m_i2c(i2c) {}
+
+auto Ap33772s::probe() -> bool {
     return writeRegister(0x00, static_cast<uint8_t>(0x00));
 }
 
-IPdSink::Status Ap33772s::getStatus() {
+auto Ap33772s::getStatus() -> IPdSink::Status {
     m_status = getStatusReg();
     IPdSink::Status status;
     if (m_status.ready) {
@@ -65,18 +69,18 @@ IPdSink::Status Ap33772s::getStatus() {
     if (m_status.newpdo) {
         status.caps_received = true;
     }
-    if (m_status.raw & 0x78) {
+    if ((m_status.raw & k_fault_mask) != 0) {
         status.has_fault = true;
     }
     return status;
 }
 
-void Ap33772s::clearStatus() {
+auto Ap33772s::clearStatus() -> void {
     // Do nothing
     // AP22772s is clearing the status register after reading it.
 }
 
-IPdSink::Faults Ap33772s::getFaultDetails() {
+auto Ap33772s::getFaultDetails() -> IPdSink::Faults {
     IPdSink::Faults fault;
     if (m_status.ovp) {
         fault.over_voltage = true;
@@ -93,40 +97,41 @@ IPdSink::Faults Ap33772s::getFaultDetails() {
     return fault;
 }
 
-uint8_t Ap33772s::getTemp() {
+auto Ap33772s::getTemp() -> uint8_t {
     uint8_t temp = 0;
     readRegister(k_cmd_temp, temp);
     return temp;
 }
 
-uint8_t Ap33772s::getPDSourcePowerCapabilities() {
+auto Ap33772s::getPDSourcePowerCapabilities() -> uint8_t {
     uint8_t cnt = 0;
 
     m_i2c->writeTo(k_i2c_addr, &k_cmd_srcpdo, 1);
-    uint8_t buf[k_max_pdo_entries * 2];
-    m_i2c->readFrom(k_i2c_addr, buf, sizeof(buf));
-    memcpy(m_pdo_array, buf, sizeof(buf));
+    std::array<uint8_t, k_max_pdo_entries * sizeof(SrcPdoReg)> buf;
+    m_i2c->readFrom(k_i2c_addr, buf.data(), buf.size());
+    m_pdo_array = *reinterpret_cast<std::array<SrcPdoReg, k_max_pdo_entries>*>(
+        buf.data());
 
-    for (int i = 0; i < k_max_pdo_entries; ++i) {
-        if (m_pdo_array[i].raw) {
+    for (auto i = 0; std::cmp_less(i, k_max_pdo_entries); ++i) {
+        if (m_pdo_array[i].raw != 0U) {
             ++cnt;
         }
     }
     return cnt;
 }
 
-bool Ap33772s::getPdo(uint8_t index, Pdo& pdo) {
+auto Ap33772s::getPdo(uint8_t index, Pdo& pdo) -> bool {
     if ((index >= k_max_pdo_entries) || (m_pdo_array[index].raw == 0)) {
         return false;
     }
     pdo.index = index;
-    pdo.current_min = 1000;
+    pdo.current_min = k_current_min;
     pdo.current_step = 250;
     pdo.current_max =
-        1000 +
-        m_pdo_array[index].fixed.current_max *
-            250;   // TODO this is not god enough cause the
-                   // m_pdo_array[index].fixed.current_max is giving ranges
+        k_current_min +
+        (m_pdo_array[index].fixed.current_max *
+         250);   // TODO this is not god enough cause the
+                 // m_pdo_array[index].fixed.current_max is giving ranges
     bool is_epr = (index >= 7 && index <= 12);   // 1-6 for SPR, 7-12 for EPR
     if (m_pdo_array[index].fixed.type == 0) {    // Fixed PDO
         pdo.type = PdoType::FIX;
@@ -139,7 +144,7 @@ bool Ap33772s::getPdo(uint8_t index, Pdo& pdo) {
         pdo.type = is_epr ? PdoType::AVS : PdoType::PPS;
         pdo.voltage_step = is_epr ? 200 : 100;
         if (m_pdo_array[index].pps.voltage_min == 1) {
-            pdo.voltage_min = is_epr ? 15000 : 3300;
+            pdo.voltage_min = is_epr ? 15000 : k_voltage_min;
         } else if (m_pdo_array[index].pps.voltage_min == 2) {
             // In this case:
             //               3.3V < VOLTAGE_MIN ≤ 5V for PPS
@@ -156,8 +161,10 @@ bool Ap33772s::getPdo(uint8_t index, Pdo& pdo) {
     return true;
 }
 
-bool Ap33772s::setPdoOutput(uint8_t index, uint16_t voltage, uint16_t current) {
-    if ((index >= k_max_pdo_entries) || (voltage < 3300) || (current < 1000)) {
+auto Ap33772s::setPdoOutput(uint8_t index, uint16_t voltage, uint16_t current)
+    -> bool {
+    if ((index >= k_max_pdo_entries) || (voltage < k_voltage_min) ||
+        (current < k_current_min)) {
         return false;
     }
     bool is_epr = (index >= 7 && index <= 12);   // 1-6 for SPR, 7-12 for EPR
@@ -179,65 +186,72 @@ bool Ap33772s::setPdoOutput(uint8_t index, uint16_t voltage, uint16_t current) {
     return false;
 }
 
-Ap33772s::StatusReg Ap33772s::getStatusReg() {
+auto Ap33772s::getStatusReg() -> Ap33772s::StatusReg {
     StatusReg status;
     status.raw = 0;
     readRegister(k_cmd_status, status.raw);
     return status;
 }
 
-bool Ap33772s::setMask(const MaskReg& mask) {
+auto Ap33772s::setMask(const MaskReg& mask) -> bool {
     return writeRegister(k_cmd_mask, mask.raw);
 }
 
-bool Ap33772s::setNtc(uint16_t tr25, uint16_t tr50, uint16_t tr75,
-                      uint16_t tr100) {
-    if (!writeRegister(k_cmd_tr25, tr25) || !writeRegister(k_cmd_tr50, tr50) ||
-        !writeRegister(k_cmd_tr75, tr75) ||
-        !writeRegister(k_cmd_tr100, tr100)) {
+auto Ap33772s::setNtc(uint16_t tr25, uint16_t tr50, uint16_t tr75,
+                      uint16_t tr100) -> bool {
+    return !writeRegister(k_cmd_tr25, tr25) ||
+           !writeRegister(k_cmd_tr50, tr50) ||
+           !writeRegister(k_cmd_tr75, tr75) ||
+           !writeRegister(k_cmd_tr100, tr100);
+}
+
+auto Ap33772s::setVselMin(uint16_t voltage) -> bool {
+    return writeRegister(k_cmd_vselmin, static_cast<uint8_t>(voltage / 200));
+}
+
+auto Ap33772s::readRegister(uint8_t reg, uint8_t& value) -> bool {
+    if (m_i2c->writeTo(k_i2c_addr, &reg, 1) != 1) {
+        return false;
+    }
+    if (m_i2c->readFrom(k_i2c_addr, &value, sizeof(value)) != sizeof(value)) {
         return false;
     }
     return true;
 }
 
-bool Ap33772s::setVselMin(uint16_t voltage) {
-    return writeRegister(k_cmd_vselmin, static_cast<uint8_t>(voltage / 200));
-}
-
-bool Ap33772s::readRegister(uint8_t reg, uint8_t& value) {
-    if (m_i2c->writeTo(k_i2c_addr, &reg, 1) != 1)
+auto Ap33772s::readRegister(uint8_t reg, uint16_t& value) -> bool {
+    if (m_i2c->writeTo(k_i2c_addr, &reg, 1) != 1) {
         return false;
-    if (m_i2c->readFrom(k_i2c_addr, &value, sizeof(value)) != sizeof(value))
+    }
+    std::array<uint8_t, 2> buf;
+    if (m_i2c->readFrom(k_i2c_addr, buf.data(), buf.size()) != buf.size()) {
         return false;
-    return true;
-}
-
-bool Ap33772s::readRegister(uint8_t reg, uint16_t& value) {
-    if (m_i2c->writeTo(k_i2c_addr, &reg, 1) != 1)
-        return false;
-    uint8_t buf[2];
-    if (m_i2c->readFrom(k_i2c_addr, buf, sizeof(buf)) != sizeof(buf))
-        return false;
+    }
     value = (buf[0] & 0xff) | (buf[1] << 8);
     return true;
 }
 
-bool Ap33772s::writeRegister(uint8_t reg, uint8_t value) {
-    uint8_t buffer[2] = {reg, value};
-    return m_i2c->writeTo(k_i2c_addr, buffer, sizeof(buffer)) == sizeof(buffer);
+auto Ap33772s::writeRegister(uint8_t reg, uint8_t value) -> bool {
+    std::array<uint8_t, uint8_t + 1> buffer = {reg, value};
+    return m_i2c->writeTo(k_i2c_addr, buffer.data(), buffer.size()) ==
+           buffer.size();
 }
 
-bool Ap33772s::writeRegister(uint8_t reg, uint16_t value) {
-    uint8_t buffer[3] = {reg, static_cast<uint8_t>(value & 0xff),
-                         static_cast<uint8_t>(value >> 8)};
-    return m_i2c->writeTo(k_i2c_addr, buffer, sizeof(buffer)) == sizeof(buffer);
+auto Ap33772s::writeRegister(uint8_t reg, uint16_t value) -> bool {
+    std::array<uint8_t, uint16_t + 1> buffer = {
+        reg, static_cast<uint8_t>(value & 0xff),
+        static_cast<uint8_t>(value >> 8)};
+    return m_i2c->writeTo(k_i2c_addr, buffer.data(), buffer.size()) ==
+           buffer.size();
 }
 
-Ap33772s::SystemReg Ap33772s::getSystemReg() {
+auto Ap33772s::getSystemReg() -> Ap33772s::SystemReg {
     SystemReg system;
     system.raw = 0;
     readRegister(k_cmd_system, system.raw);
     return system;
 }
 
-void Ap33772s::setSystemReg(SystemReg s) { writeRegister(k_cmd_system, s.raw); }
+auto Ap33772s::setSystemReg(SystemReg sys) -> void {
+    writeRegister(k_cmd_system, sys.raw);
+}

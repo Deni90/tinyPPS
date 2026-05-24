@@ -1,6 +1,7 @@
 #ifndef ap33772_h
 #define ap33772_h
 
+#include <array>
 #include <cstdint>
 
 #include "i2c_iface.h"
@@ -33,8 +34,8 @@ class Ap33772 : public IPdSink {
      */
     union SrcPdoReg {
         struct {
-            uint32_t
-                current_max : 10;   // Bits 9:0, Maximum Current in 10mA units
+            uint32_t current_max
+                : 10;   // Bits 9:0, Maximum Current in 10mA units
             uint32_t voltage_max : 10;   // Bits 19:10, Voltage in 50mV units
             uint32_t : 10;               // Bits 29:20 Reaserved
             uint32_t type : 2;           // Bits 31:30 00b - Fixed supply
@@ -64,9 +65,9 @@ class Ap33772 : public IPdSink {
         struct {
             uint32_t current_max : 10;   // Bits 9:0 Maximum Operating Current
                                          // 10mA units
-            uint32_t
-                current_op : 10;   // Bits 19:10 Operating Current in 10mA units
-            uint32_t : 8;          // Bits 27:20 Reserved - Shall be set to zero
+            uint32_t current_op
+                : 10;       // Bits 19:10 Operating Current in 10mA units
+            uint32_t : 8;   // Bits 27:20 Reserved - Shall be set to zero
             uint32_t obj_position : 3;   // Bits 30:28 Object position (000b is
                                          // Reserved and Shall Not be used)
             uint32_t : 1;   // Bit 31 Object position (000b is Reserved and
@@ -91,7 +92,7 @@ class Ap33772 : public IPdSink {
      *
      * @return Status register
      */
-    StatusReg getStatusReg();
+    auto getStatusReg() -> StatusReg;
 
   public:
     /**
@@ -126,14 +127,14 @@ class Ap33772 : public IPdSink {
      *
      * @return true if the expected hardware is detected, false otherwise.
      */
-    virtual bool probe() override;
+    auto probe() -> bool override;
 
     /**
      * @brief Get status of the PD sink
      *
      * @return A Status structure
      */
-    virtual IPdSink::Status getStatus() override;
+    auto getStatus() -> IPdSink::Status override;
 
     /**
      * @brief Resets the current fault flags and clears the status of the PD
@@ -142,7 +143,7 @@ class Ap33772 : public IPdSink {
      * This should be called after a fault has been handled to resume normal
      * operation.
      */
-    virtual void clearStatus() override;
+    auto clearStatus() -> void override;
 
     /**
      * @brief Retrieves detailed hardware fault flags from the PD Sink.
@@ -150,21 +151,21 @@ class Ap33772 : public IPdSink {
      * @return Faults structure containing the current state of all monitored
      * fault conditions.
      */
-    virtual Faults getFaultDetails() override;
+    auto getFaultDetails() -> Faults override;
 
     /**
      * @brief Get the temperature read from NTC
      *
      * @return Temperature [Celsius]
      */
-    virtual uint8_t getTemp() override;
+    auto getTemp() -> uint8_t override;
 
     /**
      * @brief Get all of the PD Source Power Capabilities
      *
      * @return The number of PD Source Power Capabilities available
      */
-    uint8_t getPDSourcePowerCapabilities() override;
+    auto getPDSourcePowerCapabilities() -> uint8_t override;
 
     /**
      * @brief Retrieves the Power Data Object (PDO) at the specified index.
@@ -179,7 +180,7 @@ class Ap33772 : public IPdSink {
      * @return true  If the PDO was successfully populated.
      * @return false If the PDO index is invalid
      */
-    virtual bool getPdo(uint8_t index, Pdo& pdo) override;
+    auto getPdo(uint8_t index, Pdo& pdo) -> bool override;
 
     /**
      * @brief Selects a Power Data Object (PDO) and sets the output voltage and
@@ -198,15 +199,15 @@ class Ap33772 : public IPdSink {
      * @note Ensure that the requested voltage and current are within the limits
      *       of the selected PDO to prevent unexpected behavior.
      */
-    virtual bool setPdoOutput(uint8_t index, uint16_t voltage,
-                              uint16_t current) override;
+    auto setPdoOutput(uint8_t index, uint16_t voltage, uint16_t current)
+        -> bool override;
 
     /**
      * @brief Set Mask, used for setting up interrupt events
      *
      * @return True if successfully set
      */
-    bool setMask(const MaskReg& mask);
+    auto setMask(const MaskReg& mask) -> bool;
 
     /**
      * @brief  NTC resistance values for selected temperatures
@@ -217,7 +218,8 @@ class Ap33772 : public IPdSink {
      * @param tr100 The resistance value of the NTC thermistor at 100C [Ohm]
      * @return True if the values are successfully set
      */
-    bool setNtc(uint16_t tr25, uint16_t tr50, uint16_t tr75, uint16_t tr100);
+    auto setNtc(uint16_t tr25, uint16_t tr50, uint16_t tr75, uint16_t tr100)
+        -> bool;
 
     /**
      * @brief The maximum number of PD Source Power Capabilities
@@ -231,15 +233,15 @@ class Ap33772 : public IPdSink {
 
   private:
     // I2C helpers
-    bool readRegister(uint8_t reg, uint8_t& value);
-    bool readRegister(uint8_t reg, uint16_t& value);
-    bool writeRegister(uint8_t reg, uint8_t value);
-    bool writeRegister(uint8_t reg, uint16_t value);
-    bool writeRegister(uint8_t reg, uint32_t value);
+    auto readRegister(uint8_t reg, uint8_t& value) -> bool;
+    auto readRegister(uint8_t reg, uint16_t& value) -> bool;
+    auto writeRegister(uint8_t reg, uint8_t value) -> bool;
+    auto writeRegister(uint8_t reg, uint16_t value) -> bool;
+    auto writeRegister(uint8_t reg, uint32_t value) -> bool;
 
     II2c* m_i2c;
-    SrcPdoReg m_pdo_array[k_max_pdo_entries];
-    StatusReg m_status;
+    std::array<SrcPdoReg, k_max_pdo_entries> m_pdo_array;
+    StatusReg m_status{0};
 };
 
 #endif   // ap33772_h

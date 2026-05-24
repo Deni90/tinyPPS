@@ -1,6 +1,7 @@
 #ifndef ap33772s_h
 #define ap33772s_h
 
+#include <array>
 #include <cassert>
 #include <cstdint>
 #include <string>
@@ -115,14 +116,14 @@ class Ap33772s : public IPdSink {
      *
      * @return System register
      */
-    SystemReg getSystemReg();
+    auto getSystemReg() -> SystemReg;
 
     /**
      * @brief Set Syetem register values
      *
      * @param[in] s System register
      */
-    void setSystemReg(SystemReg s);
+    auto setSystemReg(SystemReg sys) -> void;
 
     /**
      * @brief Get Status register values
@@ -131,7 +132,7 @@ class Ap33772s : public IPdSink {
      *
      * @return Status register
      */
-    StatusReg getStatusReg();
+    auto getStatusReg() -> StatusReg;
 
   public:
     /**
@@ -166,14 +167,14 @@ class Ap33772s : public IPdSink {
      *
      * @return true if the expected hardware is detected, false otherwise.
      */
-    virtual bool probe() override;
+    auto probe() -> bool override;
 
     /**
      * @brief Get status of the PD sink
      *
      * @return A Status structure
      */
-    virtual IPdSink::Status getStatus() override;
+    auto getStatus() -> IPdSink::Status override;
 
     /**
      * @brief Resets the current fault flags and clears the status of the PD
@@ -182,7 +183,7 @@ class Ap33772s : public IPdSink {
      * This should be called after a fault has been handled to resume normal
      * operation.
      */
-    virtual void clearStatus() override;
+    auto clearStatus() -> void override;
 
     /**
      * @brief Retrieves detailed hardware fault flags from the PD Sink.
@@ -190,21 +191,21 @@ class Ap33772s : public IPdSink {
      * @return Faults structure containing the current state of all monitored
      * fault conditions.
      */
-    virtual Faults getFaultDetails() override;
+    auto getFaultDetails() -> Faults override;
 
     /**
      * @brief Get the temperature read from NTC
      *
      * @return Temperature [Celsius]
      */
-    virtual uint8_t getTemp() override;
+    auto getTemp() -> uint8_t override;
 
     /**
      * @brief Get all of the PD Source Power Capabilities
      *
      * @return The number of PD Source Power Capabilities available
      */
-    uint8_t getPDSourcePowerCapabilities() override;
+    auto getPDSourcePowerCapabilities() -> uint8_t override;
 
     /**
      * @brief Retrieves the Power Data Object (PDO) at the specified index.
@@ -219,7 +220,7 @@ class Ap33772s : public IPdSink {
      * @return true  If the PDO was successfully populated.
      * @return false If the PDO index is invalid
      */
-    virtual bool getPdo(uint8_t index, Pdo& pdo) override;
+    auto getPdo(uint8_t index, Pdo& pdo) -> bool override;
 
     /**
      * @brief Selects a Power Data Object (PDO) and sets the output voltage and
@@ -238,15 +239,15 @@ class Ap33772s : public IPdSink {
      * @note Ensure that the requested voltage and current are within the limits
      *       of the selected PDO to prevent unexpected behavior.
      */
-    virtual bool setPdoOutput(uint8_t index, uint16_t voltage,
-                              uint16_t current) override;
+    auto setPdoOutput(uint8_t index, uint16_t voltage, uint16_t current)
+        -> bool override;
 
     /**
      * @brief Set Mask, used for setting up interrupt events
      *
      * @return True if successfully set
      */
-    bool setMask(const MaskReg& mask);
+    auto setMask(const MaskReg& mask) -> bool;
 
     /**
      * @brief  NTC resistance values for selected temperatures
@@ -257,7 +258,8 @@ class Ap33772s : public IPdSink {
      * @param tr100 The resistance value of the NTC thermistor at 100C [Ohm]
      * @return True if the values are successfully set
      */
-    bool setNtc(uint16_t tr25, uint16_t tr50, uint16_t tr75, uint16_t tr100);
+    auto setNtc(uint16_t tr25, uint16_t tr50, uint16_t tr75, uint16_t tr100)
+        -> bool;
 
     /**
      * @brief Sets the minimum allowed output voltage selection.
@@ -274,7 +276,7 @@ class Ap33772s : public IPdSink {
      * @note The voltage must be within the valid range supported by the
      *       connected USB-PD controller.
      */
-    bool setVselMin(uint16_t voltage);
+    auto setVselMin(uint16_t voltage) -> bool;
 
     /**
      * @brief The maximum number of PD Source Power Capabilities
@@ -288,14 +290,14 @@ class Ap33772s : public IPdSink {
 
   private:
     // I2C helpers
-    bool readRegister(uint8_t reg, uint8_t& value);
-    bool readRegister(uint8_t reg, uint16_t& value);
-    bool writeRegister(uint8_t reg, uint8_t value);
-    bool writeRegister(uint8_t reg, uint16_t value);
+    auto readRegister(uint8_t reg, uint8_t& value) -> bool;
+    auto readRegister(uint8_t reg, uint16_t& value) -> bool;
+    auto writeRegister(uint8_t reg, uint8_t value) -> bool;
+    auto writeRegister(uint8_t reg, uint16_t value) -> bool;
 
-    II2c* m_i2c;
-    SrcPdoReg m_pdo_array[k_max_pdo_entries];
-    StatusReg m_status;
+    II2c* m_i2c{nullptr};
+    std::array<SrcPdoReg, k_max_pdo_entries> m_pdo_array{};
+    StatusReg m_status{0};
 };
 
 #endif   // ap33772s_h
