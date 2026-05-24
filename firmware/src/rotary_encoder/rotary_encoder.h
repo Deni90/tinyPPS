@@ -37,27 +37,27 @@ class RotaryEncoder {
     /**
      * @brief Initialize rotary encoder GPIO pins
      */
-    void initialize();
+    auto initialize() -> void;
 
     /**
      * @brief Handle function for the rotary encoder.
      *
      * Call this function in a loop.
      */
-    void Handle();
+    auto Handle() -> void;
 
     /**
-     * @brief Get state of the rotsry encoder
+     * @brief Get state of the rotary encoder
      *
      * @return state
      */
-    State getState() const { return m_state; }
+    [[nodiscard]] auto getState() const -> State { return m_state; }
 
     /**
      * @brief Clear state of the rotary encoder indicating that the state is
      * processed.
      */
-    void clearState() { m_state = State::processed; }
+    auto clearState() -> void { m_state = State::processed; }
 
   private:
     State m_state;
