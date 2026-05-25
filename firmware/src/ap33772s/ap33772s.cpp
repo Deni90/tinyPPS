@@ -232,13 +232,13 @@ auto Ap33772s::readRegister(uint8_t reg, uint16_t& value) -> bool {
 }
 
 auto Ap33772s::writeRegister(uint8_t reg, uint8_t value) -> bool {
-    std::array<uint8_t, uint8_t + 1> buffer = {reg, value};
+    std::array<uint8_t, sizeof(uint8_t) + 1> buffer = {reg, value};
     return m_i2c->writeTo(k_i2c_addr, buffer.data(), buffer.size()) ==
            buffer.size();
 }
 
 auto Ap33772s::writeRegister(uint8_t reg, uint16_t value) -> bool {
-    std::array<uint8_t, uint16_t + 1> buffer = {
+    std::array<uint8_t, sizeof(uint16_t) + 1> buffer = {
         reg, static_cast<uint8_t>(value & 0xff),
         static_cast<uint8_t>(value >> 8)};
     return m_i2c->writeTo(k_i2c_addr, buffer.data(), buffer.size()) ==
