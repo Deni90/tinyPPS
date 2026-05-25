@@ -8,12 +8,12 @@
 #include "ap33772s.h"
 #include "config.h"
 #include "ina226.h"
+#include "pdsink_iface.h"
 #include "pico_gpio.h"
 #include "pico_i2c.h"
 #include "pico_timer.h"
 #include "rotary_encoder.h"
 #include "ssd1306.h"
-#include "pdsink_iface.h"
 
 class TinyPPS {
   public:
@@ -31,53 +31,53 @@ class TinyPPS {
      * @brief Initialize the module
      * @return True if the module is successfully initialized
      */
-    bool initialize();
+    auto initialize() -> bool;
 
     /**
      * @brief Handle function used executing the main logic
      * @note Call this function from the main loop
      */
-    void handle();
+    auto handle() -> void;
 
   private:
     /**
      * @brief Function for handling the init state
      * @return Return the next state
      */
-    State handleInitState();
+    auto handleInitState() -> State;
 
     /**
      * @brief Function for handling the menu state
      * @return Return the next state
      */
-    State handleMenuState();
+    auto handleMenuState() -> State;
 
     /**
      * @brief Function for handling the main state
      * @return Return the next state
      */
-    State handleMainState();
+    auto handleMainState() -> State;
 
     /**
      * @brief This function initializes the PD Sink controller
      @return true when the PD sink is successfully initialized
      @return false  when the PD sink is not initialized
      */
-    bool pdSinkInit();
+    auto pdSinkInit() -> bool;
 
     /**
      * @brief Handle PDO reading at startup
      *
      * @return The number of available PDOs
      */
-    int readPdos();
+    auto readPdos() -> int;
 
     /**
-    * @brief Enable/Disable the output
-    *
-    * * @param enable Boolean value used to enable/disable the output
-    */
-    void enableOutput(bool enable);
+     * @brief Enable/Disable the output
+     *
+     * * @param enable Boolean value used to enable/disable the output
+     */
+    auto enableOutput(bool enable) -> void;
 
     PicoI2c m_i2c;
     PicoGpio m_rot_enc_a_pin, m_rot_enc_b_pin, m_rot_enc_btn_pin;
@@ -89,17 +89,17 @@ class TinyPPS {
     RotaryEncoder m_rotary_encoder;
     Ap33772 m_ap33772;
     Ap33772s m_ap33772s;
-    IPdSink* m_pd_sink;
-    State m_state;
+    IPdSink* m_pd_sink{nullptr};
+    State m_state{State::init};
     std::vector<std::pair<std::string, Config>> m_configs;
-    unsigned int m_active_config_index;
-    bool m_is_menu_enabled;
-    volatile bool m_is_pd_interrupt_pending;
-    volatile uint32_t m_clock;
-    volatile uint32_t m_debounce_clock;
-    volatile uint32_t m_rotary_state_clock;
-    volatile uint32_t m_measuring_clock;
-    volatile uint32_t m_fault_clock;
+    unsigned int m_active_config_index{0};
+    bool m_is_menu_enabled{false};
+    volatile bool m_is_pd_interrupt_pending{false};
+    volatile uint32_t m_clock{0};
+    volatile uint32_t m_debounce_clock{0};
+    volatile uint32_t m_rotary_state_clock{0};
+    volatile uint32_t m_measuring_clock{0};
+    volatile uint32_t m_fault_clock{0};
 };
 
 #endif   // tiny_pps_h

@@ -30,19 +30,20 @@ static constexpr unsigned int k_fault_check_period = 1000;    // ms
 
 enum MainScreenSelection { None, Voltage, Current, Count };
 
-inline MainScreenSelection& operator++(MainScreenSelection& s) {
+inline auto operator++(MainScreenSelection& selection) -> MainScreenSelection& {
     using T = std::underlying_type_t<MainScreenSelection>;
-    s = static_cast<MainScreenSelection>(
-        (static_cast<T>(s) + 1) % static_cast<T>(MainScreenSelection::Count));
-    return s;
+    selection = static_cast<MainScreenSelection>(
+        (static_cast<T>(selection) + 1) %
+        static_cast<T>(MainScreenSelection::Count));
+    return selection;
 }
 
-inline MainScreenSelection& operator--(MainScreenSelection& s) {
-    int prev = (static_cast<int>(s) - 1 +
+inline auto operator--(MainScreenSelection& selection) -> MainScreenSelection& {
+    int prev = (static_cast<int>(selection) - 1 +
                 static_cast<int>(MainScreenSelection::Count)) %
                static_cast<int>(MainScreenSelection::Count);
-    s = static_cast<MainScreenSelection>(prev);
-    return s;
+    selection = static_cast<MainScreenSelection>(prev);
+    return selection;
 }
 
 TinyPPS::TinyPPS()
@@ -53,12 +54,9 @@ TinyPPS::TinyPPS()
       m_output_enable(k_output_enable_pin),
       m_rotary_encoder(&m_rot_enc_a_pin, &m_rot_enc_b_pin, &m_rot_enc_btn_pin,
                        &m_debounce_clock),
-      m_ap33772(&m_i2c), m_ap33772s(&m_i2c), m_pd_sink(nullptr),
-      m_state(State::init), m_active_config_index(0), m_is_menu_enabled(false),
-      m_is_pd_interrupt_pending(false), m_clock(0), m_debounce_clock(0),
-      m_rotary_state_clock(0), m_measuring_clock(0), m_fault_clock(0) {}
+      m_ap33772(&m_i2c), m_ap33772s(&m_i2c) {}
 
-bool TinyPPS::initialize() {
+auto TinyPPS::initialize() -> bool {
     // Initialize a timer to repeat every 1 ms
     m_timer.start(
         1,
@@ -105,7 +103,7 @@ bool TinyPPS::initialize() {
     return true;
 }
 
-void TinyPPS::handle() {
+auto TinyPPS::handle() -> void {
     if (m_state == TinyPPS::State::init) {
         m_state = handleInitState();
     } else if (m_state == TinyPPS::State::menu) {
@@ -115,18 +113,17 @@ void TinyPPS::handle() {
     }
 }
 
-TinyPPS::State TinyPPS::handleInitState() {
+auto TinyPPS::handleInitState() -> TinyPPS::State {
     // There is no need to show the menu if there is none or one PDO available.
     // We can immediately switch to the main state
     if (readPdos() <= 1) {
         return TinyPPS::State::main;
-    } else {
-        m_is_menu_enabled = true;
-        return TinyPPS::State::menu;
     }
+    m_is_menu_enabled = true;
+    return TinyPPS::State::menu;
 }
 
-TinyPPS::State TinyPPS::handleMenuState() {
+auto TinyPPS::handleMenuState() -> TinyPPS::State {
     MenuScreen menu_screen(m_oled.getWidth(), m_oled.getHeight());
     std::vector<std::string> profile_names;
     for (const auto& it : m_configs) {
@@ -147,8 +144,8 @@ TinyPPS::State TinyPPS::handleMenuState() {
             m_rotary_encoder.clearState();
             m_active_config_index = selected_menu_item;
             return State::main;
-        } else if (m_rotary_encoder.getState() ==
-                   RotaryEncoder::State::rot_inc) {
+        }
+        if (m_rotary_encoder.getState() == RotaryEncoder::State::rot_inc) {
             if (selected_menu_item < menu_screen.getMenuItems().size() - 1) {
                 ++selected_menu_item;
             } else {
@@ -169,7 +166,7 @@ TinyPPS::State TinyPPS::handleMenuState() {
     return State::menu;
 }
 
-TinyPPS::State TinyPPS::handleMainState() {
+auto TinyPPS::handleMainState() -> TinyPPS::State {
     if (!m_configs.size()) {
         // If no profile present, create a default one
         m_configs.emplace_back(
@@ -420,7 +417,7 @@ TinyPPS::State TinyPPS::handleMainState() {
     return State::main;
 }
 
-bool TinyPPS::pdSinkInit() {
+auto TinyPPS::pdSinkInit() -> bool {
     if (m_ap33772.probe()) {
         m_pd_sink = &m_ap33772;
         // https://product.tdk.com/system/files/dam/doc/product/sensor/ntc/chip-ntc-thermistor/data_sheet/datasheet_ntcgs103jx103dt8.pdf
@@ -456,7 +453,7 @@ bool TinyPPS::pdSinkInit() {
     return true;
 }
 
-int TinyPPS::readPdos() {
+auto TinyPPS::readPdos() -> int {
     int pdo_cnt = 0;
     LoadingScreen loading_screen(m_oled.getWidth(), m_oled.getHeight());
     m_oled.display(loading_screen.build());
@@ -486,4 +483,6 @@ int TinyPPS::readPdos() {
     return pdo_cnt;
 }
 
-void TinyPPS::enableOutput(bool enable) { m_output_enable.write(enable); }
+auto TinyPPS::enableOutput(bool enable) -> void {
+    m_output_enable.write(enable);
+}
