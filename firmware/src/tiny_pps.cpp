@@ -52,8 +52,7 @@ TinyPPS::TinyPPS()
       m_rot_enc_a_pin(k_rot_enc_a_pin), m_rot_enc_b_pin(k_rot_enc_b_pin),
       m_rot_enc_btn_pin(k_rot_enc_btn_pin), m_pd_int(k_pd_int_pin),
       m_output_enable(k_output_enable_pin),
-      m_rotary_encoder(&m_rot_enc_a_pin, &m_rot_enc_b_pin, &m_rot_enc_btn_pin,
-                       &m_debounce_clock),
+      m_rotary_encoder(&m_rot_enc_a_pin, &m_rot_enc_b_pin, &m_rot_enc_btn_pin),
       m_ap33772(&m_i2c), m_ap33772s(&m_i2c) {}
 
 auto TinyPPS::initialize() -> bool {
@@ -66,10 +65,10 @@ auto TinyPPS::initialize() -> bool {
             }
             auto self = static_cast<TinyPPS*>(ctx);
             self->m_clock = self->m_clock + 1;
-            self->m_debounce_clock = self->m_debounce_clock + 1;
             self->m_rotary_state_clock = self->m_rotary_state_clock + 1;
             self->m_measuring_clock = self->m_measuring_clock + 1;
             self->m_fault_clock = self->m_fault_clock + 1;
+            self->m_system_time = self->m_system_time + 1;
         },
         this);
 
@@ -137,7 +136,7 @@ auto TinyPPS::handleMenuState() -> TinyPPS::State {
         m_oled.display(menu_screen.build());
         while (m_rotary_encoder.getState() == RotaryEncoder::State::idle ||
                m_rotary_encoder.getState() == RotaryEncoder::State::processed) {
-            m_rotary_encoder.Handle();
+            m_rotary_encoder.Handle(m_system_time);
         }
         if (m_rotary_encoder.getState() ==
             RotaryEncoder::State::btn_short_press) {
@@ -212,7 +211,7 @@ auto TinyPPS::handleMainState() -> TinyPPS::State {
         m_oled.display(main_screen.build());
         while (m_rotary_encoder.getState() == RotaryEncoder::State::idle ||
                m_rotary_encoder.getState() == RotaryEncoder::State::processed) {
-            m_rotary_encoder.Handle();
+            m_rotary_encoder.Handle(m_system_time);
 
             // Handle pending interrupt
             if (m_is_pd_interrupt_pending) {

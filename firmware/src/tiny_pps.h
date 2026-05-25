@@ -96,10 +96,10 @@ class TinyPPS {
     bool m_is_menu_enabled{false};
     volatile bool m_is_pd_interrupt_pending{false};
     volatile uint32_t m_clock{0};
-    volatile uint32_t m_debounce_clock{0};
     volatile uint32_t m_rotary_state_clock{0};
     volatile uint32_t m_measuring_clock{0};
     volatile uint32_t m_fault_clock{0};
+    volatile uint32_t m_system_time{0};
 };
 
 #endif   // tiny_pps_h

@@ -31,8 +31,7 @@ class RotaryEncoder {
      * @param[in] btn_gpio Button pin of the rotary encoder
      * @param[in] clock Pointer to a variable that is used for debouncing
      */
-    RotaryEncoder(IGpio* a_gpio, IGpio* b_gpio, IGpio* btn_gpio,
-                  volatile uint32_t* clock);
+    RotaryEncoder(IGpio* a_gpio, IGpio* b_gpio, IGpio* btn_gpio);
 
     /**
      * @brief Initialize rotary encoder GPIO pins
@@ -43,8 +42,9 @@ class RotaryEncoder {
      * @brief Handle function for the rotary encoder.
      *
      * Call this function in a loop.
+     * @param[in] now_ms Current time in milliseconds
      */
-    auto Handle() -> void;
+    auto Handle(uint32_t now_ms) -> void;
 
     /**
      * @brief Get state of the rotary encoder
@@ -61,10 +61,15 @@ class RotaryEncoder {
 
   private:
     State m_state;
-    volatile uint32_t* m_clock;
     IGpio* m_a_gpio;
     IGpio* m_b_gpio;
     IGpio* m_btn_gpio;
+    uint32_t m_debounce_time_ms{0};
+    uint32_t m_long_press_time_ms{0};
+    bool m_is_debounce_started{false};
+    bool m_is_button_pressed{false};
+    bool m_is_button_handling_started{false};
+    bool m_last_btn_state{true};   // make it high
 };
 
 #endif   // rotary_encoder_h
