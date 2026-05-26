@@ -166,7 +166,7 @@ auto TinyPPS::handleMenuState() -> TinyPPS::State {
     switch (m_rotary_encoder.getState()) {
     case RotaryEncoder::State::idle:
     case RotaryEncoder::State::processed:
-        m_rotary_encoder.Handle(m_system_time);
+        m_rotary_encoder.handle(m_system_time);
         break;
     case RotaryEncoder::State::btn_short_press:
         m_rotary_encoder.clearState();
@@ -216,7 +216,7 @@ auto TinyPPS::handleMainState() -> TinyPPS::State {
     switch (m_rotary_encoder.getState()) {
     case RotaryEncoder::State::idle:
     case RotaryEncoder::State::processed:
-        m_rotary_encoder.Handle(m_system_time);
+        m_rotary_encoder.handle(m_system_time);
         if ((m_system_time - m_main_state_data.sensor_reading_time_ms) >=
             k_measuring_period) {
             m_main_state_data.sensor_reading_time_ms = m_system_time;
@@ -225,7 +225,7 @@ auto TinyPPS::handleMainState() -> TinyPPS::State {
                 .setMeasuredCurrent(m_ina226.getCurrent())
                 .setTemperature(m_pd_sink->getTemp());
         }
-        // Handle pending interrupt
+        // handle pending interrupt
         if (m_is_pd_interrupt_pending) {
             m_is_pd_interrupt_pending = false;
             // Check is the interrupt caused by some protection
@@ -241,7 +241,7 @@ auto TinyPPS::handleMainState() -> TinyPPS::State {
                     m_main_state_data.output_enable);
             }
         }
-        // Handle faults
+        // handle faults
         if (m_main_state_data.is_fault_detected) {
             // Periodically check if the fault is cleared
             if ((m_system_time - m_main_state_data.fault_recovery_time_ms) >=
@@ -257,7 +257,7 @@ auto TinyPPS::handleMainState() -> TinyPPS::State {
                 }
             }
         }
-        // Handle blinking state for value editing mode
+        // handle blinking state for value editing mode
         if (m_main_state_data.is_editing &&
             (m_system_time - m_main_state_data.blinking_time_ms) >=
                 k_blinking_period) {

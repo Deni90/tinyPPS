@@ -44,7 +44,7 @@ class RotaryEncoder {
      * Call this function in a loop.
      * @param[in] now_ms Current time in milliseconds
      */
-    auto Handle(uint32_t now_ms) -> void;
+    auto handle(uint32_t now_ms) -> void;
 
     /**
      * @brief Get state of the rotary encoder

@@ -16,7 +16,7 @@ auto RotaryEncoder::initialize() -> void {
     m_btn_gpio->configure(IGpio::Direction::Input, IGpio::Pull::Up);
 }
 
-auto RotaryEncoder::Handle(uint32_t now_ms) -> void {
+auto RotaryEncoder::handle(uint32_t now_ms) -> void {
     // reset rotary_encoder state to idle if processed
     if (m_state == RotaryEncoder::State::processed) {
         // if the rotary_encoder is still pressed do nothing
