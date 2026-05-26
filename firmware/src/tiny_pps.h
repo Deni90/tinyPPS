@@ -41,6 +41,13 @@ class TinyPPS {
 
   private:
     /**
+     * @brief Data for the menu state
+     */
+    struct MenuStateData {
+        uint8_t selected_menu_item = 0;
+    };
+
+    /**
      * @brief Function for handling the init state
      * @return Return the next state
      */
@@ -100,6 +107,7 @@ class TinyPPS {
     volatile uint32_t m_measuring_clock{0};
     volatile uint32_t m_fault_clock{0};
     volatile uint32_t m_system_time{0};
+    MenuStateData m_menu_state_data;
 };
 
 #endif   // tiny_pps_h

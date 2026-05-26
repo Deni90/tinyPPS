@@ -123,46 +123,49 @@ auto TinyPPS::handleInitState() -> TinyPPS::State {
 }
 
 auto TinyPPS::handleMenuState() -> TinyPPS::State {
+    State next_state = TinyPPS::State::menu;
     MenuScreen menu_screen(m_oled.getWidth(), m_oled.getHeight());
     std::vector<std::string> profile_names;
+    // Fill in the menu with the available PDO profiles
     for (const auto& it : m_configs) {
         profile_names.emplace_back(it.first);
     }
-    static auto selected_menu_item = 0;
-    menu_screen.setTitle("Available PDOs")
-        .setMenuItems(profile_names)
-        .selectMenuItem(selected_menu_item);
-    while (true) {
-        m_oled.display(menu_screen.build());
-        while (m_rotary_encoder.getState() == RotaryEncoder::State::idle ||
-               m_rotary_encoder.getState() == RotaryEncoder::State::processed) {
-            m_rotary_encoder.Handle(m_system_time);
-        }
-        if (m_rotary_encoder.getState() ==
-            RotaryEncoder::State::btn_short_press) {
-            m_rotary_encoder.clearState();
-            m_active_config_index = selected_menu_item;
-            return State::main;
-        }
-        if (m_rotary_encoder.getState() == RotaryEncoder::State::rot_inc) {
-            if (selected_menu_item < menu_screen.getMenuItems().size() - 1) {
-                ++selected_menu_item;
-            } else {
-                selected_menu_item = 0;
-            }
-            menu_screen.selectMenuItem(selected_menu_item);
-        } else if (m_rotary_encoder.getState() ==
-                   RotaryEncoder::State::rot_dec) {
-            if (selected_menu_item == 0) {
-                selected_menu_item = menu_screen.getMenuItems().size() - 1;
-            } else {
-                --selected_menu_item;
-            }
-            menu_screen.selectMenuItem(selected_menu_item);
-        }
+
+    m_oled.display(menu_screen.setTitle("Available PDOs")
+                       .setMenuItems(profile_names)
+                       .selectMenuItem(m_menu_state_data.selected_menu_item)
+                       .build());
+
+    switch (m_rotary_encoder.getState()) {
+    case RotaryEncoder::State::idle:
+    case RotaryEncoder::State::processed:
+        m_rotary_encoder.Handle(m_system_time);
+        break;
+    case RotaryEncoder::State::btn_short_press:
         m_rotary_encoder.clearState();
+        m_active_config_index = m_menu_state_data.selected_menu_item;
+        next_state = State::main;
+        break;
+    case RotaryEncoder::State::rot_inc:
+        m_rotary_encoder.clearState();
+        if (m_menu_state_data.selected_menu_item <
+            menu_screen.getMenuItems().size() - 1) {
+            ++m_menu_state_data.selected_menu_item;
+        } else {
+            m_menu_state_data.selected_menu_item = 0;
+        }
+        break;
+    case RotaryEncoder::State::rot_dec:
+        m_rotary_encoder.clearState();
+        if (m_menu_state_data.selected_menu_item == 0) {
+            m_menu_state_data.selected_menu_item =
+                menu_screen.getMenuItems().size() - 1;
+        } else {
+            --m_menu_state_data.selected_menu_item;
+        }
+        break;
     }
-    return State::menu;
+    return next_state;
 }
 
 auto TinyPPS::handleMainState() -> TinyPPS::State {
