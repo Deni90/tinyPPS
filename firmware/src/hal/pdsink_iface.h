@@ -21,7 +21,7 @@ class IPdSink {
      *
      * @param type PdoType
      */
-    static constexpr const char* pdoTypeToString(PdoType type) {
+    static constexpr auto pdoTypeToString(PdoType type) -> const char* {
         switch (type) {
         case PdoType::FIX:
             return "FIX";

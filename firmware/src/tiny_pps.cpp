@@ -1,6 +1,7 @@
 #include "tiny_pps.h"
 
 #include <algorithm>
+#include <cstdint>
 
 #include "ap33772s.h"
 #include "gpio_iface.h"
@@ -28,6 +29,18 @@ static constexpr unsigned int k_blinking_period = 500;        // ms
 static constexpr unsigned int k_double_click_period = 1000;   // ms
 static constexpr unsigned int k_measuring_period = 200;       // ms
 static constexpr unsigned int k_fault_check_period = 1000;    // ms
+
+static constexpr unsigned int k_i2c_speed = 400;   // kHz
+static constexpr uint16_t k_ap33772s_vsel_min = 3300;
+
+// https://product.tdk.com/system/files/dam/doc/product/sensor/ntc/chip-ntc-thermistor/data_sheet/datasheet_ntcgs103jx103dt8.pdf
+// based on B value:
+//                  [at 25/50C] 3380K typ.
+//                  [at 25/85C] 3435K+-0.7%
+static constexpr unsigned int k_ntc_tr25 = 10000;
+static constexpr unsigned int k_ntc_tr50 = 4164;
+static constexpr unsigned int k_ntc_tr75 = 1912;
+static constexpr unsigned int k_ntc_tr100 = 987;
 
 inline auto operator++(MainScreenSelection& selection) -> MainScreenSelection& {
     using T = std::underlying_type_t<MainScreenSelection>;
@@ -60,7 +73,7 @@ static auto increment_and_clamp(T& value, T step, T min_val, T max_val,
 }
 
 TinyPPS::TinyPPS()
-    : m_i2c(), m_ina226(&m_i2c, k_ina226_addr),
+    : m_ina226(&m_i2c, k_ina226_addr),
       m_oled(&m_i2c, Ssd1306::Type::ssd1306_128x64),
       m_rot_enc_a_pin(k_rot_enc_a_pin), m_rot_enc_b_pin(k_rot_enc_b_pin),
       m_rot_enc_btn_pin(k_rot_enc_btn_pin), m_pd_int(k_pd_int_pin),
@@ -84,11 +97,11 @@ auto TinyPPS::initialize() -> bool {
     m_pd_int.configure(IGpio::Direction::Input, IGpio::Pull::Down);
     m_pd_int.attachInterrupt(
         IGpio::Edge::Rising,
-        [](IGpio& gpio, void* user) {
+        [](IGpio& gpio, void* user) -> void {
             if (!user) {
                 return;
             }
-            auto self = static_cast<TinyPPS*>(user);
+            auto* self = static_cast<TinyPPS*>(user);
             self->m_is_pd_interrupt_pending = true;
         },
         this);
@@ -97,7 +110,7 @@ auto TinyPPS::initialize() -> bool {
     m_output_enable.configure(IGpio::Direction::Output, IGpio::Pull::Down);
 
     m_rotary_encoder.initialize();
-    m_i2c.initialize(i2c0, k_i2c_sda_pin, k_i2c_scl_pin, 400);
+    m_i2c.initialize(i2c0, k_i2c_sda_pin, k_i2c_scl_pin, k_i2c_speed);
     m_oled.initialize();
     if (!pdSinkInit()) {
         return false;
@@ -404,11 +417,7 @@ auto TinyPPS::handleMainState() -> TinyPPS::State {
 auto TinyPPS::pdSinkInit() -> bool {
     if (m_ap33772.probe()) {
         m_pd_sink = &m_ap33772;
-        // https://product.tdk.com/system/files/dam/doc/product/sensor/ntc/chip-ntc-thermistor/data_sheet/datasheet_ntcgs103jx103dt8.pdf
-        // based on B value:
-        //                  [at 25/50C] 3380K typ.
-        //                  [at 25/85C] 3435K+-0.7%
-        m_ap33772.setNtc(10000, 4164, 1912, 987);
+        m_ap33772.setNtc(k_ntc_tr25, k_ntc_tr50, k_ntc_tr75, k_ntc_tr100);
         Ap33772::MaskReg mask;
         mask.ocp_en = 1;
         mask.otp_en = 1;
@@ -416,12 +425,8 @@ auto TinyPPS::pdSinkInit() -> bool {
         m_ap33772.setMask(mask);
     } else if (m_ap33772s.probe()) {
         m_pd_sink = &m_ap33772s;
-        // https://product.tdk.com/system/files/dam/doc/product/sensor/ntc/chip-ntc-thermistor/data_sheet/datasheet_ntcgs103jx103dt8.pdf
-        // based on B value:
-        //                  [at 25/50C] 3380K typ.
-        //                  [at 25/85C] 3435K+-0.7%
-        m_ap33772s.setNtc(10000, 4164, 1912, 987);
-        m_ap33772s.setVselMin(3300);
+        m_ap33772s.setNtc(k_ntc_tr25, k_ntc_tr50, k_ntc_tr75, k_ntc_tr100);
+        m_ap33772s.setVselMin(k_ap33772s_vsel_min);
         Ap33772s::MaskReg mask;
         mask.ocp_msk = 1;
         mask.otp_msk = 1;

@@ -18,9 +18,9 @@ class PicoGpio : public IGpio {
      * Implementation of IGpio interface
      */
 
-    virtual ~PicoGpio() = default;
+    ~PicoGpio() final = default;
 
-    auto configure(Direction dir, Pull pull = Pull::None) -> bool;
+    auto configure(Direction dir, Pull pull = Pull::None) -> bool override;
 
     auto write(bool value) -> bool override;
 

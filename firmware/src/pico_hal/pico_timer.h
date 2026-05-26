@@ -7,7 +7,8 @@
 class PicoRepeatingTimer final : public IRepeatingTimer {
   public:
     PicoRepeatingTimer() = default;
-    ~PicoRepeatingTimer();
+
+    ~PicoRepeatingTimer() final;
 
     /**
      * Implementation of IRepeatingTimer interface

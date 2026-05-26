@@ -12,6 +12,8 @@ class PicoI2c : public II2c {
      */
     PicoI2c();
 
+    ~PicoI2c() final = default;
+
     /**
      * @brief Initialize the module
      *
