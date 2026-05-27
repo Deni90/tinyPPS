@@ -71,7 +71,7 @@ static auto increment_and_clamp(T& value, T step, T min_val, T max_val,
 }
 
 TinyPPS::TinyPPS()
-    : m_ina226(&m_i2c, k_ina226_addr),
+    : m_ina226(m_i2c, k_ina226_addr),
       m_oled(m_i2c, Ssd1306::Type::ssd1306_128x64),
       m_rot_enc_a_pin(k_rot_enc_a_pin), m_rot_enc_b_pin(k_rot_enc_b_pin),
       m_rot_enc_btn_pin(k_rot_enc_btn_pin), m_pd_int(k_pd_int_pin),
