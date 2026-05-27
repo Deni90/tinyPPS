@@ -11,16 +11,16 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # == DO NOT EDIT THE FOLLOWING LINES for the Raspberry Pi Pico VS Code Extension to work ==
 if(WIN32)
-    set(USERHOME $ENV{USERPROFILE})
+  set(USERHOME $ENV{USERPROFILE})
 else()
-    set(USERHOME $ENV{HOME})
+  set(USERHOME $ENV{HOME})
 endif()
 set(sdkVersion 2.1.1)
 set(toolchainVersion 14_2_Rel1)
 set(picotoolVersion 2.1.1)
 set(picoVscode ${USERHOME}/.pico-sdk/cmake/pico-vscode.cmake)
 if (EXISTS ${picoVscode})
-    include(${picoVscode})
+  include(${picoVscode})
 endif()
 # ====================================================================================
 set(PICO_BOARD pico CACHE STRING "Board type")
@@ -50,7 +50,7 @@ add_subdirectory(src/ssd1306)
 add_subdirectory(src/utils)
 
 pico_set_program_name(TinyPPS "TinyPPS")
-pico_set_program_version(TinyPPS "1.0")
+pico_set_program_version(TinyPPS "2.0")
 
 # Modify the below lines to enable/disable output over UART/USB
 pico_enable_stdio_uart(TinyPPS 0)
@@ -75,3 +75,15 @@ pico_add_extra_outputs(TinyPPS)
 
 # disable warnings caused by using std::format
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-psabi")
+
+# Custom target to flash the RP2040 via OpenOCD
+add_custom_target(flash
+    COMMAND openocd -f interface/cmsis-dap.cfg
+                    -f target/rp2040.cfg
+                    -c "adapter speed 5000"
+                    -c "program ${CMAKE_CURRENT_BINARY_DIR}/TinyPPS.elf verify reset exit"
+    DEPENDS TinyPPS
+    COMMENT "Flashing TinyPPS to RP2040 via OpenOCD..."
+    USES_TERMINAL
+    VERBATIM
+)
