@@ -18,11 +18,27 @@ Huge thank you to **[PCBWay](https://www.pcbway.com)** for sponsoring this proje
 
 The firmware is written in C++ using the Raspberry Pi Pico SDK.
 
+Configure the build using CMake:
+
+```bash
+cd firmware
+cmake -G Ninja -S . -B build
+```
+
+Build the firmware:
+
+```bash
+cmake --build build
+```
+
 ## Flashing
 
 There are two options to flash RP2040:
 1. Via USB by pressing the `BOOT` button during power on. On a PC a new virtual drive called `RPI-RP2` should appear. Then, drag and drop a *.uf2* file onto the drive.
 2. Via SWD interface by attaching a debugger like Raspberry Pi Debug Probe to the "DBG" connector and then using OpenOCD.
+    ```bash
+    cmake --build build --target flash
+    ```
 
 ## Hardware
 
