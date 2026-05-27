@@ -31,7 +31,7 @@ class RotaryEncoder {
      * @param[in] btn_gpio Button pin of the rotary encoder
      * @param[in] clock Pointer to a variable that is used for debouncing
      */
-    RotaryEncoder(IGpio* a_gpio, IGpio* b_gpio, IGpio* btn_gpio);
+    RotaryEncoder(IGpio& a_gpio, IGpio& b_gpio, IGpio& btn_gpio);
 
     /**
      * @brief Initialize rotary encoder GPIO pins
@@ -61,9 +61,9 @@ class RotaryEncoder {
 
   private:
     State m_state;
-    IGpio* m_a_gpio;
-    IGpio* m_b_gpio;
-    IGpio* m_btn_gpio;
+    IGpio& m_a_gpio;
+    IGpio& m_b_gpio;
+    IGpio& m_btn_gpio;
     uint32_t m_debounce_time_ms{0};
     uint32_t m_long_press_time_ms{0};
     bool m_is_debounce_started{false};
