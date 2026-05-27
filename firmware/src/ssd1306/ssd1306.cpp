@@ -35,7 +35,7 @@ static constexpr uint8_t k_set_vcom_desel = 0xDB;
 static constexpr uint8_t k_width = 128;
 static constexpr uint8_t k_page_height = 8;
 
-Ssd1306::Ssd1306(II2c* i2c, Ssd1306::Type oled_type)
+Ssd1306::Ssd1306(II2c& i2c, Ssd1306::Type oled_type)
     : m_i2c(i2c), m_type(oled_type) {}
 
 void Ssd1306::initialize() {
@@ -110,11 +110,11 @@ void Ssd1306::display(const uint8_t* fb) {
             0x00,                         // Set lower column start (0)
             0x10                          // Set higher column start (0)
         };
-        m_i2c->writeTo(k_i2c_addr, cmds, sizeof(cmds));
+        m_i2c.writeTo(k_i2c_addr, cmds, sizeof(cmds));
         uint8_t temp_buf[k_width + 1];
         temp_buf[0] = 0x40;
         memcpy(temp_buf + 1, fb + base, k_width);
-        m_i2c->writeTo(k_i2c_addr, temp_buf, sizeof(temp_buf));
+        m_i2c.writeTo(k_i2c_addr, temp_buf, sizeof(temp_buf));
     }
     memcpy(m_old_fb, fb, pages * k_width);
 }
@@ -130,7 +130,7 @@ void Ssd1306::sendCommand(uint8_t cmd) {
     // this "data" can be a command or data to follow up a command
     // Co = 1, D/C = 0 => the driver expects a command
     uint8_t buf[2] = {0x80, cmd};
-    m_i2c->writeTo(k_i2c_addr, buf, 2);
+    m_i2c.writeTo(k_i2c_addr, buf, 2);
 }
 
 void Ssd1306::sendCommands(const uint8_t* cmds, uint16_t len) {

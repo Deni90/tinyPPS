@@ -18,10 +18,10 @@ class Ssd1306 {
     /**
      * @brief Constructor
      *
-     * @param[in] i2c Pointer to i2c interface implementation
+     * @param[in] i2c Reference to i2c interface implementation
      * @param[in] oled_type Type of the oled display
      */
-    Ssd1306(II2c* i2c, Type oled_type);
+    Ssd1306(II2c& i2c, Type oled_type);
 
     /**
      * @brief Initialize the module
@@ -70,7 +70,7 @@ class Ssd1306 {
      */
     void sendCommands(const uint8_t* cmds, uint16_t len);
 
-    II2c* m_i2c;
+    II2c& m_i2c;
     Type m_type;
     uint8_t m_old_fb[1024];
 };
