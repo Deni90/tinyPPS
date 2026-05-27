@@ -29,7 +29,6 @@ class RotaryEncoder {
      * @param[in] a_gpio A pin of the rotary encoder
      * @param[in] b_gpio B pin of the rotary encoder
      * @param[in] btn_gpio Button pin of the rotary encoder
-     * @param[in] clock Pointer to a variable that is used for debouncing
      */
     RotaryEncoder(IGpio& a_gpio, IGpio& b_gpio, IGpio& btn_gpio);
 
