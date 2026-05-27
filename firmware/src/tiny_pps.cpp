@@ -6,8 +6,6 @@
 #include "ap33772s.h"
 #include "gpio_iface.h"
 #include "loading_screen.h"
-#include "main_screen.h"
-#include "menu_screen.h"
 #include "pdo_helper.h"
 #include "pdsink_iface.h"
 #include "rotary_encoder.h"
@@ -150,52 +148,61 @@ auto TinyPPS::handleInitState() -> TinyPPS::State {
 }
 
 auto TinyPPS::handleMenuState() -> TinyPPS::State {
-    State next_state = TinyPPS::State::menu;
-    MenuScreen menu_screen(m_oled.getWidth(), m_oled.getHeight());
-    std::vector<std::string> profile_names;
-    // Fill in the menu with the available PDO profiles
-    for (const auto& it : m_configs) {
-        profile_names.emplace_back(it.first);
+    auto next_state = TinyPPS::State::menu;
+
+    if (!m_menu_state_data.is_initialized) {
+        m_menu_state_data.is_initialized = true;
+        std::vector<std::string> profile_names;
+        // Fill in the menu with the available PDO profiles
+        for (const auto& it : m_configs) {
+            profile_names.emplace_back(it.first);
+        }
+        m_menu_state_data.screen.setTitle("Available PDOs")
+            .setMenuItems(profile_names);
     }
 
-    m_oled.display(menu_screen.setTitle("Available PDOs")
-                       .setMenuItems(profile_names)
-                       .selectMenuItem(m_menu_state_data.selected_menu_item)
-                       .build());
+    const auto encoder_state = m_rotary_encoder.getState();
+    if (encoder_state != RotaryEncoder::State::idle &&
+        encoder_state != RotaryEncoder::State::processed) {
+        m_rotary_encoder.clearState();
+    }
 
-    switch (m_rotary_encoder.getState()) {
+    switch (encoder_state) {
     case RotaryEncoder::State::idle:
     case RotaryEncoder::State::processed:
         m_rotary_encoder.handle(m_system_time);
         break;
     case RotaryEncoder::State::btn_short_press:
-        m_rotary_encoder.clearState();
         m_main_state_data.pdo_index = m_menu_state_data.selected_menu_item;
         next_state = State::main;
         break;
     case RotaryEncoder::State::rot_inc:
-        m_rotary_encoder.clearState();
         if (m_menu_state_data.selected_menu_item <
-            menu_screen.getMenuItems().size() - 1) {
+            m_menu_state_data.screen.getMenuItems().size() - 1) {
             ++m_menu_state_data.selected_menu_item;
         } else {
             m_menu_state_data.selected_menu_item = 0;
         }
         break;
     case RotaryEncoder::State::rot_dec:
-        m_rotary_encoder.clearState();
         if (m_menu_state_data.selected_menu_item == 0) {
             m_menu_state_data.selected_menu_item =
-                menu_screen.getMenuItems().size() - 1;
+                m_menu_state_data.screen.getMenuItems().size() - 1;
         } else {
             --m_menu_state_data.selected_menu_item;
         }
         break;
+    default:
+        break;
     }
+    m_oled.display(m_menu_state_data.screen
+                       .selectMenuItem(m_menu_state_data.selected_menu_item)
+                       .build());
     return next_state;
 }
 
 auto TinyPPS::handleMainState() -> TinyPPS::State {
+    auto next_state = TinyPPS::State::main;
     Config& config = m_configs[m_main_state_data.pdo_index].second;
 
     if (!m_main_state_data.is_initialized) {
@@ -207,13 +214,17 @@ auto TinyPPS::handleMainState() -> TinyPPS::State {
         m_pd_sink->setPdoOutput(m_main_state_data.pdo_index,
                                 m_main_state_data.target_voltage,
                                 m_main_state_data.target_current);
+        m_main_state_data.screen.setPdoType(config.pdo.type)
+            .setTargetVoltage(m_main_state_data.target_voltage)
+            .setTargetCurrent(m_main_state_data.target_current);
     }
-    m_main_state_data.screen.setPdoType(config.pdo.type)
-        .setTargetVoltage(m_main_state_data.target_voltage)
-        .setTargetCurrent(m_main_state_data.target_current)
-        .setSupplyMode(config.supply_mode);
 
-    switch (m_rotary_encoder.getState()) {
+    const auto encoder_state = m_rotary_encoder.getState();
+    if (encoder_state != RotaryEncoder::State::idle &&
+        encoder_state != RotaryEncoder::State::processed) {
+        m_rotary_encoder.clearState();
+    }
+    switch (encoder_state) {
     case RotaryEncoder::State::idle:
     case RotaryEncoder::State::processed:
         m_rotary_encoder.handle(m_system_time);
@@ -281,7 +292,6 @@ auto TinyPPS::handleMainState() -> TinyPPS::State {
         }
         break;
     case RotaryEncoder::State::btn_short_press:
-        m_rotary_encoder.clearState();
         // handle short button press
         // if tv or tc is selected enter editing mode of the value
         if (m_main_state_data.selection > None) {
@@ -303,17 +313,15 @@ auto TinyPPS::handleMainState() -> TinyPPS::State {
             }
             if ((m_system_time - m_main_state_data.rotary_encoder_time_ms) <=
                 k_double_click_period) {
-                // Switch to menu g_state
-                m_rotary_encoder.clearState();
+                // Switch to menu state
                 m_main_state_data.is_initialized = false;
-                return State::menu;
+                next_state = State::menu;
             }
             m_main_state_data.rotary_encoder_time_ms = m_system_time;
         }
         // if tv or tc is in editing mode set the value on button press
         break;
     case RotaryEncoder::State::btn_long_press:
-        m_rotary_encoder.clearState();
         // handle long button press
         // ignore this while editing target voltage/current
         if (m_main_state_data.is_editing) {
@@ -331,7 +339,6 @@ auto TinyPPS::handleMainState() -> TinyPPS::State {
         }
         break;
     case RotaryEncoder::State::rot_dec:
-        m_rotary_encoder.clearState();
         if (!config.is_editing_enabled) {
             break;
         }
@@ -362,13 +369,15 @@ auto TinyPPS::handleMainState() -> TinyPPS::State {
             default:
                 break;
             }
+            m_main_state_data.screen
+                .setTargetVoltage(m_main_state_data.target_voltage)
+                .setTargetCurrent(m_main_state_data.target_current);
         } else {
             --m_main_state_data.selection;
         }
         // decrement tv or tc in value editing mode
         break;
     case RotaryEncoder::State::rot_inc:
-        m_rotary_encoder.clearState();
         if (!config.is_editing_enabled) {
             break;
         }
@@ -399,19 +408,21 @@ auto TinyPPS::handleMainState() -> TinyPPS::State {
             default:
                 break;
             }
+            m_main_state_data.screen
+                .setTargetVoltage(m_main_state_data.target_voltage)
+                .setTargetCurrent(m_main_state_data.target_current);
         } else {
             ++m_main_state_data.selection;
         }
         break;
     case RotaryEncoder::State::rot_dec_while_btn_press:
     case RotaryEncoder::State::rot_inc_while_btn_press:
-        m_rotary_encoder.clearState();
         // TODO implement me with constant current mode implementation...
         break;
     }
 
     m_oled.display(m_main_state_data.screen.build());
-    return State::main;
+    return next_state;
 }
 
 auto TinyPPS::pdSinkInit() -> bool {

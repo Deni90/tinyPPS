@@ -10,6 +10,7 @@
 #include "config.h"
 #include "ina226.h"
 #include "main_screen.h"
+#include "menu_screen.h"
 #include "pdsink_iface.h"
 #include "pico_gpio.h"
 #include "pico_i2c.h"
@@ -48,6 +49,8 @@ class TinyPPS {
      * @brief Data for the menu state
      */
     struct MenuStateData {
+        MenuScreen screen{128, 64};
+        bool is_initialized = false;
         uint8_t selected_menu_item = 0;
     };
 
