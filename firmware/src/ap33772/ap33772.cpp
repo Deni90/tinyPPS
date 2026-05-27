@@ -37,7 +37,7 @@ static constexpr uint16_t k_rdo_fixed_current_inc = 10;   // mV
 static constexpr uint16_t k_rdo_pps_voltage_inc = 20;     // mV
 static constexpr uint16_t k_rdo_pps_current_inc = 50;     // mA
 
-Ap33772::Ap33772(II2c* i2c) : m_i2c(i2c) {}
+Ap33772::Ap33772(II2c& i2c) : m_i2c(i2c) {}
 
 auto Ap33772::probe() -> bool {
     return writeRegister(0x00, static_cast<uint8_t>(0x00));
@@ -90,9 +90,9 @@ auto Ap33772::getPDSourcePowerCapabilities() -> uint8_t {
         return 0;
     }
 
-    m_i2c->writeTo(k_i2c_addr, &k_cmd_srcpdo, 1);
+    m_i2c.writeTo(k_i2c_addr, &k_cmd_srcpdo, 1);
     std::array<uint8_t, k_max_pdo_entries * sizeof(SrcPdoReg)> buffer;
-    m_i2c->readFrom(k_i2c_addr, buffer.data(), buffer.size());
+    m_i2c.readFrom(k_i2c_addr, buffer.data(), buffer.size());
     m_pdo_array = *reinterpret_cast<std::array<SrcPdoReg, k_max_pdo_entries>*>(
         buffer.data());
 
@@ -189,21 +189,21 @@ auto Ap33772::setNtc(uint16_t tr25, uint16_t tr50, uint16_t tr75,
 }
 
 auto Ap33772::readRegister(uint8_t reg, uint8_t& value) -> bool {
-    if (m_i2c->writeTo(k_i2c_addr, &reg, 1) != 1) {
+    if (m_i2c.writeTo(k_i2c_addr, &reg, 1) != 1) {
         return false;
     }
-    if (m_i2c->readFrom(k_i2c_addr, &value, sizeof(value)) != sizeof(value)) {
+    if (m_i2c.readFrom(k_i2c_addr, &value, sizeof(value)) != sizeof(value)) {
         return false;
     }
     return true;
 }
 
 auto Ap33772::readRegister(uint8_t reg, uint16_t& value) -> bool {
-    if (m_i2c->writeTo(k_i2c_addr, &reg, 1) != 1) {
+    if (m_i2c.writeTo(k_i2c_addr, &reg, 1) != 1) {
         return false;
     }
     std::array<uint8_t, sizeof(uint16_t)> buffer;
-    if (m_i2c->readFrom(k_i2c_addr, buffer.data(), buffer.size()) !=
+    if (m_i2c.readFrom(k_i2c_addr, buffer.data(), buffer.size()) !=
         buffer.size()) {
         return false;
     }
@@ -213,7 +213,7 @@ auto Ap33772::readRegister(uint8_t reg, uint16_t& value) -> bool {
 
 auto Ap33772::writeRegister(uint8_t reg, uint8_t value) -> bool {
     std::array<uint8_t, 2> buffer = {reg, value};
-    return m_i2c->writeTo(k_i2c_addr, buffer.data(), buffer.size()) ==
+    return m_i2c.writeTo(k_i2c_addr, buffer.data(), buffer.size()) ==
            buffer.size();
 }
 
@@ -221,7 +221,7 @@ auto Ap33772::writeRegister(uint8_t reg, uint16_t value) -> bool {
     std::array<uint8_t, sizeof(uint16_t) + 1> buffer = {
         reg, static_cast<uint8_t>(value & 0xff),
         static_cast<uint8_t>(value >> 8)};
-    return m_i2c->writeTo(k_i2c_addr, buffer.data(), buffer.size()) ==
+    return m_i2c.writeTo(k_i2c_addr, buffer.data(), buffer.size()) ==
            buffer.size();
 }
 
@@ -230,6 +230,6 @@ auto Ap33772::writeRegister(uint8_t reg, uint32_t value) -> bool {
         reg, static_cast<uint8_t>(value & 0xff),
         static_cast<uint8_t>(value >> 8), static_cast<uint8_t>(value >> 16),
         static_cast<uint8_t>(value >> 24)};
-    return m_i2c->writeTo(k_i2c_addr, buffer.data(), buffer.size()) ==
+    return m_i2c.writeTo(k_i2c_addr, buffer.data(), buffer.size()) ==
            buffer.size();
 }

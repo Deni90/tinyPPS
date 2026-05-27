@@ -77,7 +77,7 @@ TinyPPS::TinyPPS()
       m_rot_enc_btn_pin(k_rot_enc_btn_pin), m_pd_int(k_pd_int_pin),
       m_output_enable(k_output_enable_pin),
       m_rotary_encoder(m_rot_enc_a_pin, m_rot_enc_b_pin, m_rot_enc_btn_pin),
-      m_ap33772(&m_i2c), m_ap33772s(&m_i2c) {}
+      m_ap33772(m_i2c), m_ap33772s(m_i2c) {}
 
 auto TinyPPS::initialize() -> bool {
     // Initialize a timer to repeat every 1 ms

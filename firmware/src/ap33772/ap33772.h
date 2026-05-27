@@ -118,9 +118,9 @@ class Ap33772 : public IPdSink {
     /**
      * @brief Constructor
      *
-     * @param[in] i2c Pointer to i2c object
+     * @param[in] i2c Reference to i2c object
      */
-    Ap33772(II2c* i2c);
+    Ap33772(II2c& i2c);
 
     /**
      * @brief Checks the I2C bus to see if the specific chip is present.
@@ -239,7 +239,7 @@ class Ap33772 : public IPdSink {
     auto writeRegister(uint8_t reg, uint16_t value) -> bool;
     auto writeRegister(uint8_t reg, uint32_t value) -> bool;
 
-    II2c* m_i2c;
+    II2c& m_i2c;
     std::array<SrcPdoReg, k_max_pdo_entries> m_pdo_array;
     StatusReg m_status{0};
 };
