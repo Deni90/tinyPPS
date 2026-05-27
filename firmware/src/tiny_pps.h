@@ -2,6 +2,7 @@
 #define tiny_pps_h
 
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -123,7 +124,7 @@ class TinyPPS {
     RotaryEncoder m_rotary_encoder;
     Ap33772 m_ap33772;
     Ap33772s m_ap33772s;
-    IPdSink* m_pd_sink{nullptr};
+    std::reference_wrapper<IPdSink> m_pd_sink{m_ap33772};
     State m_state{State::init};
     std::vector<std::pair<std::string, Config>> m_configs;
     volatile bool m_is_pd_interrupt_pending{false};

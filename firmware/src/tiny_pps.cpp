@@ -209,8 +209,8 @@ auto TinyPPS::handleMainState(MainStateData& data) -> TinyPPS::State {
         data.target_voltage = config.pdo.voltage_min;
         data.target_current = config.pdo.current_min;
         // Request the min voltage and current for a selected PDO
-        m_pd_sink->setPdoOutput(data.pdo_index, data.target_voltage,
-                                data.target_current);
+        m_pd_sink.get().setPdoOutput(data.pdo_index, data.target_voltage,
+                                     data.target_current);
         data.screen.setPdoType(config.pdo.type)
             .setTargetVoltage(data.target_voltage)
             .setTargetCurrent(data.target_current);
@@ -230,13 +230,13 @@ auto TinyPPS::handleMainState(MainStateData& data) -> TinyPPS::State {
             data.sensor_reading_time_ms = m_system_time;
             data.screen.setMeasuredVoltage(m_ina226.getBusVoltage())
                 .setMeasuredCurrent(m_ina226.getCurrent())
-                .setTemperature(m_pd_sink->getTemp());
+                .setTemperature(m_pd_sink.get().getTemp());
         }
         // handle pending interrupt
         if (m_is_pd_interrupt_pending) {
             m_is_pd_interrupt_pending = false;
             // Check is the interrupt caused by some protection
-            data.is_fault_detected = m_pd_sink->getStatus().has_fault;
+            data.is_fault_detected = m_pd_sink.get().getStatus().has_fault;
 
             if (data.is_fault_detected) {
                 data.fault_recovery_time_ms = m_system_time;
@@ -252,12 +252,13 @@ auto TinyPPS::handleMainState(MainStateData& data) -> TinyPPS::State {
             if ((m_system_time - data.fault_recovery_time_ms) >=
                 k_fault_check_period) {
                 data.fault_recovery_time_ms = m_system_time;
-                if (!m_pd_sink->getStatus().has_fault) {
+                if (!m_pd_sink.get().getStatus().has_fault) {
                     // Fault is cleared, re negotiate the selected power
                     // profile
                     data.is_fault_detected = false;
-                    m_pd_sink->setPdoOutput(data.pdo_index, data.target_voltage,
-                                            data.target_current);
+                    m_pd_sink.get().setPdoOutput(data.pdo_index,
+                                                 data.target_voltage,
+                                                 data.target_current);
                 }
             }
         }
@@ -288,8 +289,8 @@ auto TinyPPS::handleMainState(MainStateData& data) -> TinyPPS::State {
                 data.is_editing = true;
             } else {
                 // TODO set a value
-                m_pd_sink->setPdoOutput(data.pdo_index, data.target_voltage,
-                                        data.target_current);
+                m_pd_sink.get().setPdoOutput(
+                    data.pdo_index, data.target_voltage, data.target_current);
                 data.is_editing = false;
             }
         } else {
@@ -412,15 +413,15 @@ auto TinyPPS::handleMainState(MainStateData& data) -> TinyPPS::State {
 
 auto TinyPPS::pdSinkInit() -> bool {
     if (m_ap33772.probe()) {
-        m_pd_sink = &m_ap33772;
         m_ap33772.setNtc(k_ntc_tr25, k_ntc_tr50, k_ntc_tr75, k_ntc_tr100);
         Ap33772::MaskReg mask;
         mask.ocp_en = 1;
         mask.otp_en = 1;
         mask.ovp_en = 1;
         m_ap33772.setMask(mask);
-    } else if (m_ap33772s.probe()) {
-        m_pd_sink = &m_ap33772s;
+    } else {
+        // Fall back to AP33772S if AP33772 probe fails
+        m_pd_sink = std::ref(m_ap33772s);
         m_ap33772s.setNtc(k_ntc_tr25, k_ntc_tr50, k_ntc_tr75, k_ntc_tr100);
         m_ap33772s.setVselMin(k_ap33772s_vsel_min);
         Ap33772s::MaskReg mask;
@@ -429,8 +430,6 @@ auto TinyPPS::pdSinkInit() -> bool {
         mask.ovp_msk = 1;
         mask.uvp_msk = 1;
         m_ap33772s.setMask(mask);
-    } else {
-        return false;
     }
 
     enableOutput(false);
@@ -445,13 +444,13 @@ auto TinyPPS::readPdos() -> int {
     // 1500ms should be enough to read PDOs
     for (int i = 0; i < 10; ++i) {
         sleep_ms(150);
-        if (m_pd_sink->getStatus().caps_received) {
+        if (m_pd_sink.get().getStatus().caps_received) {
             sleep_ms(10);
-            pdo_cnt = m_pd_sink->getPDSourcePowerCapabilities();
+            pdo_cnt = m_pd_sink.get().getPDSourcePowerCapabilities();
             // Fill in menu with PDOs
             for (uint8_t i = 0; i < Ap33772s::k_max_pdo_entries; ++i) {
                 IPdSink::Pdo pdo;
-                if (m_pd_sink->getPdo(i, pdo)) {
+                if (m_pd_sink.get().getPdo(i, pdo)) {
                     m_configs.emplace_back(std::make_pair(
                         pdoToString(pdo), ConfigBuilder::buildWithPdo(pdo)));
                 }
