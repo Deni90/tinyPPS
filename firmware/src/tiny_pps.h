@@ -84,13 +84,13 @@ class TinyPPS {
      * @brief Function for handling the menu state
      * @return Return the next state
      */
-    auto handleMenuState() -> State;
+    auto handleMenuState(MenuStateData& data) -> State;
 
     /**
      * @brief Function for handling the main state
      * @return Return the next state
      */
-    auto handleMainState() -> State;
+    auto handleMainState(MainStateData& data) -> State;
 
     /**
      * @brief This function initializes the PD Sink controller
