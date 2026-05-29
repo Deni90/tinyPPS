@@ -84,13 +84,6 @@ class TinyPPS {
     auto handleMainState(MainStateData& data) -> State;
 
     /**
-     * @brief Handle PDO reading at startup
-     *
-     * @return The number of available PDOs
-     */
-    auto readPdos() -> int;
-
-    /**
      * @brief Sleep for a given number of milliseconds
      *
      * @param duration_ms The number of milliseconds to sleep

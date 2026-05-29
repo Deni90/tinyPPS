@@ -85,7 +85,32 @@ auto TinyPPS::handle() -> void {
 }
 
 auto TinyPPS::handleInitState() -> TinyPPS::State {
-    if (readPdos() == 0) {
+    int pdo_cnt = 0;
+    LoadingScreen loading_screen(m_hw.oled.getWidth(), m_hw.oled.getHeight());
+    m_hw.oled.display(loading_screen.build());
+    // 1500ms should be enough to read PDOs
+    for (int i = 0; i < 10; ++i) {
+        sleep_ms(150);
+        if (m_hw.pdsink.getStatus().caps_received) {
+            sleep_ms(10);
+            pdo_cnt = m_hw.pdsink.getPDSourcePowerCapabilities();
+            // Fill in menu with PDOs
+            for (uint8_t i = 0; i < pdo_cnt; ++i) {
+                IPdSink::Pdo pdo;
+                if (m_hw.pdsink.getPdo(i, pdo)) {
+                    m_configs.emplace_back(std::make_pair(
+                        pdoToString(pdo), ConfigBuilder::buildWithPdo(pdo)));
+                }
+            }
+            sleep_ms(1000);
+            break;
+        }
+        m_hw.oled.display(loading_screen.updateProgress().build());
+    }
+    m_hw.oled.display(loading_screen.setPdoProfileCount(pdo_cnt).build());
+    sleep_ms(1500);
+
+    if (pdo_cnt == 0) {
         // If no profile present, create a default one
         m_configs.emplace_back(
             std::make_pair("", ConfigBuilder::buildDefault()));
@@ -358,35 +383,6 @@ auto TinyPPS::handleMainState(MainStateData& data) -> TinyPPS::State {
 
     m_hw.oled.display(data.screen.build());
     return next_state;
-}
-
-auto TinyPPS::readPdos() -> int {
-    int pdo_cnt = 0;
-    LoadingScreen loading_screen(m_hw.oled.getWidth(), m_hw.oled.getHeight());
-    m_hw.oled.display(loading_screen.build());
-    // 1500ms should be enough to read PDOs
-    for (int i = 0; i < 10; ++i) {
-        sleep_ms(150);
-        if (m_hw.pdsink.getStatus().caps_received) {
-            sleep_ms(10);
-            pdo_cnt = m_hw.pdsink.getPDSourcePowerCapabilities();
-            // Fill in menu with PDOs
-            for (uint8_t i = 0; i < pdo_cnt; ++i) {
-                IPdSink::Pdo pdo;
-                if (m_hw.pdsink.getPdo(i, pdo)) {
-                    m_configs.emplace_back(std::make_pair(
-                        pdoToString(pdo), ConfigBuilder::buildWithPdo(pdo)));
-                }
-            }
-            sleep_ms(1000);
-            break;
-        }
-        m_hw.oled.display(loading_screen.updateProgress().build());
-    }
-    m_hw.oled.display(loading_screen.setPdoProfileCount(pdo_cnt).build());
-    sleep_ms(1500);
-
-    return pdo_cnt;
 }
 
 auto TinyPPS::sleep_ms(uint32_t duration_ms) const -> void {
