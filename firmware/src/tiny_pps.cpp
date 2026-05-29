@@ -1,44 +1,15 @@
 #include "tiny_pps.h"
 
 #include <algorithm>
-#include <cstdint>
 
-#include "ap33772s.h"
-#include "gpio_iface.h"
 #include "loading_screen.h"
 #include "pdo_helper.h"
-#include "pdsink_iface.h"
-#include "rotary_encoder.h"
-
-static constexpr uint k_rot_enc_btn_pin = 11;
-static constexpr uint k_rot_enc_a_pin = 10;
-static constexpr uint k_rot_enc_b_pin = 9;
-
-static constexpr unsigned int k_i2c_sda_pin = 28;
-static constexpr unsigned int k_i2c_scl_pin = 29;
-
-static constexpr unsigned int k_pd_int_pin = 25;
-static constexpr unsigned int k_output_enable_pin = 17;
-
-static constexpr uint8_t k_ina226_addr = 0x40;
 
 static constexpr unsigned int k_big_step_period = 75;         // ms
 static constexpr unsigned int k_blinking_period = 500;        // ms
 static constexpr unsigned int k_double_click_period = 1000;   // ms
 static constexpr unsigned int k_measuring_period = 200;       // ms
 static constexpr unsigned int k_fault_check_period = 1000;    // ms
-
-static constexpr unsigned int k_i2c_speed = 400;   // kHz
-static constexpr uint16_t k_ap33772s_vsel_min = 3300;
-
-// https://product.tdk.com/system/files/dam/doc/product/sensor/ntc/chip-ntc-thermistor/data_sheet/datasheet_ntcgs103jx103dt8.pdf
-// based on B value:
-//                  [at 25/50C] 3380K typ.
-//                  [at 25/85C] 3435K+-0.7%
-static constexpr unsigned int k_ntc_tr25 = 10000;
-static constexpr unsigned int k_ntc_tr50 = 4164;
-static constexpr unsigned int k_ntc_tr75 = 1912;
-static constexpr unsigned int k_ntc_tr100 = 987;
 
 inline auto operator++(MainScreenSelection& selection) -> MainScreenSelection& {
     using T = std::underlying_type_t<MainScreenSelection>;
@@ -70,30 +41,23 @@ static auto increment_and_clamp(T& value, T step, T min_val, T max_val,
     value = std::clamp<T>(value, min_val, max_val);
 }
 
-TinyPPS::TinyPPS()
-    : m_ina226(m_i2c, k_ina226_addr),
-      m_oled(m_i2c, Ssd1306::Type::ssd1306_128x64),
-      m_rot_enc_a_pin(k_rot_enc_a_pin), m_rot_enc_b_pin(k_rot_enc_b_pin),
-      m_rot_enc_btn_pin(k_rot_enc_btn_pin), m_pd_int(k_pd_int_pin),
-      m_output_enable(k_output_enable_pin),
-      m_rotary_encoder(m_rot_enc_a_pin, m_rot_enc_b_pin, m_rot_enc_btn_pin),
-      m_ap33772(m_i2c), m_ap33772s(m_i2c) {}
+TinyPPS::TinyPPS(HardwareContext& hardware) : m_hw(hardware) {}
 
-auto TinyPPS::initialize() -> bool {
+auto TinyPPS::initialize() -> void {
     // Initialize a timer to repeat every 1 ms
-    m_timer.start(
+    m_hw.timer.start(
         1,
-        [](void* ctx) {
+        [](void* ctx) -> void {
             if (!ctx) {
                 return;
             }
-            auto self = static_cast<TinyPPS*>(ctx);
+            auto* self = static_cast<TinyPPS*>(ctx);
             self->m_system_time = self->m_system_time + 1;
         },
         this);
 
-    m_pd_int.configure(IGpio::Direction::Input, IGpio::Pull::Down);
-    m_pd_int.attachInterrupt(
+    m_hw.pd_int.configure(IGpio::Direction::Input, IGpio::Pull::Down);
+    m_hw.pd_int.attachInterrupt(
         IGpio::Edge::Rising,
         [](IGpio& gpio, void* user) -> void {
             if (!user) {
@@ -103,23 +67,7 @@ auto TinyPPS::initialize() -> bool {
             self->m_is_pd_interrupt_pending = true;
         },
         this);
-    m_pd_int.enableInterrupt(true);
-
-    m_output_enable.configure(IGpio::Direction::Output, IGpio::Pull::Down);
-
-    m_rotary_encoder.initialize();
-    m_i2c.initialize(i2c0, k_i2c_sda_pin, k_i2c_scl_pin, k_i2c_speed);
-    m_oled.initialize();
-    if (!pdSinkInit()) {
-        return false;
-    }
-    m_ina226.setAveragingMode(Ina226::AveragingMode::Samples128);
-    if (!m_ina226.calibrate(0.01, 0.25)) {
-        // Failed to calibrate INA226
-        return false;
-    }
-
-    return true;
+    m_hw.pd_int.enableInterrupt(true);
 }
 
 auto TinyPPS::handle() -> void {
@@ -164,16 +112,16 @@ auto TinyPPS::handleMenuState(MenuStateData& data) -> TinyPPS::State {
         data.screen.setTitle("Available PDOs").setMenuItems(profile_names);
     }
 
-    const auto encoder_state = m_rotary_encoder.getState();
+    const auto encoder_state = m_hw.encoder.getState();
     if (encoder_state != RotaryEncoder::State::idle &&
         encoder_state != RotaryEncoder::State::processed) {
-        m_rotary_encoder.clearState();
+        m_hw.encoder.clearState();
     }
 
     switch (encoder_state) {
     case RotaryEncoder::State::idle:
     case RotaryEncoder::State::processed:
-        m_rotary_encoder.handle(m_system_time);
+        m_hw.encoder.handle(m_system_time);
         break;
     case RotaryEncoder::State::btn_short_press:
         next_state = State::main;
@@ -195,7 +143,8 @@ auto TinyPPS::handleMenuState(MenuStateData& data) -> TinyPPS::State {
     default:
         break;
     }
-    m_oled.display(data.screen.selectMenuItem(data.selected_menu_item).build());
+    m_hw.oled.display(
+        data.screen.selectMenuItem(data.selected_menu_item).build());
     return next_state;
 }
 
@@ -209,40 +158,40 @@ auto TinyPPS::handleMainState(MainStateData& data) -> TinyPPS::State {
         data.target_voltage = config.pdo.voltage_min;
         data.target_current = config.pdo.current_min;
         // Request the min voltage and current for a selected PDO
-        m_pd_sink.get().setPdoOutput(data.pdo_index, data.target_voltage,
-                                     data.target_current);
+        m_hw.pdsink.setPdoOutput(data.pdo_index, data.target_voltage,
+                                 data.target_current);
         data.screen.setPdoType(config.pdo.type)
             .setTargetVoltage(data.target_voltage)
             .setTargetCurrent(data.target_current);
     }
 
-    const auto encoder_state = m_rotary_encoder.getState();
+    const auto encoder_state = m_hw.encoder.getState();
     if (encoder_state != RotaryEncoder::State::idle &&
         encoder_state != RotaryEncoder::State::processed) {
-        m_rotary_encoder.clearState();
+        m_hw.encoder.clearState();
     }
     switch (encoder_state) {
     case RotaryEncoder::State::idle:
     case RotaryEncoder::State::processed:
-        m_rotary_encoder.handle(m_system_time);
+        m_hw.encoder.handle(m_system_time);
         if ((m_system_time - data.sensor_reading_time_ms) >=
             k_measuring_period) {
             data.sensor_reading_time_ms = m_system_time;
-            data.screen.setMeasuredVoltage(m_ina226.getBusVoltage())
-                .setMeasuredCurrent(m_ina226.getCurrent())
-                .setTemperature(m_pd_sink.get().getTemp());
+            data.screen.setMeasuredVoltage(m_hw.ina226.getBusVoltage())
+                .setMeasuredCurrent(m_hw.ina226.getCurrent())
+                .setTemperature(m_hw.pdsink.getTemp());
         }
         // handle pending interrupt
         if (m_is_pd_interrupt_pending) {
             m_is_pd_interrupt_pending = false;
             // Check is the interrupt caused by some protection
-            data.is_fault_detected = m_pd_sink.get().getStatus().has_fault;
+            data.is_fault_detected = m_hw.pdsink.getStatus().has_fault;
 
             if (data.is_fault_detected) {
                 data.fault_recovery_time_ms = m_system_time;
                 // Disable output
                 data.output_enable = false;
-                enableOutput(data.output_enable);
+                m_hw.output_enable.write(data.output_enable);
                 data.screen.setOutputEnable(data.output_enable);
             }
         }
@@ -252,13 +201,13 @@ auto TinyPPS::handleMainState(MainStateData& data) -> TinyPPS::State {
             if ((m_system_time - data.fault_recovery_time_ms) >=
                 k_fault_check_period) {
                 data.fault_recovery_time_ms = m_system_time;
-                if (!m_pd_sink.get().getStatus().has_fault) {
+                if (!m_hw.pdsink.getStatus().has_fault) {
                     // Fault is cleared, re negotiate the selected power
                     // profile
                     data.is_fault_detected = false;
-                    m_pd_sink.get().setPdoOutput(data.pdo_index,
-                                                 data.target_voltage,
-                                                 data.target_current);
+                    m_hw.pdsink.setPdoOutput(data.pdo_index,
+                                             data.target_voltage,
+                                             data.target_current);
                 }
             }
         }
@@ -289,8 +238,8 @@ auto TinyPPS::handleMainState(MainStateData& data) -> TinyPPS::State {
                 data.is_editing = true;
             } else {
                 // TODO set a value
-                m_pd_sink.get().setPdoOutput(
-                    data.pdo_index, data.target_voltage, data.target_current);
+                m_hw.pdsink.setPdoOutput(data.pdo_index, data.target_voltage,
+                                         data.target_current);
                 data.is_editing = false;
             }
         } else {
@@ -322,7 +271,7 @@ auto TinyPPS::handleMainState(MainStateData& data) -> TinyPPS::State {
         // toggle the output enable only if no fault is detected
         if (!data.is_fault_detected) {
             data.output_enable = !data.output_enable;
-            enableOutput(data.output_enable);
+            m_hw.output_enable.write(data.output_enable);
             data.screen.setOutputEnable(data.output_enable);
         }
         break;
@@ -407,50 +356,24 @@ auto TinyPPS::handleMainState(MainStateData& data) -> TinyPPS::State {
         break;
     }
 
-    m_oled.display(data.screen.build());
+    m_hw.oled.display(data.screen.build());
     return next_state;
-}
-
-auto TinyPPS::pdSinkInit() -> bool {
-    if (m_ap33772.probe()) {
-        m_ap33772.setNtc(k_ntc_tr25, k_ntc_tr50, k_ntc_tr75, k_ntc_tr100);
-        Ap33772::MaskReg mask;
-        mask.ocp_en = 1;
-        mask.otp_en = 1;
-        mask.ovp_en = 1;
-        m_ap33772.setMask(mask);
-    } else {
-        // Fall back to AP33772S if AP33772 probe fails
-        m_pd_sink = std::ref(m_ap33772s);
-        m_ap33772s.setNtc(k_ntc_tr25, k_ntc_tr50, k_ntc_tr75, k_ntc_tr100);
-        m_ap33772s.setVselMin(k_ap33772s_vsel_min);
-        Ap33772s::MaskReg mask;
-        mask.ocp_msk = 1;
-        mask.otp_msk = 1;
-        mask.ovp_msk = 1;
-        mask.uvp_msk = 1;
-        m_ap33772s.setMask(mask);
-    }
-
-    enableOutput(false);
-
-    return true;
 }
 
 auto TinyPPS::readPdos() -> int {
     int pdo_cnt = 0;
-    LoadingScreen loading_screen(m_oled.getWidth(), m_oled.getHeight());
-    m_oled.display(loading_screen.build());
+    LoadingScreen loading_screen(m_hw.oled.getWidth(), m_hw.oled.getHeight());
+    m_hw.oled.display(loading_screen.build());
     // 1500ms should be enough to read PDOs
     for (int i = 0; i < 10; ++i) {
         sleep_ms(150);
-        if (m_pd_sink.get().getStatus().caps_received) {
+        if (m_hw.pdsink.getStatus().caps_received) {
             sleep_ms(10);
-            pdo_cnt = m_pd_sink.get().getPDSourcePowerCapabilities();
+            pdo_cnt = m_hw.pdsink.getPDSourcePowerCapabilities();
             // Fill in menu with PDOs
-            for (uint8_t i = 0; i < Ap33772s::k_max_pdo_entries; ++i) {
+            for (uint8_t i = 0; i < pdo_cnt; ++i) {
                 IPdSink::Pdo pdo;
-                if (m_pd_sink.get().getPdo(i, pdo)) {
+                if (m_hw.pdsink.getPdo(i, pdo)) {
                     m_configs.emplace_back(std::make_pair(
                         pdoToString(pdo), ConfigBuilder::buildWithPdo(pdo)));
                 }
@@ -458,14 +381,17 @@ auto TinyPPS::readPdos() -> int {
             sleep_ms(1000);
             break;
         }
-        m_oled.display(loading_screen.updateProgress().build());
+        m_hw.oled.display(loading_screen.updateProgress().build());
     }
-    m_oled.display(loading_screen.setPdoProfileCount(pdo_cnt).build());
+    m_hw.oled.display(loading_screen.setPdoProfileCount(pdo_cnt).build());
     sleep_ms(1500);
 
     return pdo_cnt;
 }
 
-auto TinyPPS::enableOutput(bool enable) -> void {
-    m_output_enable.write(enable);
+auto TinyPPS::sleep_ms(uint32_t duration_ms) const -> void {
+    auto now = m_system_time;
+    while (m_system_time - now < duration_ms) {
+        // do nothing
+    }
 }
