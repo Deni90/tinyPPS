@@ -23,7 +23,7 @@ if (EXISTS ${picoVscode})
   include(${picoVscode})
 endif()
 # ====================================================================================
-set(PICO_BOARD pico CACHE STRING "Board type")
+set(PICO_BOARD none CACHE STRING "Board type")
 
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico_sdk_import.cmake)
@@ -72,6 +72,9 @@ target_link_libraries(TinyPPS
 )
 
 pico_add_extra_outputs(TinyPPS)
+
+#disable RTTI and exceptions
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti -fno-exceptions")
 
 # disable warnings caused by using std::format
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-psabi")
