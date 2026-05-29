@@ -16,8 +16,9 @@ static constexpr uint k_rot_enc_btn_pin = 11;
 static constexpr uint k_rot_enc_a_pin = 10;
 static constexpr uint k_rot_enc_b_pin = 9;
 
-static constexpr unsigned int k_i2c_sda_pin = 28;
-static constexpr unsigned int k_i2c_scl_pin = 29;
+static constexpr i2c_inst_t* k_i2c = i2c1;
+static constexpr unsigned int k_i2c_sda_pin = 18;
+static constexpr unsigned int k_i2c_scl_pin = 19;
 static constexpr unsigned int k_i2c_speed = 400;   // kHz
 
 static constexpr unsigned int k_pd_int_pin = 25;
@@ -52,7 +53,7 @@ auto main() -> int {
     Ap33772s ap33772s{i2c};
     PicoRepeatingTimer timer;
 
-    i2c.initialize(i2c0, k_i2c_sda_pin, k_i2c_scl_pin, k_i2c_speed);
+    i2c.initialize(k_i2c, k_i2c_sda_pin, k_i2c_scl_pin, k_i2c_speed);
     rotary_encoder.initialize();
     output_enable.configure(IGpio::Direction::Output, IGpio::Pull::Down);
     pd_int.configure(IGpio::Direction::Input, IGpio::Pull::Down);

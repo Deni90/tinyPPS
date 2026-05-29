@@ -10,7 +10,7 @@ class PicoI2c : public II2c {
     /**
      * @brief Create RP2040 I2C object instance
      */
-    PicoI2c();
+    PicoI2c() = default;
 
     ~PicoI2c() final = default;
 
@@ -32,6 +32,9 @@ class PicoI2c : public II2c {
         -> int override;
     auto readFrom(uint8_t addr, uint8_t* data, unsigned int len)
         -> int override;
+
+  private:
+    i2c_inst_t* m_i2c{nullptr};
 };
 
 #endif   // pico_i2c_h
