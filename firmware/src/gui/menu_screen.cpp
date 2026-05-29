@@ -1,6 +1,6 @@
 #include "menu_screen.h"
 
-#include <format>
+#include "tiny_format.h"
 
 static constexpr uint8_t k_page_height = 8;
 
@@ -38,7 +38,7 @@ auto MenuScreen::build() -> uint8_t* {
     uint16_t y_pos = 0;
     printString(
         0, y_pos,
-        std::format("{}/{}", m_selected_menu_item + 1, m_menu_items.size()));
+        tinyFormat("%d/%d", m_selected_menu_item + 1, m_menu_items.size()));
     printString(m_width / 2, y_pos, m_title, {.align = TextAlign::center});
 
     y_pos += 2 * k_page_height;

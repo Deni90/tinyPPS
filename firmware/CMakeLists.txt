@@ -76,9 +76,6 @@ pico_add_extra_outputs(TinyPPS)
 #disable RTTI and exceptions
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti -fno-exceptions")
 
-# disable warnings caused by using std::format
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-psabi")
-
 # Custom target to flash the RP2040 via OpenOCD
 add_custom_target(flash
     COMMAND openocd -f interface/cmsis-dap.cfg

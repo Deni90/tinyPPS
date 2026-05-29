@@ -1,8 +1,7 @@
 #include "main_screen.h"
-#include "pdsink_iface.h"
 
-#include <format>
-#include <iomanip>
+#include "pdsink_iface.h"
+#include "tiny_format.h"
 
 MainScreen::MainScreen(uint16_t width, uint16_t height)
     : Screen(width, height) {}
@@ -14,11 +13,11 @@ auto MainScreen::build() -> uint8_t* {
     printString(0, 0, IPdSink::pdoTypeToString(m_pdo_type));
 
     // Temperature
-    printString(m_width, 0, std::format("{}*C", m_temperature),
+    printString(m_width, 0, tinyFormat("%d*C", m_temperature),
                 {.align = TextAlign::right});
 
     // Measured voltage in V
-    printString(m_width / 2, 0, std::format("{:05.2f}V", m_measured_voltage),
+    printString(m_width / 2, 0, tinyFormat("%05.2fV", m_measured_voltage),
                 {.align = TextAlign::center, .size = FontSize::big});
 
     // Target voltage in mV
@@ -26,12 +25,12 @@ auto MainScreen::build() -> uint8_t* {
         (m_width - printString(0, 0, "TARGET 00000mV", true)) / 2;
     auto len = printString(target_voltage_pos, 16, "TARGET ");
     len += printString(target_voltage_pos + len, 16,
-                       std::format("{:05d}", m_target_voltage),
+                       tinyFormat("%05d", m_target_voltage),
                        {.invert = m_is_target_voltage_selected});
     printString(target_voltage_pos + len, 16, "mV");
 
     // Measured current in A
-    printString(m_width / 2, 25, std::format("{:05.2f}A", m_measured_current),
+    printString(m_width / 2, 25, tinyFormat("%05.2fA", m_measured_current),
                 {.align = TextAlign::center, .size = FontSize::big});
 
     // Target current in mA
@@ -39,7 +38,7 @@ auto MainScreen::build() -> uint8_t* {
         (m_width - printString(0, 0, "LIMIT 0000mA", true)) / 2;
     len = printString(target_current_pos, 41, "LIMIT ");
     len += printString(target_current_pos + len, 41,
-                       std::format("{:04d}", m_target_current),
+                       tinyFormat("%04dV", m_target_current),
                        {.invert = m_is_target_current_selected});
     printString(target_current_pos + len, 41, "mA");
 
