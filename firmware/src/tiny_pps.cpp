@@ -285,19 +285,20 @@ auto TinyPPS::handleMainState(MainStateData& data) -> TinyPPS::State {
         // if tv or tc is in editing mode set the value on button press
         break;
     case RotaryEncoder::State::btn_long_press:
-        // handle long button press
         // ignore this while editing target voltage/current
-        if (data.is_editing) {
+        // or when a fault is detected
+        if (data.is_editing || data.is_fault_detected) {
             break;
         }
-        if (!data.output_enable) {   // TODO check this
-            data.selection = None;
-        }
-        // toggle the output enable only if no fault is detected
-        if (!data.is_fault_detected) {
+        {   // toggle output enable
             data.output_enable = !data.output_enable;
             m_hw.output_enable.write(data.output_enable);
-            data.screen.setOutputEnable(data.output_enable);
+            // read vout status (the output of the AND gate) and update screen
+            // with it
+            auto vout_status = m_hw.vout_status.read();
+            data.screen.setOutputEnable(vout_status);
+            // finally, write the vout status back to the output enable pin
+            m_hw.output_enable.write(vout_status);
         }
         break;
     case RotaryEncoder::State::rot_dec:

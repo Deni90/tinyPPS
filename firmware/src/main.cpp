@@ -23,6 +23,7 @@ static constexpr unsigned int k_i2c_speed = 400;   // kHz
 
 static constexpr unsigned int k_pd_int_pin = 25;
 static constexpr unsigned int k_output_enable_pin = 17;
+static constexpr unsigned int k_vout_status_pin = 14;
 
 static constexpr uint8_t k_ina226_addr = 0x40;
 
@@ -46,6 +47,7 @@ auto main() -> int {
     PicoGpio rot_enc_btn_pin(k_rot_enc_btn_pin);
     RotaryEncoder rotary_encoder{rot_enc_a_pin, rot_enc_b_pin, rot_enc_btn_pin};
     PicoGpio output_enable{k_output_enable_pin};
+    PicoGpio vout_status{k_vout_status_pin};
     PicoGpio pd_int{k_pd_int_pin};
     Ssd1306 oled{i2c, Ssd1306::Type::ssd1306_128x64};
     Ina226 ina226{i2c, k_ina226_addr};
@@ -56,6 +58,7 @@ auto main() -> int {
     i2c.initialize(k_i2c, k_i2c_sda_pin, k_i2c_scl_pin, k_i2c_speed);
     rotary_encoder.initialize();
     output_enable.configure(IGpio::Direction::Output, IGpio::Pull::Down);
+    vout_status.configure(IGpio::Direction::Input, IGpio::Pull::Down);
     pd_int.configure(IGpio::Direction::Input, IGpio::Pull::Down);
     oled.initialize();
     ina226.setAveragingMode(Ina226::AveragingMode::Samples128);
@@ -84,6 +87,7 @@ auto main() -> int {
     HardwareContext hardware{.timer = timer,
                              .pdsink = pdsink.get(),
                              .output_enable = output_enable,
+                             .vout_status = vout_status,
                              .pd_int = pd_int,
                              .ina226 = ina226,
                              .encoder = rotary_encoder,

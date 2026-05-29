@@ -12,6 +12,7 @@ struct HardwareContext {
     IRepeatingTimer& timer;
     IPdSink& pdsink;
     IGpio& output_enable;
+    IGpio& vout_status;
     IGpio& pd_int;
     Ina226& ina226;
     RotaryEncoder& encoder;
