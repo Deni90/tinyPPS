@@ -41,8 +41,8 @@ class TinyPPS {
      */
     struct MenuStateData {
         MenuScreen screen{128, 64};
-        bool is_initialized = false;
-        uint8_t selected_menu_item = 0;
+        bool is_initialized{false};
+        uint8_t selected_menu_item{0};
     };
 
     /**
@@ -50,19 +50,19 @@ class TinyPPS {
      */
     struct MainStateData {
         MainScreen screen{128, 64};   // FIXME
-        MainScreenSelection selection = None;
-        bool is_initialized = false;
-        uint8_t pdo_index = 0;
-        uint16_t target_voltage = 0;
-        uint16_t target_current = 0;
-        bool is_fault_detected = false;
-        bool output_enable = false;
-        bool is_editing = false;
-        bool blinking_state = false;
-        uint32_t sensor_reading_time_ms = 0;
-        uint32_t rotary_encoder_time_ms = 0;
-        uint32_t fault_recovery_time_ms = 0;
-        uint32_t blinking_time_ms = 0;
+        MainScreenSelection selection{None};
+        bool is_initialized{false};
+        uint8_t pdo_index{0};
+        uint16_t target_voltage{0};
+        uint16_t target_current{0};
+        bool is_fault_detected{false};
+        bool output_enable{false};
+        bool is_editing{false};
+        bool blinking_state{false};
+        uint32_t sensor_reading_time_ms{0};
+        uint32_t rotary_encoder_time_ms{0};
+        uint32_t fault_recovery_time_ms{0};
+        uint32_t blinking_time_ms{0};
     };
 
     /**
