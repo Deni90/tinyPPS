@@ -140,35 +140,28 @@ auto TinyPPS::handleMenuState(MenuStateData& data) -> TinyPPS::State {
     }
 
     const auto encoder_state = m_hw.encoder.getState();
-    if (encoder_state != RotaryEncoder::State::idle &&
-        encoder_state != RotaryEncoder::State::processed) {
-        m_hw.encoder.clearState();
-    }
-
-    switch (encoder_state) {
-    case RotaryEncoder::State::idle:
-    case RotaryEncoder::State::processed:
+    int direction = 0;
+    if (encoder_state == RotaryEncoder::State::idle ||
+        encoder_state == RotaryEncoder::State::processed) {
         m_hw.encoder.handle(m_system_time);
-        break;
-    case RotaryEncoder::State::btn_short_press:
-        next_state = State::main;
-        break;
-    case RotaryEncoder::State::rot_inc:
-        if (data.selected_menu_item < data.screen.getMenuItems().size() - 1) {
-            ++data.selected_menu_item;
-        } else {
-            data.selected_menu_item = 0;
+    } else {
+        m_hw.encoder.clearState();
+        // Handle encoder states
+        if (encoder_state == RotaryEncoder::State::btn_short_press) {
+            next_state = TinyPPS::State::main;
+        } else if (encoder_state == RotaryEncoder::State::rot_inc) {
+            direction = 1;
+        } else if (encoder_state == RotaryEncoder::State::rot_dec) {
+            direction = -1;
         }
-        break;
-    case RotaryEncoder::State::rot_dec:
-        if (data.selected_menu_item == 0) {
-            data.selected_menu_item = data.screen.getMenuItems().size() - 1;
-        } else {
-            --data.selected_menu_item;
+    }
+    // Update selected menu item based on encoder direction
+    if (direction != 0) {
+        auto menu_size = data.screen.getMenuItems().size();
+        if (menu_size > 0) {
+            data.selected_menu_item =
+                (data.selected_menu_item + direction + menu_size) % menu_size;
         }
-        break;
-    default:
-        break;
     }
     m_hw.oled.display(
         data.screen.selectMenuItem(data.selected_menu_item).build());
