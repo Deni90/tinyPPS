@@ -1,6 +1,7 @@
 #include "tiny_pps.h"
 
 #include <algorithm>
+#include <cstdint>
 
 #include "loading_screen.h"
 #include "pdo_helper.h"
@@ -29,18 +30,15 @@ inline auto operator--(MainScreenSelection& selection) -> MainScreenSelection& {
     return selection;
 }
 
-template <typename T>
-static auto decrement_and_clamp(T& value, T step, T min_val, T max_val,
-                                uint8_t multiplier = 1) -> void {
-    value -= step * multiplier;
-    value = std::clamp<T>(value, min_val, max_val);
-}
-
-template <typename T>
-static auto increment_and_clamp(T& value, T step, T min_val, T max_val,
-                                uint8_t multiplier = 1) -> void {
-    value += step * multiplier;
-    value = std::clamp<T>(value, min_val, max_val);
+static auto adjustAndClamp(uint16_t& value, uint16_t step, uint16_t min_val,
+                           uint16_t max_val, int8_t multiplier) -> void {
+    // 32-bit signed int is wide enough to prevent uint16_t underflow/overflow
+    int32_t current = value;
+    int32_t total_change = static_cast<int32_t>(step) * multiplier;
+    int32_t result = current + total_change;
+    // Clamp and cast back to uint16_t
+    value = static_cast<uint16_t>(std::clamp(
+        result, static_cast<int32_t>(min_val), static_cast<int32_t>(max_val)));
 }
 
 TinyPPS::TinyPPS(HardwareContext& hardware) : m_hw(hardware) {}
@@ -247,22 +245,18 @@ auto TinyPPS::handleMainState(MainStateData& data) -> TinyPPS::State {
         m_hw.encoder.handle(m_system_time);
         break;
     case RotaryEncoder::State::btn_short_press:
-        // handle short button press
-        // if tv or tc is selected enter editing mode of the value
         if (data.selection > None) {
-            if (!data.is_editing) {
-                data.is_editing = true;
-            } else {
-                // TODO set a value
+            // if tv or tc is selected enter editing mode of the value
+            if (data.is_editing) {
                 m_hw.pdsink.setPdoOutput(data.pdo_index, data.target_voltage,
                                          data.target_current);
-                data.is_editing = false;
             }
+            data.is_editing = !data.is_editing;
         } else {
             // when no item selected show menu on double click
             // show menu only if there is more than one config item and when the
             // output is turned off
-            if (!m_configs.size() == 1 || data.output_enable) {
+            if (m_configs.size() <= 1 || data.output_enable) {
                 break;
             }
             if ((m_system_time - data.rotary_encoder_time_ms) <=
@@ -273,7 +267,6 @@ auto TinyPPS::handleMainState(MainStateData& data) -> TinyPPS::State {
             }
             data.rotary_encoder_time_ms = m_system_time;
         }
-        // if tv or tc is in editing mode set the value on button press
         break;
     case RotaryEncoder::State::btn_long_press:
         // ignore this while editing target voltage/current
@@ -292,81 +285,53 @@ auto TinyPPS::handleMainState(MainStateData& data) -> TinyPPS::State {
             m_hw.output_enable.write(vout_status);
         }
         break;
-    case RotaryEncoder::State::rot_dec:
-        if (!config.is_editing_enabled) {
-            break;
-        }
-        // handle rotary decrement
-        // select target voltage, target current or none
-        if (data.is_editing) {
-            bool big_step = false;
-            if ((m_system_time - data.rotary_encoder_time_ms) <=
-                k_big_step_period) {
-                big_step = true;
-            }
-            data.rotary_encoder_time_ms = m_system_time;
-            switch (data.selection) {
-            case Voltage:
-                decrement_and_clamp(
-                    data.target_voltage, config.pdo.voltage_step,
-                    config.pdo.voltage_min, config.pdo.voltage_max,
-                    big_step ? k_big_step_size / config.pdo.voltage_step : 1);
-                break;
-            case Current:
-                decrement_and_clamp(
-                    data.target_current, config.pdo.current_step,
-                    config.pdo.current_min, config.pdo.current_max,
-                    big_step ? k_big_step_size / config.pdo.current_step : 1);
-                break;
-            case None:
-            case Count:
-            default:
-                break;
-            }
-            data.screen.setTargetVoltage(data.target_voltage)
-                .setTargetCurrent(data.target_current);
-        } else {
-            --data.selection;
-        }
-        // decrement tv or tc in value editing mode
-        break;
     case RotaryEncoder::State::rot_inc:
+    case RotaryEncoder::State::rot_dec: {
+        int8_t direction =
+            (encoder_state == RotaryEncoder::State::rot_inc) ? 1 : -1;
         if (!config.is_editing_enabled) {
             break;
         }
-        // handle rotary increment
         // select target voltage, target current or none
         if (data.is_editing) {
-            bool big_step = false;
-            if ((m_system_time - data.rotary_encoder_time_ms) <=
-                k_big_step_period) {
-                big_step = true;
-            }
+            bool big_step = (m_system_time - data.rotary_encoder_time_ms) <=
+                            k_big_step_period;
             data.rotary_encoder_time_ms = m_system_time;
             switch (data.selection) {
-            case Voltage:
-                increment_and_clamp(
-                    data.target_voltage, config.pdo.voltage_step,
-                    config.pdo.voltage_min, config.pdo.voltage_max,
-                    big_step ? k_big_step_size / config.pdo.voltage_step : 1);
+            case Voltage: {
+                int8_t step_multiplier =
+                    big_step
+                        ? k_big_step_size / config.pdo.voltage_step * direction
+                        : direction;
+                adjustAndClamp(data.target_voltage, config.pdo.voltage_step,
+                               config.pdo.voltage_min, config.pdo.voltage_max,
+                               step_multiplier);
                 break;
-            case Current:
-                increment_and_clamp(
-                    data.target_current, config.pdo.current_step,
-                    config.pdo.current_min, config.pdo.current_max,
-                    big_step ? k_big_step_size / config.pdo.current_step : 1);
+            }
+            case Current: {
+                int8_t step_multiplier =
+                    big_step
+                        ? k_big_step_size / config.pdo.current_step * direction
+                        : direction;
+                adjustAndClamp(data.target_current, config.pdo.current_step,
+                               config.pdo.current_min, config.pdo.current_max,
+                               step_multiplier);
                 break;
-            case None:
-            case Count:
+            }
             default:
                 break;
             }
             data.screen.setTargetVoltage(data.target_voltage)
                 .setTargetCurrent(data.target_current);
         } else {
-            ++data.selection;
+            if (direction > 0) {
+                ++data.selection;
+            } else {
+                --data.selection;
+            }
         }
         break;
+    }
     case RotaryEncoder::State::rot_dec_while_btn_press:
     case RotaryEncoder::State::rot_inc_while_btn_press:
         // TODO implement me with constant current mode implementation...
