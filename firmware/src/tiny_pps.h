@@ -40,7 +40,7 @@ class TinyPPS {
      * @brief Data for the menu state
      */
     struct MenuStateData {
-        MenuScreen screen{128, 64};
+        MenuScreen screen;
         bool is_initialized{false};
         uint8_t selected_menu_item{0};
     };
@@ -49,7 +49,7 @@ class TinyPPS {
      * @brief Data for the main state
      */
     struct MainStateData {
-        MainScreen screen{128, 64};   // FIXME
+        MainScreen screen;
         MainScreenSelection selection{None};
         bool is_initialized{false};
         uint8_t pdo_index{0};

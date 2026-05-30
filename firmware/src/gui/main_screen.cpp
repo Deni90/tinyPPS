@@ -4,28 +4,25 @@
 #include "pdsink_iface.h"
 #include "tiny_format.h"
 
-MainScreen::MainScreen(uint16_t width, uint16_t height)
-    : Screen(width, height) {}
-
-auto MainScreen::build() -> uint8_t* {
+auto MainScreen::build() -> FrameBuffer& {
     clear();
 
     // PDO type
     printString(0, 0, IPdSink::pdoTypeToString(m_pdo_type));
 
     // Temperature
-    printString(m_width, 0, tinyFormat("%d*C", m_temperature),
+    printString(k_width, 0, tinyFormat("%d*C", m_temperature),
                 {.align = TextAlign::right});
 
     // Measured voltage in V
-    printString(m_width / 2, 0, tinyFormat("%05.2fV", m_measured_voltage),
+    printString(k_width / 2, 0, tinyFormat("%05.2fV", m_measured_voltage),
                 {.align = TextAlign::center, .size = FontSize::big});
 
     // Target/Limit voltage in mV
     std::string voltage_label =
         (m_supply_mode == SupplyMode::CV) ? "TARGET" : "LIMIT";
     auto target_voltage_pos =
-        (m_width - printString(0, 0, voltage_label + " 00000mV", true)) / 2;
+        (k_width - printString(0, 0, voltage_label + " 00000mV", true)) / 2;
     auto len = printString(target_voltage_pos, 16, voltage_label + " ");
     len += printString(target_voltage_pos + len, 16,
                        tinyFormat("%05d", m_target_voltage),
@@ -33,14 +30,14 @@ auto MainScreen::build() -> uint8_t* {
     printString(target_voltage_pos + len, 16, "mV");
 
     // Measured current in A
-    printString(m_width / 2, 25, tinyFormat("%05.2fA", m_measured_current),
+    printString(k_width / 2, 25, tinyFormat("%05.2fA", m_measured_current),
                 {.align = TextAlign::center, .size = FontSize::big});
 
     // Target/Limit current in mA
     std::string current_label =
         (m_supply_mode == SupplyMode::CV) ? "LIMIT" : "TARGET";
     auto target_current_pos =
-        (m_width - printString(0, 0, current_label + " 0000mA", true)) / 2;
+        (k_width - printString(0, 0, current_label + " 0000mA", true)) / 2;
     len = printString(target_current_pos, 41, current_label + " ");
     len += printString(target_current_pos + len, 41,
                        tinyFormat("%04d", m_target_current),

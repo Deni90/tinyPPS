@@ -9,11 +9,8 @@ class LoadingScreen : public Screen {
   public:
     /**
      * @brief Constructor
-     *
-     * @param[in] width Width of the screen
-     * @param[in] height Height of the screeen
      */
-    LoadingScreen(uint16_t width, uint16_t height);
+    LoadingScreen() = default;
 
     /**
      * @brief Destructor
@@ -23,10 +20,10 @@ class LoadingScreen : public Screen {
     /**
      * @brief Build the loading screen based on data provided by user
      *
-     * @return An array containing the loading screen matching the screen
-     * dimensions
+     * @return A reference to shared FrameBuffer matching the display
+     * dimensions.
      */
-    auto build() -> uint8_t* override;
+    auto build() -> FrameBuffer& override;
 
     /**
      * @brief Update the progress bar

@@ -86,8 +86,8 @@ auto TinyPPS::handle() -> void {
 
 auto TinyPPS::handleInitState() -> TinyPPS::State {
     int pdo_cnt = 0;
-    LoadingScreen loading_screen(m_hw.oled.getWidth(), m_hw.oled.getHeight());
-    m_hw.oled.display(loading_screen.build());
+    LoadingScreen loading_screen;
+    m_hw.oled.display(loading_screen.build().data());
     // 1500ms should be enough to read PDOs
     for (int i = 0; i < 10; ++i) {
         sleep_ms(150);
@@ -105,9 +105,10 @@ auto TinyPPS::handleInitState() -> TinyPPS::State {
             sleep_ms(1000);
             break;
         }
-        m_hw.oled.display(loading_screen.updateProgress().build());
+        m_hw.oled.display(loading_screen.updateProgress().build().data());
     }
-    m_hw.oled.display(loading_screen.setPdoProfileCount(pdo_cnt).build());
+    m_hw.oled.display(
+        loading_screen.setPdoProfileCount(pdo_cnt).build().data());
     sleep_ms(1500);
 
     if (pdo_cnt == 0) {
@@ -162,7 +163,7 @@ auto TinyPPS::handleMenuState(MenuStateData& data) -> TinyPPS::State {
         }
     }
     m_hw.oled.display(
-        data.screen.selectMenuItem(data.selected_menu_item).build());
+        data.screen.selectMenuItem(data.selected_menu_item).build().data());
     return next_state;
 }
 
@@ -338,7 +339,7 @@ auto TinyPPS::handleMainState(MainStateData& data) -> TinyPPS::State {
         break;
     }
 
-    m_hw.oled.display(data.screen.build());
+    m_hw.oled.display(data.screen.build().data());
     return next_state;
 }
 

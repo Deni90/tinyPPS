@@ -5,7 +5,6 @@
 #include <cstring>
 #include <utility>
 
-static constexpr uint8_t k_page_height = 8;
 static constexpr uint8_t k_font_width = 5;
 static constexpr uint8_t k_font_height = 8;
 static constexpr uint8_t k_unused = 0x80;
@@ -111,25 +110,18 @@ static constexpr std::array<uint8_t, 475> k_font = {
     0x08, 0x04,     0x08,     0x04,     k_unused,   // ~
 };
 
-Screen::Screen(uint16_t width, uint16_t height)
-    : m_width(width), m_height(height) {
-    m_frame_buffer = new uint8_t[width * height / k_page_height];
-    clear();
-}
+FrameBuffer Screen::m_frame_buffer;
 
-Screen::~Screen() { delete[] m_frame_buffer; }
+Screen::Screen() { clear(); }
 
-auto Screen::clear() -> void {
-    memset(m_frame_buffer, 0,
-           sizeof(uint8_t) * (m_width * m_height / k_page_height));
-}
+auto Screen::clear() -> void { m_frame_buffer.fill(0); }
 
 auto Screen::setPixel(int16_t x_pos, int16_t y_pos) -> void {
-    if ((x_pos < 0) || (y_pos < 0) || std::cmp_greater_equal(x_pos, m_width) ||
-        std::cmp_greater_equal(y_pos, m_height)) {
+    if ((x_pos < 0) || (y_pos < 0) || std::cmp_greater_equal(x_pos, k_width) ||
+        std::cmp_greater_equal(y_pos, k_height)) {
         return;
     }
-    auto buffer_index = (m_width * (y_pos / k_page_height)) + x_pos;
+    auto buffer_index = (k_width * (y_pos / k_page_height)) + x_pos;
     m_frame_buffer[buffer_index] |= (1 << (y_pos % k_page_height));
 }
 
@@ -160,12 +152,12 @@ auto Screen::draw(int16_t x_pos, int16_t y_pos, const uint8_t* object,
         for (auto temp_x_pos = x_pos; temp_x_pos < (x_pos + width);
              temp_x_pos++) {
             if ((temp_x_pos < 0) || (temp_y_pos < 0) ||
-                std::cmp_greater_equal(temp_x_pos, m_width) ||
-                std::cmp_greater_equal(temp_y_pos, m_height)) {
+                std::cmp_greater_equal(temp_x_pos, k_width) ||
+                std::cmp_greater_equal(temp_y_pos, k_height)) {
                 continue;
             }
             auto buffer_index =
-                (m_width * (temp_y_pos / k_page_height)) + temp_x_pos;
+                (k_width * (temp_y_pos / k_page_height)) + temp_x_pos;
             auto object_x = temp_x_pos - x_pos;
             auto object_y = temp_y_pos - y_pos;
             auto object_index = (width * (object_y / k_page_height)) + object_x;

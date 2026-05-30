@@ -1,23 +1,27 @@
 #ifndef screen_h
 #define screen_h
 
+#include <array>
 #include <cstdint>
 #include <string>
+
+constexpr uint16_t k_width = 128;   // Width of the screen in pixels
+constexpr uint16_t k_height = 64;   // Height of the screen in pixels
+constexpr uint8_t k_page_height = 8;
+
+using FrameBuffer = std::array<uint8_t, k_width * k_height / k_page_height>;
 
 class Screen {
   public:
     /**
      * @brief Constructor
-     *
-     * @param[in] width Width of the screen
-     * @param[in] height Height of the screen
      */
-    Screen(uint16_t width, uint16_t height);
+    Screen();
 
     /**
-     * @bried Destructor
+     * @brief Destructor
      */
-    virtual ~Screen();
+    virtual ~Screen() = default;
 
     /**
      * @brief Build function that all screens must to implement
@@ -25,10 +29,10 @@ class Screen {
      * This function is used to build the desired screen and store it in the
      * frame buffer.
      *
-     * @return Return the buffer containing the screen. Buffer size is always
-     * width * height / 8.
+     * @return A reference to shared FrameBuffer matching the display
+     * dimensions.
      */
-    virtual auto build() -> uint8_t* = 0;
+    virtual auto build() -> FrameBuffer& = 0;
 
   protected:
     /**
@@ -148,9 +152,8 @@ class Screen {
                      const StringConfig& config, bool dry_run = false)
         -> uint16_t;
 
-    uint16_t m_width;
-    uint16_t m_height;
-    uint8_t* m_frame_buffer;
+    // Make the frame buffer shared across all screens
+    static FrameBuffer m_frame_buffer;
 };
 
 #endif   // screen_h

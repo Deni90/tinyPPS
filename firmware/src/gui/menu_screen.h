@@ -10,11 +10,8 @@ class MenuScreen : public Screen {
   public:
     /**
      * @brief Constructor
-     *
-     * @param[in] width Width of the screen
-     * @param[in] height Height of the screeen
      */
-    MenuScreen(uint16_t width, uint16_t height);
+    MenuScreen() = default;
 
     /**
      * @brief Destructor
@@ -70,10 +67,10 @@ class MenuScreen : public Screen {
     /**
      * @brief Build the menu screen based on data provided by user
      *
-     * @return An array containing the menu screen matching the screen
-     * dimensions
+     * @return A reference to shared FrameBuffer matching the display
+     * dimensions.
      */
-    auto build() -> uint8_t* override;
+    auto build() -> FrameBuffer& override;
 
   private:
     std::string m_title;

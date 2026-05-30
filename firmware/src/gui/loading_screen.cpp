@@ -29,26 +29,23 @@ constexpr uint8_t k_logo[] = {
 constexpr uint8_t k_logo_width = 91;
 constexpr uint8_t k_logo_height = 19;
 
-LoadingScreen::LoadingScreen(uint16_t width, uint16_t height)
-    : Screen(width, height) {}
-
-auto LoadingScreen::build() -> uint8_t* {
+auto LoadingScreen::build() -> FrameBuffer& {
     clear();
     // Logo
-    draw((m_width - k_logo_width) / 2, (m_height - k_logo_height) / 2, k_logo,
+    draw((k_width - k_logo_width) / 2, (k_height - k_logo_height) / 2, k_logo,
          k_logo_width, k_logo_height);
     // if PDO count is not set show the progress bar, otherwise show the number
     // of PDO profiles
     if (m_pdo_profile_count.has_value()) {
         std::string profiles_found_text =
             std::to_string(m_pdo_profile_count.value()) + " PDOs found";
-        printString(m_width / 2, 48, profiles_found_text,
+        printString(k_width / 2, 48, profiles_found_text,
                     {.align = TextAlign::center});
     } else {
         std::string loading_text(m_progress, '.');
-        printString(m_width / 2, 50, loading_text,
+        printString(k_width / 2, 50, loading_text,
                     {.align = TextAlign::center, .size = FontSize::big});
-        printString(m_width / 2, 48, "Loading PDOs",
+        printString(k_width / 2, 48, "Loading PDOs",
                     {.align = TextAlign::center});
     }
 
