@@ -10,7 +10,7 @@
 #include "pico_i2c.h"
 #include "pico_timer.h"
 #include "ssd1306.h"
-#include "tiny_pps.h"
+#include "state_machine.h"
 
 static constexpr uint k_rot_enc_btn_pin = 11;
 static constexpr uint k_rot_enc_a_pin = 10;
@@ -93,10 +93,10 @@ auto main() -> int {
                              .encoder = rotary_encoder,
                              .oled = oled};
 
-    TinyPPS tiny_pps{hardware};
-    tiny_pps.initialize();
+    StateMachine state_machine{hardware};
+    state_machine.initialize();
 
     while (true) {
-        tiny_pps.handle();
+        state_machine.handle();
     }
 }

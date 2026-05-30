@@ -1,4 +1,4 @@
-#include "tiny_pps.h"
+#include "state_machine.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -41,9 +41,9 @@ static auto adjustAndClamp(uint16_t& value, uint16_t step, uint16_t min_val,
         result, static_cast<int32_t>(min_val), static_cast<int32_t>(max_val)));
 }
 
-TinyPPS::TinyPPS(HardwareContext& hardware) : m_hw(hardware) {}
+StateMachine::StateMachine(HardwareContext& hardware) : m_hw(hardware) {}
 
-auto TinyPPS::initialize() -> void {
+auto StateMachine::initialize() -> void {
     // Initialize a timer to repeat every 1 ms
     m_hw.timer.start(
         1,
@@ -51,7 +51,7 @@ auto TinyPPS::initialize() -> void {
             if (!ctx) {
                 return;
             }
-            auto* self = static_cast<TinyPPS*>(ctx);
+            auto* self = static_cast<StateMachine*>(ctx);
             self->m_system_time = self->m_system_time + 1;
         },
         this);
@@ -63,28 +63,28 @@ auto TinyPPS::initialize() -> void {
             if (!user) {
                 return;
             }
-            auto* self = static_cast<TinyPPS*>(user);
+            auto* self = static_cast<StateMachine*>(user);
             self->m_is_pd_interrupt_pending = true;
         },
         this);
     m_hw.pd_int.enableInterrupt(true);
 }
 
-auto TinyPPS::handle() -> void {
-    if (m_state == TinyPPS::State::init) {
+auto StateMachine::handle() -> void {
+    if (m_state == StateMachine::State::init) {
         m_state = handleInitState();
-    } else if (m_state == TinyPPS::State::menu) {
+    } else if (m_state == StateMachine::State::menu) {
         auto tmp_state = handleMenuState(m_menu_state_data);
         if (tmp_state != m_state) {
             m_main_state_data.pdo_index = m_menu_state_data.selected_menu_item;
             m_state = tmp_state;
         }
-    } else if (m_state == TinyPPS::State::main) {
+    } else if (m_state == StateMachine::State::main) {
         m_state = handleMainState(m_main_state_data);
     }
 }
 
-auto TinyPPS::handleInitState() -> TinyPPS::State {
+auto StateMachine::handleInitState() -> StateMachine::State {
     int pdo_cnt = 0;
     LoadingScreen loading_screen;
     m_hw.oled.display(loading_screen.build().data());
@@ -120,13 +120,13 @@ auto TinyPPS::handleInitState() -> TinyPPS::State {
     // We can immediately switch to the main state
     if (m_configs.size() == 1) {
 
-        return TinyPPS::State::main;
+        return StateMachine::State::main;
     }
-    return TinyPPS::State::menu;
+    return StateMachine::State::menu;
 }
 
-auto TinyPPS::handleMenuState(MenuStateData& data) -> TinyPPS::State {
-    auto next_state = TinyPPS::State::menu;
+auto StateMachine::handleMenuState(MenuStateData& data) -> StateMachine::State {
+    auto next_state = StateMachine::State::menu;
 
     if (!data.is_initialized) {
         data.is_initialized = true;
@@ -147,7 +147,7 @@ auto TinyPPS::handleMenuState(MenuStateData& data) -> TinyPPS::State {
         m_hw.encoder.clearState();
         // Handle encoder states
         if (encoder_state == RotaryEncoder::State::btn_short_press) {
-            next_state = TinyPPS::State::main;
+            next_state = StateMachine::State::main;
         } else if (encoder_state == RotaryEncoder::State::rot_inc) {
             direction = 1;
         } else if (encoder_state == RotaryEncoder::State::rot_dec) {
@@ -167,8 +167,8 @@ auto TinyPPS::handleMenuState(MenuStateData& data) -> TinyPPS::State {
     return next_state;
 }
 
-auto TinyPPS::handleMainState(MainStateData& data) -> TinyPPS::State {
-    auto next_state = TinyPPS::State::main;
+auto StateMachine::handleMainState(MainStateData& data) -> StateMachine::State {
+    auto next_state = StateMachine::State::main;
     Config& config = m_configs[data.pdo_index].second;
 
     if (!data.is_initialized) {
@@ -343,7 +343,7 @@ auto TinyPPS::handleMainState(MainStateData& data) -> TinyPPS::State {
     return next_state;
 }
 
-auto TinyPPS::sleep_ms(uint32_t duration_ms) const -> void {
+auto StateMachine::sleep_ms(uint32_t duration_ms) const -> void {
     auto now = m_system_time;
     while (m_system_time - now < duration_ms) {
         // do nothing

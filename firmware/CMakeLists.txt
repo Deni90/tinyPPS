@@ -36,7 +36,7 @@ pico_sdk_init()
 # Add executable. Default name is the project name, version 0.1
 add_executable(TinyPPS
         src/main.cpp
-        src/tiny_pps.cpp
+        src/state_machine.cpp
 )
 
 add_subdirectory(src/ap33772)

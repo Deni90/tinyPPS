@@ -1,5 +1,5 @@
-#ifndef tiny_pps_h
-#define tiny_pps_h
+#ifndef state_machine_h
+#define state_machine_h
 
 #include <cstdint>
 #include <string>
@@ -12,7 +12,7 @@
 
 enum MainScreenSelection { None, Voltage, Current, Count };   // FIXME
 
-class TinyPPS {
+class StateMachine {
   public:
     /**
      * Enumeration represending state machine states
@@ -22,7 +22,7 @@ class TinyPPS {
     /**
      * @brief Constructor
      * */
-    TinyPPS(HardwareContext& hardware);
+    StateMachine(HardwareContext& hardware);
 
     /**
      * @brief Initialize the module
@@ -99,4 +99,4 @@ class TinyPPS {
     MainStateData m_main_state_data;
 };
 
-#endif   // tiny_pps_h
+#endif   // state_machine_h
