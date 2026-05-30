@@ -11,6 +11,8 @@ static constexpr unsigned int k_double_click_period = 1000;   // ms
 static constexpr unsigned int k_measuring_period = 200;       // ms
 static constexpr unsigned int k_fault_check_period = 1000;    // ms
 
+static constexpr uint16_t k_big_step_size = 250;
+
 inline auto operator++(MainScreenSelection& selection) -> MainScreenSelection& {
     using T = std::underlying_type_t<MainScreenSelection>;
     selection = static_cast<MainScreenSelection>(
@@ -95,7 +97,7 @@ auto TinyPPS::handleInitState() -> TinyPPS::State {
             sleep_ms(10);
             pdo_cnt = m_hw.pdsink.getPDSourcePowerCapabilities();
             // Fill in menu with PDOs
-            for (uint8_t i = 0; i < pdo_cnt; ++i) {
+            for (auto i = 0; i < pdo_cnt; ++i) {
                 IPdSink::Pdo pdo;
                 if (m_hw.pdsink.getPdo(i, pdo)) {
                     m_configs.emplace_back(std::make_pair(
@@ -195,6 +197,7 @@ auto TinyPPS::handleMainState(MainStateData& data) -> TinyPPS::State {
         encoder_state != RotaryEncoder::State::processed) {
         m_hw.encoder.clearState();
     }
+
     switch (encoder_state) {
     case RotaryEncoder::State::idle:
     case RotaryEncoder::State::processed:
@@ -316,16 +319,16 @@ auto TinyPPS::handleMainState(MainStateData& data) -> TinyPPS::State {
             data.rotary_encoder_time_ms = m_system_time;
             switch (data.selection) {
             case Voltage:
-                decrement_and_clamp(data.target_voltage,
-                                    config.pdo.voltage_step,
-                                    config.pdo.voltage_min,
-                                    config.pdo.voltage_max, big_step ? 5 : 1);
+                decrement_and_clamp(
+                    data.target_voltage, config.pdo.voltage_step,
+                    config.pdo.voltage_min, config.pdo.voltage_max,
+                    big_step ? k_big_step_size / config.pdo.voltage_step : 1);
                 break;
             case Current:
-                decrement_and_clamp(data.target_current,
-                                    config.pdo.current_step,
-                                    config.pdo.current_min,
-                                    config.pdo.current_max, big_step ? 4 : 1);
+                decrement_and_clamp(
+                    data.target_current, config.pdo.current_step,
+                    config.pdo.current_min, config.pdo.current_max,
+                    big_step ? k_big_step_size / config.pdo.current_step : 1);
                 break;
             case None:
             case Count:
@@ -354,16 +357,16 @@ auto TinyPPS::handleMainState(MainStateData& data) -> TinyPPS::State {
             data.rotary_encoder_time_ms = m_system_time;
             switch (data.selection) {
             case Voltage:
-                increment_and_clamp(data.target_voltage,
-                                    config.pdo.voltage_step,
-                                    config.pdo.voltage_min,
-                                    config.pdo.voltage_max, big_step ? 5 : 1);
+                increment_and_clamp(
+                    data.target_voltage, config.pdo.voltage_step,
+                    config.pdo.voltage_min, config.pdo.voltage_max,
+                    big_step ? k_big_step_size / config.pdo.voltage_step : 1);
                 break;
             case Current:
-                increment_and_clamp(data.target_current,
-                                    config.pdo.current_step,
-                                    config.pdo.current_min,
-                                    config.pdo.current_max, big_step ? 4 : 1);
+                increment_and_clamp(
+                    data.target_current, config.pdo.current_step,
+                    config.pdo.current_min, config.pdo.current_max,
+                    big_step ? k_big_step_size / config.pdo.current_step : 1);
                 break;
             case None:
             case Count:
