@@ -198,65 +198,60 @@ auto TinyPPS::handleMainState(MainStateData& data) -> TinyPPS::State {
         m_hw.encoder.clearState();
     }
 
+    if ((m_system_time - data.sensor_reading_time_ms) >= k_measuring_period) {
+        data.sensor_reading_time_ms = m_system_time;
+        data.screen.setMeasuredVoltage(m_hw.ina226.getBusVoltage())
+            .setMeasuredCurrent(m_hw.ina226.getCurrent())
+            .setTemperature(m_hw.pdsink.getTemp());
+    }
+    // handle pending interrupt
+    if (m_is_pd_interrupt_pending) {
+        m_is_pd_interrupt_pending = false;
+        // Check is the interrupt caused by some protection
+        data.is_fault_detected = m_hw.pdsink.getStatus().has_fault;
+
+        if (data.is_fault_detected) {
+            data.fault_recovery_time_ms = m_system_time;
+            // Disable output
+            data.output_enable = false;
+            m_hw.output_enable.write(data.output_enable);
+            data.screen.setOutputEnable(data.output_enable);
+        }
+    }
+    // handle faults
+    if (data.is_fault_detected) {
+        // Periodically check if the fault is cleared
+        if ((m_system_time - data.fault_recovery_time_ms) >=
+            k_fault_check_period) {
+            data.fault_recovery_time_ms = m_system_time;
+            if (!m_hw.pdsink.getStatus().has_fault) {
+                // Fault is cleared, re negotiate the selected power
+                // profile
+                data.is_fault_detected = false;
+                m_hw.pdsink.setPdoOutput(data.pdo_index, data.target_voltage,
+                                         data.target_current);
+            }
+        }
+    }
+    // handle blinking state for value editing mode
+    if (data.is_editing &&
+        (m_system_time - data.blinking_time_ms) >= k_blinking_period) {
+        data.blinking_time_ms = m_system_time;
+        data.blinking_state = !data.blinking_state;
+    }
+    // Determine visibility based on whether we are editing or static
+    bool active_state = data.is_editing ? data.blinking_state : true;
+    // Map selection to the final screen states
+    bool highlight_voltage = (data.selection == Voltage) && active_state;
+    bool highlight_current = (data.selection == Current) && active_state;
+    // Update screen state based on selection and editing state
+    data.screen.selectTargetVoltage(highlight_voltage)
+        .selectTargetCurrent(highlight_current);
+
     switch (encoder_state) {
     case RotaryEncoder::State::idle:
     case RotaryEncoder::State::processed:
         m_hw.encoder.handle(m_system_time);
-        if ((m_system_time - data.sensor_reading_time_ms) >=
-            k_measuring_period) {
-            data.sensor_reading_time_ms = m_system_time;
-            data.screen.setMeasuredVoltage(m_hw.ina226.getBusVoltage())
-                .setMeasuredCurrent(m_hw.ina226.getCurrent())
-                .setTemperature(m_hw.pdsink.getTemp());
-        }
-        // handle pending interrupt
-        if (m_is_pd_interrupt_pending) {
-            m_is_pd_interrupt_pending = false;
-            // Check is the interrupt caused by some protection
-            data.is_fault_detected = m_hw.pdsink.getStatus().has_fault;
-
-            if (data.is_fault_detected) {
-                data.fault_recovery_time_ms = m_system_time;
-                // Disable output
-                data.output_enable = false;
-                m_hw.output_enable.write(data.output_enable);
-                data.screen.setOutputEnable(data.output_enable);
-            }
-        }
-        // handle faults
-        if (data.is_fault_detected) {
-            // Periodically check if the fault is cleared
-            if ((m_system_time - data.fault_recovery_time_ms) >=
-                k_fault_check_period) {
-                data.fault_recovery_time_ms = m_system_time;
-                if (!m_hw.pdsink.getStatus().has_fault) {
-                    // Fault is cleared, re negotiate the selected power
-                    // profile
-                    data.is_fault_detected = false;
-                    m_hw.pdsink.setPdoOutput(data.pdo_index,
-                                             data.target_voltage,
-                                             data.target_current);
-                }
-            }
-        }
-        // handle blinking state for value editing mode
-        if (data.is_editing &&
-            (m_system_time - data.blinking_time_ms) >= k_blinking_period) {
-            data.blinking_time_ms = m_system_time;
-            data.blinking_state = !data.blinking_state;
-        }
-        {
-            // Determine visibility based on whether we are editing or static
-            bool active_state = data.is_editing ? data.blinking_state : true;
-            // Map selection to the final screen states
-            bool highlight_voltage =
-                (data.selection == Voltage) && active_state;
-            bool highlight_current =
-                (data.selection == Current) && active_state;
-            // Update screen state based on selection and editing state
-            data.screen.selectTargetVoltage(highlight_voltage)
-                .selectTargetCurrent(highlight_current);
-        }
         break;
     case RotaryEncoder::State::btn_short_press:
         // handle short button press
