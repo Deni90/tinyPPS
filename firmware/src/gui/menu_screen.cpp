@@ -29,6 +29,17 @@ auto MenuScreen::selectMenuItem(uint8_t index) -> MenuScreen& {
     return *this;
 }
 
+auto MenuScreen::selectNextMenuItem() -> MenuScreen& {
+    m_selected_menu_item = (m_selected_menu_item + 1) % m_menu_items.size();
+    return *this;
+}
+
+auto MenuScreen::selectPreviousMenuItem() -> MenuScreen& {
+    m_selected_menu_item =
+        (m_selected_menu_item - 1 + m_menu_items.size()) % m_menu_items.size();
+    return *this;
+}
+
 auto MenuScreen::build() -> FrameBuffer& {
     clear();
     uint16_t y_pos = 0;

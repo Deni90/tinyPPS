@@ -54,7 +54,7 @@ class MenuScreen : public Screen {
      *
      * @return Index of the selected menu item
      */
-    [[nodiscard]] auto getSelectedMenuItem() const -> uint8_t;
+    auto getSelectedMenuItem() const -> uint8_t;
 
     /**
      * @brief Select a menu item
@@ -62,7 +62,25 @@ class MenuScreen : public Screen {
      * @param[in] index Index of the selected menu item
      * @return reference to this menu screen object
      */
-    [[nodiscard]] auto selectMenuItem(uint8_t index) -> MenuScreen&;
+    auto selectMenuItem(uint8_t index) -> MenuScreen&;
+
+    /**
+     * @brief Select the next menu item
+     *
+     * Wraps around to the first item if the current item is the last one.
+     *
+     * @return reference to this menu screen object
+     */
+    auto selectNextMenuItem() -> MenuScreen&;
+
+    /**
+     * @brief Select the previous menu item
+     *
+     * Wraps around to the last item if the current item is the first one.
+     *
+     * @return reference to this menu screen object
+     */
+    auto selectPreviousMenuItem() -> MenuScreen&;
 
     /**
      * @brief Build the menu screen based on data provided by user

@@ -1,16 +1,17 @@
 #include "state_machine.h"
 
 #include <algorithm>
-#include <cstdint>
 
-#include "loading_screen.h"
 #include "pdo_helper.h"
 
-static constexpr unsigned int k_big_step_period = 75;         // ms
-static constexpr unsigned int k_blinking_period = 500;        // ms
-static constexpr unsigned int k_double_click_period = 1000;   // ms
-static constexpr unsigned int k_measuring_period = 200;       // ms
-static constexpr unsigned int k_fault_check_period = 1000;    // ms
+static constexpr uint8_t k_retry_count = 20;
+static constexpr uint32_t k_timeout_period = 200;             // ms
+static constexpr uint32_t k_state_transition_period = 1500;   // ms
+static constexpr uint32_t k_big_step_period = 100;            // ms
+static constexpr uint32_t k_blinking_period = 500;            // ms
+static constexpr uint32_t k_double_click_period = 1000;       // ms
+static constexpr uint32_t k_ui_refresh_period = 20;           // ms
+static constexpr uint32_t k_fault_recovery_period = 1000;     // ms
 
 static constexpr uint16_t k_big_step_size = 250;
 
@@ -41,247 +42,183 @@ static auto adjustAndClamp(uint16_t& value, uint16_t step, uint16_t min_val,
         result, static_cast<int32_t>(min_val), static_cast<int32_t>(max_val)));
 }
 
-StateMachine::StateMachine(HardwareContext& hardware) : m_hw(hardware) {}
-
-auto StateMachine::initialize() -> void {
-    // Initialize a timer to repeat every 1 ms
-    m_hw.timer.start(
-        1,
-        [](void* ctx) -> void {
-            if (!ctx) {
-                return;
-            }
-            auto* self = static_cast<StateMachine*>(ctx);
-            self->m_system_time = self->m_system_time + 1;
-        },
-        this);
-
-    m_hw.pd_int.configure(IGpio::Direction::Input, IGpio::Pull::Down);
-    m_hw.pd_int.attachInterrupt(
-        IGpio::Edge::Rising,
-        [](IGpio& gpio, void* user) -> void {
-            if (!user) {
-                return;
-            }
-            auto* self = static_cast<StateMachine*>(user);
-            self->m_is_pd_interrupt_pending = true;
-        },
-        this);
-    m_hw.pd_int.enableInterrupt(true);
+StateMachine::StateMachine(HardwareContext& hardware) : m_hw(hardware) {
+    renderUI();
 }
 
-auto StateMachine::handle() -> void {
-    if (m_state == StateMachine::State::init) {
-        m_state = handleInitState();
-    } else if (m_state == StateMachine::State::menu) {
-        auto tmp_state = handleMenuState(m_menu_state_data);
-        if (tmp_state != m_state) {
-            m_main_state_data.pdo_index = m_menu_state_data.selected_menu_item;
-            m_state = tmp_state;
+auto StateMachine::handleEvent(InitState& state, const SystemTickEvent& event)
+    -> void {
+    if (state.retry_count < k_retry_count) {
+        state.elapsed_time += event.delta;
+        if (state.elapsed_time >= k_timeout_period) {
+            state.elapsed_time = 0;
+            state.retry_count++;
+            state.screen.updateProgress();
         }
-    } else if (m_state == StateMachine::State::main) {
-        m_state = handleMainState(m_main_state_data);
-    }
-}
-
-auto StateMachine::handleInitState() -> StateMachine::State {
-    int pdo_cnt = 0;
-    LoadingScreen loading_screen;
-    m_hw.oled.display(loading_screen.build().data());
-    // 1500ms should be enough to read PDOs
-    for (int i = 0; i < 10; ++i) {
-        sleep_ms(150);
-        if (m_hw.pdsink.getStatus().caps_received) {
-            sleep_ms(10);
-            pdo_cnt = m_hw.pdsink.getPDSourcePowerCapabilities();
-            // Fill in menu with PDOs
-            for (auto i = 0; i < pdo_cnt; ++i) {
-                IPdSink::Pdo pdo;
-                if (m_hw.pdsink.getPdo(i, pdo)) {
-                    m_configs.emplace_back(std::make_pair(
-                        pdoToString(pdo), ConfigBuilder::buildWithPdo(pdo)));
-                }
-            }
-            sleep_ms(1000);
-            break;
-        }
-        m_hw.oled.display(loading_screen.updateProgress().build().data());
-    }
-    m_hw.oled.display(
-        loading_screen.setPdoProfileCount(pdo_cnt).build().data());
-    sleep_ms(1500);
-
-    if (pdo_cnt == 0) {
-        // If no profile present, create a default one
-        m_configs.emplace_back(
-            std::make_pair("", ConfigBuilder::buildDefault()));
-    }
-    // There is no need to show the menu if there is only one PDO available.
-    // We can immediately switch to the main state
-    if (m_configs.size() == 1) {
-
-        return StateMachine::State::main;
-    }
-    return StateMachine::State::menu;
-}
-
-auto StateMachine::handleMenuState(MenuStateData& data) -> StateMachine::State {
-    auto next_state = StateMachine::State::menu;
-
-    if (!data.is_initialized) {
-        data.is_initialized = true;
-        std::vector<std::string> profile_names;
-        // Fill in the menu with the available PDO profiles
-        for (const auto& it : m_configs) {
-            profile_names.emplace_back(it.first);
-        }
-        data.screen.setTitle("Available PDOs").setMenuItems(profile_names);
-    }
-
-    const auto encoder_state = m_hw.encoder.getState();
-    int direction = 0;
-    if (encoder_state == RotaryEncoder::State::idle ||
-        encoder_state == RotaryEncoder::State::processed) {
-        m_hw.encoder.handle(m_system_time);
     } else {
-        m_hw.encoder.clearState();
-        // Handle encoder states
-        if (encoder_state == RotaryEncoder::State::btn_short_press) {
-            next_state = StateMachine::State::main;
-        } else if (encoder_state == RotaryEncoder::State::rot_inc) {
-            direction = 1;
-        } else if (encoder_state == RotaryEncoder::State::rot_dec) {
-            direction = -1;
+        // Reached max retries, load a default config and transition to main
+        // state
+        state.screen.setPdoProfileCount(0);
+        state.transition_time += event.delta;
+        if (state.transition_time >= k_state_transition_period) {
+            m_configs.emplace_back(
+                std::make_pair("", ConfigBuilder::buildDefault()));
+            m_current_state =
+                MainStateBuilder::buildFromConfig(m_configs.back().second);
+            ;
         }
+    }
+    renderUI();
+}
+
+auto StateMachine::handleEvent(InitState& state,
+                               const PdSinkStatusUpdateEvent& event) -> void {
+    if (event.status.caps_received) {
+        m_current_state = LoadingState{};
+    }
+}
+
+auto StateMachine::handleEvent(LoadingState& state,
+                               const SystemTickEvent& event) -> void {
+    if (!state.are_pdos_loaded) {
+        state.are_pdos_loaded = true;
+        state.pdo_count = m_hw.pdsink.getPDSourcePowerCapabilities();
+        for (auto i = 0; i < state.pdo_count; ++i) {
+            IPdSink::Pdo pdo;
+            if (m_hw.pdsink.getPdo(i, pdo)) {
+                m_configs.emplace_back(std::make_pair(
+                    pdoToString(pdo), ConfigBuilder::buildWithPdo(pdo)));
+            }
+        }
+        state.screen.setPdoProfileCount(state.pdo_count);
+    } else {
+        state.transition_time += event.delta;
+        if (state.transition_time >= k_state_transition_period) {
+            if (state.pdo_count == 1) {
+                auto next_state =
+                    MainStateBuilder::buildFromConfig(m_configs.back().second);
+                m_hw.pdsink.setPdoOutput(next_state.config.pdo.index,
+                                         next_state.target_voltage,
+                                         next_state.target_current);
+                m_current_state = next_state;
+            } else {
+                m_current_state = MenuStateBuilder::build(m_configs, 0);
+            }
+        }
+    }
+    renderUI();
+}
+
+auto StateMachine::handleEvent(MenuState& state,
+                               const RotaryEncoderEvent& event) -> void {
+    int direction = 0;
+    // Handle encoder states
+    if (event.encoder_state == RotaryEncoder::State::btn_short_press) {
+        auto next_state = MainStateBuilder::MainStateBuilder::buildFromConfig(
+            m_configs[state.screen.getSelectedMenuItem()].second);
+        m_hw.pdsink.setPdoOutput(next_state.config.pdo.index,
+                                 next_state.target_voltage,
+                                 next_state.target_current);
+        m_current_state = next_state;
     }
     // Update selected menu item based on encoder direction
-    if (direction != 0) {
-        auto menu_size = data.screen.getMenuItems().size();
-        if (menu_size > 0) {
-            data.selected_menu_item =
-                (data.selected_menu_item + direction + menu_size) % menu_size;
-        }
+    if (event.encoder_state == RotaryEncoder::State::rot_inc) {
+        state.screen.selectNextMenuItem();
+    } else if (event.encoder_state == RotaryEncoder::State::rot_dec) {
+        state.screen.selectPreviousMenuItem();
     }
-    m_hw.oled.display(
-        data.screen.selectMenuItem(data.selected_menu_item).build().data());
-    return next_state;
+    renderUI();
 }
 
-auto StateMachine::handleMainState(MainStateData& data) -> StateMachine::State {
-    auto next_state = StateMachine::State::main;
-    Config& config = m_configs[data.pdo_index].second;
-
-    if (!data.is_initialized) {
-        data.is_initialized = true;
-        // Start with min values for current and voltage
-        data.target_voltage = config.pdo.voltage_min;
-        data.target_current = config.pdo.current_min;
-        // Request the min voltage and current for a selected PDO
-        m_hw.pdsink.setPdoOutput(data.pdo_index, data.target_voltage,
-                                 data.target_current);
-        data.screen.setPdoType(config.pdo.type)
-            .setTargetVoltage(data.target_voltage)
-            .setTargetCurrent(data.target_current);
-    }
-
-    const auto encoder_state = m_hw.encoder.getState();
-    if (encoder_state != RotaryEncoder::State::idle &&
-        encoder_state != RotaryEncoder::State::processed) {
-        m_hw.encoder.clearState();
-    }
-
-    if ((m_system_time - data.sensor_reading_time_ms) >= k_measuring_period) {
-        data.sensor_reading_time_ms = m_system_time;
-        data.screen.setMeasuredVoltage(m_hw.ina226.getBusVoltage())
-            .setMeasuredCurrent(m_hw.ina226.getCurrent())
-            .setTemperature(m_hw.pdsink.getTemp());
-    }
-    // handle pending interrupt
-    if (m_is_pd_interrupt_pending) {
-        m_is_pd_interrupt_pending = false;
-        // Check is the interrupt caused by some protection
-        data.is_fault_detected = m_hw.pdsink.getStatus().has_fault;
-
-        if (data.is_fault_detected) {
-            data.fault_recovery_time_ms = m_system_time;
-            // Disable output
-            data.output_enable = false;
-            m_hw.output_enable.write(data.output_enable);
-            data.screen.setOutputEnable(data.output_enable);
-        }
-    }
-    // handle faults
-    if (data.is_fault_detected) {
-        // Periodically check if the fault is cleared
-        if ((m_system_time - data.fault_recovery_time_ms) >=
-            k_fault_check_period) {
-            data.fault_recovery_time_ms = m_system_time;
-            if (!m_hw.pdsink.getStatus().has_fault) {
-                // Fault is cleared, re negotiate the selected power
-                // profile
-                data.is_fault_detected = false;
-                m_hw.pdsink.setPdoOutput(data.pdo_index, data.target_voltage,
-                                         data.target_current);
-            }
-        }
-    }
-    // handle blinking state for value editing mode
-    if (data.is_editing &&
-        (m_system_time - data.blinking_time_ms) >= k_blinking_period) {
-        data.blinking_time_ms = m_system_time;
-        data.blinking_state = !data.blinking_state;
+auto StateMachine::handleEvent(MainState& state, const SystemTickEvent& event)
+    -> void {
+    // Update timers
+    state.blinking_time += event.delta;
+    state.rotary_encoder_time += event.delta;
+    state.ui_refresh_time += event.delta;
+    state.fault_recovery_time += event.delta;
+    // Handle blinking state for value editing mode
+    if (state.is_editing && state.blinking_time >= k_blinking_period) {
+        state.blinking_time = 0;
+        state.blinking_state = !state.blinking_state;
     }
     // Determine visibility based on whether we are editing or static
-    bool active_state = data.is_editing ? data.blinking_state : true;
+    bool active_state = state.is_editing ? state.blinking_state : true;
     // Map selection to the final screen states
-    bool highlight_voltage = (data.selection == Voltage) && active_state;
-    bool highlight_current = (data.selection == Current) && active_state;
+    bool highlight_voltage = (state.selection == Voltage) && active_state;
+    bool highlight_current = (state.selection == Current) && active_state;
     // Update screen state based on selection and editing state
-    data.screen.selectTargetVoltage(highlight_voltage)
+    state.screen.selectTargetVoltage(highlight_voltage)
         .selectTargetCurrent(highlight_current);
+    // Handle fault recovery
+    if (state.is_fault_detected &&
+        state.fault_recovery_time >= k_fault_recovery_period) {
+        state.fault_recovery_time = 0;
+        if (!m_hw.pdsink.getStatus().has_fault) {
+            // Fault is cleared, re negotiate the selected power profile
+            state.is_fault_detected = false;
+            m_hw.pdsink.setPdoOutput(state.config.pdo.index,
+                                     state.target_voltage,
+                                     state.target_current);
+        }
+    }
+    // Update UI periodically
+    if (state.ui_refresh_time >= k_ui_refresh_period) {
+        state.ui_refresh_time = 0;
+        renderUI();
+    }
+}
 
-    switch (encoder_state) {
-    case RotaryEncoder::State::idle:
-    case RotaryEncoder::State::processed:
-        m_hw.encoder.handle(m_system_time);
-        break;
+auto StateMachine::handleEvent(MainState& state,
+                               const RotaryEncoderEvent& event) -> void {
+    switch (event.encoder_state) {
     case RotaryEncoder::State::btn_short_press:
-        if (data.selection > None) {
+        if (state.selection > None) {
             // if tv or tc is selected enter editing mode of the value
-            if (data.is_editing) {
-                m_hw.pdsink.setPdoOutput(data.pdo_index, data.target_voltage,
-                                         data.target_current);
+            if (state.is_editing) {
+                m_hw.pdsink.setPdoOutput(state.config.pdo.index,
+                                         state.target_voltage,
+                                         state.target_current);
             }
-            data.is_editing = !data.is_editing;
+            state.is_editing = !state.is_editing;
         } else {
-            // when no item selected show menu on double click
-            // show menu only if there is more than one config item and when the
+            // when no item selected show menu on double click show menu
+            // only if there is more than one config item and when the
             // output is turned off
-            if (m_configs.size() <= 1 || data.output_enable) {
+            if (m_configs.size() <= 1 || state.output_enable) {
                 break;
             }
-            if ((m_system_time - data.rotary_encoder_time_ms) <=
-                k_double_click_period) {
+            if (state.rotary_encoder_time <= k_double_click_period) {
                 // Switch to menu state
-                data.is_initialized = false;
-                next_state = State::menu;
+                MenuScreen menu_screen;
+                menu_screen.setTitle("Available PDOs");
+                std::vector<std::string> profile_names;
+                for (const auto& config : m_configs) {
+                    profile_names.emplace_back(config.first);
+                }
+                menu_screen.setMenuItems(profile_names)
+                    .selectMenuItem(state.config.pdo.index);
+                m_current_state =
+                    MenuStateBuilder::build(m_configs, state.config.pdo.index);
+                renderUI();
+                return;
             }
-            data.rotary_encoder_time_ms = m_system_time;
+            state.rotary_encoder_time = 0;
         }
         break;
     case RotaryEncoder::State::btn_long_press:
         // ignore this while editing target voltage/current
         // or when a fault is detected
-        if (data.is_editing || data.is_fault_detected) {
+        if (state.is_editing || state.is_fault_detected) {
             break;
         }
         {   // toggle output enable
-            data.output_enable = !data.output_enable;
-            m_hw.output_enable.write(data.output_enable);
-            // read vout status (the output of the AND gate) and update screen
-            // with it
+            state.output_enable = !state.output_enable;
+            m_hw.output_enable.write(state.output_enable);
+            // read vout status (the output of the AND gate) and update
+            // screen with it
             auto vout_status = m_hw.vout_status.read();
-            data.screen.setOutputEnable(vout_status);
+            state.screen.setOutputEnable(vout_status);
             // finally, write the vout status back to the output enable pin
             m_hw.output_enable.write(vout_status);
         }
@@ -289,63 +226,108 @@ auto StateMachine::handleMainState(MainStateData& data) -> StateMachine::State {
     case RotaryEncoder::State::rot_inc:
     case RotaryEncoder::State::rot_dec: {
         int8_t direction =
-            (encoder_state == RotaryEncoder::State::rot_inc) ? 1 : -1;
-        if (!config.is_editing_enabled) {
+            (event.encoder_state == RotaryEncoder::State::rot_inc) ? 1 : -1;
+        if (!state.config.is_editing_enabled) {
             break;
         }
         // select target voltage, target current or none
-        if (data.is_editing) {
-            bool big_step = (m_system_time - data.rotary_encoder_time_ms) <=
-                            k_big_step_period;
-            data.rotary_encoder_time_ms = m_system_time;
-            switch (data.selection) {
+        if (state.is_editing) {
+            bool big_step = state.rotary_encoder_time < k_big_step_period;
+            state.rotary_encoder_time = 0;
+            switch (state.selection) {
             case Voltage: {
                 int8_t step_multiplier =
-                    big_step
-                        ? k_big_step_size / config.pdo.voltage_step * direction
-                        : direction;
-                adjustAndClamp(data.target_voltage, config.pdo.voltage_step,
-                               config.pdo.voltage_min, config.pdo.voltage_max,
-                               step_multiplier);
+                    big_step ? k_big_step_size / state.config.pdo.voltage_step *
+                                   direction
+                             : direction;
+                adjustAndClamp(state.target_voltage,
+                               state.config.pdo.voltage_step,
+                               state.config.pdo.voltage_min,
+                               state.config.pdo.voltage_max, step_multiplier);
                 break;
             }
             case Current: {
                 int8_t step_multiplier =
-                    big_step
-                        ? k_big_step_size / config.pdo.current_step * direction
-                        : direction;
-                adjustAndClamp(data.target_current, config.pdo.current_step,
-                               config.pdo.current_min, config.pdo.current_max,
-                               step_multiplier);
+                    big_step ? k_big_step_size / state.config.pdo.current_step *
+                                   direction
+                             : direction;
+                adjustAndClamp(state.target_current,
+                               state.config.pdo.current_step,
+                               state.config.pdo.current_min,
+                               state.config.pdo.current_max, step_multiplier);
                 break;
             }
             default:
                 break;
             }
-            data.screen.setTargetVoltage(data.target_voltage)
-                .setTargetCurrent(data.target_current);
+            state.screen.setTargetVoltage(state.target_voltage)
+                .setTargetCurrent(state.target_current);
         } else {
             if (direction > 0) {
-                ++data.selection;
+                ++state.selection;
             } else {
-                --data.selection;
+                --state.selection;
             }
         }
         break;
     }
     case RotaryEncoder::State::rot_dec_while_btn_press:
     case RotaryEncoder::State::rot_inc_while_btn_press:
-        // TODO implement me with constant current mode implementation...
+        // TODO implement me with constant current mode
+        // implementation...
         break;
     }
-
-    m_hw.oled.display(data.screen.build().data());
-    return next_state;
 }
 
-auto StateMachine::sleep_ms(uint32_t duration_ms) const -> void {
-    auto now = m_system_time;
-    while (m_system_time - now < duration_ms) {
-        // do nothing
+auto StateMachine::handleEvent(MainState& state, const SensorUpdateEvent& event)
+    -> void {
+    state.screen.setMeasuredVoltage(event.voltage);
+    state.screen.setMeasuredCurrent(event.current);
+    state.screen.setTemperature(event.temperature);
+}
+
+auto StateMachine::handleEvent(MainState& state,
+                               const PdSinkStatusUpdateEvent& event) -> void {
+    if (event.status.has_fault) {
+        state.is_fault_detected = true;
+        state.output_enable = false;
+        m_hw.output_enable.write(state.output_enable);
+        state.screen.setOutputEnable(state.output_enable);
     }
+}
+
+auto StateMachine::MenuStateBuilder::build(
+    const std::vector<std::pair<std::string, Config>>& configs,
+    uint8_t selected_item) -> MenuState {
+    MenuScreen menu_screen;
+    menu_screen.setTitle("Available PDOs");
+    std::vector<std::string> profile_names;
+    for (const auto& config : configs) {
+        profile_names.emplace_back(config.first);
+    }
+    menu_screen.setMenuItems(profile_names).selectMenuItem(selected_item);
+    return MenuState{.screen = menu_screen};
+}
+
+auto StateMachine::MainStateBuilder::buildFromConfig(Config& config)
+    -> MainState {
+    auto main_state =
+        StateMachine::MainState{.config = config,
+                                .target_voltage = config.pdo.voltage_min,
+                                .target_current = config.pdo.current_min};
+    main_state.screen.setPdoType(config.pdo.type);
+    main_state.screen.setTargetVoltage(main_state.target_voltage);
+    main_state.screen.setTargetCurrent(main_state.target_current);
+    return main_state;
+}
+
+void StateMachine::renderUI() {
+    auto& current_screen = std::visit(
+        [](auto& state) -> Screen& {
+            using StateType = std::decay_t<decltype(state)>;
+            return state.screen;
+        },
+        m_current_state);
+
+    m_hw.oled.display(current_screen.build().data());
 }

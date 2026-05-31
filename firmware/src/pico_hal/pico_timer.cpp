@@ -31,7 +31,7 @@ auto PicoRepeatingTimer::isRunning() const -> bool { return m_running; }
 auto PicoRepeatingTimer::timerThunk(repeating_timer_t* repeating_timer)
     -> bool {
     auto* self = static_cast<PicoRepeatingTimer*>(repeating_timer->user_data);
-    if (self && self->m_callback && self->m_context) {
+    if (self && self->m_callback) {
         self->m_callback(self->m_context);
     }
     return true;   // keep repeating

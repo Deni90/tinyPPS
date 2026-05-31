@@ -3,12 +3,14 @@
 
 #include "ap33772.h"
 #include "ap33772s.h"
+#include "event.h"
 #include "hardware.h"
 #include "ina226.h"
 #include "pdsink_iface.h"
 #include "pico_gpio.h"
 #include "pico_i2c.h"
 #include "pico_timer.h"
+#include "rotary_encoder.h"
 #include "ssd1306.h"
 #include "state_machine.h"
 
@@ -38,6 +40,11 @@ static constexpr unsigned int k_ntc_tr100 = 987;
 
 static constexpr uint16_t k_ap33772s_vsel_min = 3300;
 
+static constexpr uint32_t k_sensor_read_period = 20;
+
+volatile uint32_t g_system_time = 0;
+volatile bool g_is_pd_interrupt_pending = false;
+
 auto main() -> int {
     stdio_init_all();
 
@@ -60,6 +67,13 @@ auto main() -> int {
     output_enable.configure(IGpio::Direction::Output, IGpio::Pull::Down);
     vout_status.configure(IGpio::Direction::Input, IGpio::Pull::Down);
     pd_int.configure(IGpio::Direction::Input, IGpio::Pull::Down);
+    pd_int.attachInterrupt(
+        IGpio::Edge::Rising,
+        [](IGpio& gpio, void* user) -> void {
+            g_is_pd_interrupt_pending = true;
+        },
+        nullptr);
+    pd_int.enableInterrupt(true);
     oled.initialize();
     ina226.setAveragingMode(Ina226::AveragingMode::Samples128);
     ina226.calibrate(0.01, 0.25);
@@ -68,6 +82,7 @@ auto main() -> int {
     if (ap33772.probe()) {
         ap33772.setNtc(k_ntc_tr25, k_ntc_tr50, k_ntc_tr75, k_ntc_tr100);
         Ap33772::MaskReg mask;
+        mask.newpdo_en = 1;
         mask.ocp_en = 1;
         mask.otp_en = 1;
         mask.ovp_en = 1;
@@ -77,13 +92,16 @@ auto main() -> int {
         ap33772s.setNtc(k_ntc_tr25, k_ntc_tr50, k_ntc_tr75, k_ntc_tr100);
         ap33772s.setVselMin(k_ap33772s_vsel_min);
         Ap33772s::MaskReg mask;
+        mask.newpdo_msk = 1;
         mask.ocp_msk = 1;
         mask.otp_msk = 1;
         mask.ovp_msk = 1;
         mask.uvp_msk = 1;
         ap33772s.setMask(mask);
     }
-
+    timer.start(
+        1, [](void* ctx) -> void { g_system_time = g_system_time + 1; },
+        nullptr);
     HardwareContext hardware{.timer = timer,
                              .pdsink = pdsink.get(),
                              .output_enable = output_enable,
@@ -94,9 +112,36 @@ auto main() -> int {
                              .oled = oled};
 
     StateMachine state_machine{hardware};
-    state_machine.initialize();
+
+    uint32_t last_tick_time = 0;
+    uint32_t last_sensor_read_time = 0;
 
     while (true) {
-        state_machine.handle();
+        uint32_t current_time = g_system_time;
+        uint32_t delta = current_time - last_tick_time;
+        last_tick_time = current_time;
+
+        rotary_encoder.handle(current_time);
+        auto encoder_state = rotary_encoder.getState();
+        if (encoder_state != RotaryEncoder::State::idle &&
+            encoder_state != RotaryEncoder::State::processed) {
+            state_machine.dispatch(RotaryEncoderEvent{encoder_state});
+            rotary_encoder.clearState();
+        }
+
+        if (current_time - last_sensor_read_time >= k_sensor_read_period) {
+            last_sensor_read_time = current_time;
+            state_machine.dispatch(SensorUpdateEvent{ina226.getBusVoltage(),
+                                                     ina226.getCurrent(),
+                                                     pdsink.get().getTemp()});
+        }
+
+        if (g_is_pd_interrupt_pending) {
+            g_is_pd_interrupt_pending = false;
+            state_machine.dispatch(
+                PdSinkStatusUpdateEvent{pdsink.get().getStatus()});
+        }
+
+        state_machine.dispatch(SystemTickEvent{delta});
     }
 }

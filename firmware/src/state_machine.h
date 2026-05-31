@@ -3,10 +3,12 @@
 
 #include <cstdint>
 #include <string>
-#include <vector>
+#include <variant>
 
 #include "config.h"
+#include "event.h"
 #include "hardware.h"
+#include "loading_screen.h"
 #include "main_screen.h"
 #include "menu_screen.h"
 
@@ -15,88 +17,90 @@ enum MainScreenSelection { None, Voltage, Current, Count };   // FIXME
 class StateMachine {
   public:
     /**
-     * Enumeration represending state machine states
-     */
-    enum class State { init, menu, main };
-
-    /**
      * @brief Constructor
-     * */
+     * @param hardware The hardware context
+     */
     StateMachine(HardwareContext& hardware);
 
     /**
-     * @brief Initialize the module
+     * @brief Dispatch an event to the current state
+     * @param event The event to dispatch
      */
-    auto initialize() -> void;
-
-    /**
-     * @brief Handle function used executing the main logic
-     * @note Call this function from the main loop
-     */
-    auto handle() -> void;
+    auto dispatch(const SystemEvent& event) -> void {
+        std::visit([this](auto& state,
+                          const auto& evt) -> auto { handleEvent(state, evt); },
+                   m_current_state, event);
+    }
 
   private:
-    /**
-     * @brief Data for the menu state
-     */
-    struct MenuStateData {
-        MenuScreen screen;
-        bool is_initialized{false};
-        uint8_t selected_menu_item{0};
+    struct InitState {
+        LoadingScreen screen;
+        uint8_t retry_count{0};
+        uint32_t elapsed_time{0};
+        uint32_t transition_time{0};
     };
 
-    /**
-     * @brief Data for the main state
-     */
-    struct MainStateData {
+    struct LoadingState {
+        LoadingScreen screen;
+        bool are_pdos_loaded{false};
+        uint8_t pdo_count{0};
+        uint32_t transition_time{0};
+    };
+
+    struct MenuState {
+        MenuScreen screen;
+    };
+
+    struct MenuStateBuilder {
+        static auto
+        build(const std::vector<std::pair<std::string, Config>>& configs,
+              uint8_t selected_item) -> MenuState;
+    };
+
+    struct MainState {
+        Config config;
         MainScreen screen;
+        bool is_editing{false};
+        uint32_t blinking_time{0};
+        bool blinking_state{false};
         MainScreenSelection selection{None};
-        bool is_initialized{false};
-        uint8_t pdo_index{0};
+        bool output_enable{false};
+        uint32_t rotary_encoder_time{0};
+        uint32_t ui_refresh_time{0};
         uint16_t target_voltage{0};
         uint16_t target_current{0};
         bool is_fault_detected{false};
-        bool output_enable{false};
-        bool is_editing{false};
-        bool blinking_state{false};
-        uint32_t sensor_reading_time_ms{0};
-        uint32_t rotary_encoder_time_ms{0};
-        uint32_t fault_recovery_time_ms{0};
-        uint32_t blinking_time_ms{0};
+        uint32_t fault_recovery_time{0};
     };
 
-    /**
-     * @brief Function for handling the init state
-     * @return Return the next state
-     */
-    auto handleInitState() -> State;
+    struct MainStateBuilder {
+        static auto buildFromConfig(Config& config) -> MainState;
+    };
 
-    /**
-     * @brief Function for handling the menu state
-     * @return Return the next state
-     */
-    auto handleMenuState(MenuStateData& data) -> State;
+    using State = std::variant<InitState, LoadingState, MenuState, MainState>;
 
-    /**
-     * @brief Function for handling the main state
-     * @return Return the next state
-     */
-    auto handleMainState(MainStateData& data) -> State;
+    auto handleEvent(InitState& state, const SystemTickEvent& event) -> void;
+    auto handleEvent(InitState& state, const PdSinkStatusUpdateEvent& event)
+        -> void;
 
-    /**
-     * @brief Sleep for a given number of milliseconds
-     *
-     * @param duration_ms The number of milliseconds to sleep
-     */
-    auto sleep_ms(uint32_t duration_ms) const -> void;
+    auto handleEvent(LoadingState& state, const SystemTickEvent& event) -> void;
+
+    auto handleEvent(MenuState& state, const RotaryEncoderEvent& event) -> void;
+
+    auto handleEvent(MainState& state, const SystemTickEvent& event) -> void;
+    auto handleEvent(MainState& state, const RotaryEncoderEvent& event) -> void;
+    auto handleEvent(MainState& state, const SensorUpdateEvent& event) -> void;
+    auto handleEvent(MainState& state, const PdSinkStatusUpdateEvent& event)
+        -> void;
+
+    template <typename S, typename E>
+    void handleEvent(S& state, const E& evt) {}
+
+    void renderUI();
 
     HardwareContext& m_hw;
-    State m_state{State::init};
+    State m_current_state{InitState{}};
     std::vector<std::pair<std::string, Config>> m_configs;
-    volatile bool m_is_pd_interrupt_pending{false};
-    volatile uint32_t m_system_time{0};
-    MenuStateData m_menu_state_data;
-    MainStateData m_main_state_data;
 };
 
 #endif   // state_machine_h
