@@ -85,7 +85,9 @@ auto StateMachine::handleEvent(LoadingState& state,
         state.pdo_count = m_hw.pdsink.getPDSourcePowerCapabilities();
         for (auto i = 0; i < state.pdo_count; ++i) {
             IPdSink::Pdo pdo;
-            if (m_hw.pdsink.getPdo(i, pdo)) {
+            if (m_hw.pdsink.getPdo(i, pdo) &&
+                pdo.type != IPdSink::PdoType::AVS) {
+                // Skip AVS PDOs, since the HW is not capable of handling them
                 m_configs.emplace_back(std::make_pair(
                     pdoToString(pdo), ConfigBuilder::buildWithPdo(pdo)));
             }
