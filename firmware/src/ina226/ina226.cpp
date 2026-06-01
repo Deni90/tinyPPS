@@ -20,31 +20,31 @@ static constexpr uint16_t k_conf_mask_busvc = 0x01C0;
 static constexpr uint16_t k_conf_mask_shuntvc = 0x0038;
 static constexpr uint16_t k_conf_mask_mode = 0x0007;
 
-static constexpr float k_max_shunt_voltage = 81.92 / 1000;
-static constexpr float k_min_shunt_ohm = 0.001F;
+static constexpr float k_max_shunt_voltage = 81.92e-3F;
+static constexpr float k_adc_resolution = 32768.0F;
+static constexpr float k_internal_calibration_multiplier = 5.12e-3F;
+static constexpr float k_bus_voltage_lsb = 1.25e-3F;
+static constexpr float k_shunt_voltage_lsb = 2.5e-6F;
 
 Ina226::Ina226(II2c& i2c, uint8_t address) : m_i2c(i2c), m_addr(address) {}
 
-auto Ina226::calibrate(float shunt, float current_lsb_ma,
-                       float current_zero_offset_mA, uint16_t bus_v_scaling_e4)
-    -> bool {
-    if (shunt < k_min_shunt_ohm) {
+auto Ina226::calibrate(float max_current, float shunt) -> bool {
+    if (max_current <= 0.0F || shunt <= 0.0F) {
         return false;
     }
-    float max_current = min<float>((k_max_shunt_voltage / shunt),
-                                   32768 * current_lsb_ma * 1e-3);
-    if (max_current < 0.001) {
+    // Prevent overflow by checking the hardware shunt voltage limit (81.92 mV)
+    if (max_current * shunt > k_max_shunt_voltage) {
         return false;
     }
+    // INA226 Data Sheet - 6.5 Programming
+    // (2) Calculate Current LSB (Maximum current divided over 2^15)
+    m_current_lsb = max_current / k_adc_resolution;
+    // (1) Compute Calibration Register value
+    float calib_raw =
+        k_internal_calibration_multiplier / (m_current_lsb * shunt);
+    auto calib_val = static_cast<uint16_t>(std::round(calib_raw));
 
-    m_shunt = shunt;
-    m_current_lsb = current_lsb_ma * 1e-3;
-    m_current_zero_offset = current_zero_offset_mA * 1e-3;
-    m_bus_v_scaling_e4 = bus_v_scaling_e4;
-    m_max_current = max_current;
-
-    uint32_t calib = round(0.00512 / (m_current_lsb * m_shunt));
-    return writeRegister(k_cmd_calibration, calib);
+    return writeRegister(k_cmd_calibration, calib_val);
 }
 
 auto Ina226::getBusVoltage() -> float {
@@ -52,11 +52,8 @@ auto Ina226::getBusVoltage() -> float {
     if (!readRegister(k_cmd_bus_voltage, val)) {
         return 0;
     }
-    float voltage = val * 1.25e-3;
-    if (m_bus_v_scaling_e4 != 10000) {
-        voltage *= m_bus_v_scaling_e4 * 1.0e-4;
-    }
-    return voltage;
+    // INA226 Data Sheet - 6.3.1 Basic ADC Functions
+    return val * k_bus_voltage_lsb;
 }
 
 auto Ina226::getShuntVoltage() -> float {
@@ -64,15 +61,20 @@ auto Ina226::getShuntVoltage() -> float {
     if (!readRegister(k_cmd_shunt_voltage, val)) {
         return 0;
     }
-    return val * 2.5e-6;   //  fixed 2.50 uV
+    // INA226 Data Sheet - 7.1.2 Shunt Voltage Register (01h) (Read-Only)
+    auto signed_val = static_cast<int16_t>(val);
+    return signed_val * k_shunt_voltage_lsb;
 }
 
 auto Ina226::getCurrent() -> float {
     uint16_t val = 0;
     if (!readRegister(k_cmd_current, val)) {
-        return 0;
+        return 0.0F;
     }
-    return (val * m_current_lsb) - m_current_zero_offset;
+    // Cast the raw bits to a signed 16-bit integer to preserve the negative
+    // sign
+    auto signed_val = static_cast<int16_t>(val);
+    return signed_val * m_current_lsb;
 }
 
 auto Ina226::reset() -> bool {
@@ -84,9 +86,7 @@ auto Ina226::reset() -> bool {
     if (!writeRegister(k_cmd_configuration, config)) {
         return false;
     }
-    m_current_lsb = 0;
-    m_max_current = 0;
-    m_shunt = 0;
+    m_current_lsb = 0.0F;
     return false;
 }
 

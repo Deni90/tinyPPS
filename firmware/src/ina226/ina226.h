@@ -84,16 +84,10 @@ class Ina226 {
     /**
      * @brief Calibrate function
      *
+     * @param[in] max_current Maximum expected Current in Amperes
      * @param[in] shunt Shunt Resistance in Ohms
-     * @param[in] current_lsb_ma Current Least Significant Bit in milli Amperes.
-     * Recommended values: 0.050, 0.100, 0.250, 0.500, 1, 2, 2.5
-     * @param[in] current_zero_offset_ma Current Zero Offset in milli Amperes,
-     * default = 0
-     * @param[in] bus_v_scaling_e4 Bus Voltage Scaling Factor, default = 10000
      */
-    auto calibrate(float shunt = 0.1, float current_lsb_ma = 0.1,
-                   float current_zero_offset_ma = 0,
-                   uint16_t bus_v_scaling_e4 = 10000) -> bool;
+    auto calibrate(float max_current, float shunt = 0.1) -> bool;
 
     /**
      * @brief Read bus voltage
@@ -240,11 +234,7 @@ class Ina226 {
 
     II2c& m_i2c;
     uint8_t m_addr;
-    float m_shunt;
     float m_current_lsb;
-    float m_max_current;
-    float m_current_zero_offset;
-    uint16_t m_bus_v_scaling_e4;
 };
 
 #endif   // ina226_h

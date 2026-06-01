@@ -76,7 +76,7 @@ auto main() -> int {
     pd_int.enableInterrupt(true);
     oled.initialize();
     ina226.setAveragingMode(Ina226::AveragingMode::Samples128);
-    ina226.calibrate(0.01, 0.25);
+    ina226.calibrate(5, 0.01);
     // By default, use AP33772 if available, otherwise fall back to AP33772S
     std::reference_wrapper<IPdSink> pdsink = ap33772;
     if (ap33772.probe()) {

@@ -30,7 +30,10 @@ auto MainScreen::build() -> FrameBuffer& {
     printString(target_voltage_pos + len, 16, "mV");
 
     // Measured current in A
-    printString(k_width / 2, 25, tinyFormat("%05.2fA", m_measured_current),
+    // Using std::abs as a safety net against sensor noise.
+    // The circuit is physically wired for positive current only.
+    printString(k_width / 2, 25,
+                tinyFormat("%05.2fA", std::abs(m_measured_current)),
                 {.align = TextAlign::center, .size = FontSize::big});
 
     // Target/Limit current in mA
