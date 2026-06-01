@@ -134,7 +134,7 @@ class Screen {
      * required width.
      * @return Return printed text width or 0 in case of error.
      */
-    auto printString(int16_t x_pos, int16_t y_pos, const std::string& str,
+    auto printString(int16_t x_pos, int16_t y_pos, std::string_view str,
                      bool dry_run = false) -> uint16_t;
 
     /**
@@ -148,7 +148,7 @@ class Screen {
      * required width.
      * @return Return printed text width or 0 in case of error.
      */
-    auto printString(int16_t x_pos, int16_t y_pos, const std::string& str,
+    auto printString(int16_t x_pos, int16_t y_pos, std::string_view str,
                      const StringConfig& config, bool dry_run = false)
         -> uint16_t;
 

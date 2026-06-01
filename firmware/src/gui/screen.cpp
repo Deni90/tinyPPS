@@ -235,12 +235,12 @@ auto Screen::printCharBig(int16_t x_pos, int16_t y_pos, char character,
     return char_width + 2;   // +2 is for letter spacing
 }
 
-auto Screen::printString(int16_t x_pos, int16_t y_pos, const std::string& str,
+auto Screen::printString(int16_t x_pos, int16_t y_pos, std::string_view str,
                          bool dry_run) -> uint16_t {
     return printString(x_pos, y_pos, str, StringConfig(), dry_run);
 }
 
-auto Screen::printString(int16_t x_pos, int16_t y_pos, const std::string& str,
+auto Screen::printString(int16_t x_pos, int16_t y_pos, std::string_view str,
                          const StringConfig& config, bool dry_run) -> uint16_t {
     auto text_width = 0;
     if (config.align == TextAlign::center || config.align == TextAlign::right) {
