@@ -1,6 +1,7 @@
 #include "state_machine.h"
 
 #include <algorithm>
+#include <cstdint>
 
 #include "pdo_helper.h"
 
@@ -12,8 +13,12 @@ static constexpr uint32_t k_blinking_period = 500;            // ms
 static constexpr uint32_t k_double_click_period = 1000;       // ms
 static constexpr uint32_t k_ui_refresh_period = 20;           // ms
 static constexpr uint32_t k_fault_recovery_period = 1000;     // ms
+static constexpr uint32_t k_sensor_update_period = 200;       // ms
+static constexpr uint32_t k_ramp_up_period = 500;             // ms
 
 static constexpr uint16_t k_big_step_size = 250;
+static constexpr float k_low_voltage_threshold = 0.5F;
+static constexpr uint8_t k_low_voltage_reading_count = 10;
 
 inline auto operator++(MainScreenSelection& selection) -> MainScreenSelection& {
     using T = std::underlying_type_t<MainScreenSelection>;
@@ -139,6 +144,8 @@ auto StateMachine::handleEvent(MainState& state, const SystemTickEvent& event)
     state.rotary_encoder_time += event.delta;
     state.ui_refresh_time += event.delta;
     state.fault_recovery_time += event.delta;
+    state.ramp_up_time += event.delta;
+    state.sensor_update_time += event.delta;
     // Handle blinking state for value editing mode
     if (state.is_editing && state.blinking_time >= k_blinking_period) {
         state.blinking_time = 0;
@@ -162,6 +169,27 @@ auto StateMachine::handleEvent(MainState& state, const SystemTickEvent& event)
             m_hw.pdsink.setPdoOutput(state.config.pdo.index,
                                      state.target_voltage,
                                      state.target_current);
+        }
+    }
+    // Update screen with sensor data periodically
+    if (state.sensor_update_time >= k_sensor_update_period) {
+        state.sensor_update_time = 0;
+        state.screen.setMeasuredVoltage(state.measured_voltage);
+        state.screen.setMeasuredCurrent(state.measured_current);
+        state.screen.setTemperature(state.measured_temperature);
+    }
+    // Handle when the LM73100 turns off the output due to a short circuit
+    // Ramp up time can be high (couple hundered ms), it is used to update UI
+    // and mark output as disabled. LM73100 immediately turns off output after
+    // short circuit is detected.
+    if (state.ramp_up_time >= k_ramp_up_period && state.output_enable == true &&
+        state.measured_voltage < k_low_voltage_threshold) {
+        ++state.low_voltage_reading_count;
+        if (state.low_voltage_reading_count >= k_low_voltage_reading_count) {
+            state.output_enable = false;
+            m_hw.output_enable.write(state.output_enable);
+            state.screen.setOutputEnable(state.output_enable);
+            state.low_voltage_reading_count = 0;
         }
     }
     // Update UI periodically
@@ -223,6 +251,11 @@ auto StateMachine::handleEvent(MainState& state,
             state.screen.setOutputEnable(vout_status);
             // finally, write the vout status back to the output enable pin
             m_hw.output_enable.write(vout_status);
+            // reset ramp up timer to ignore checking for SCP for some time
+            // while the output voltage is rising
+            if (vout_status) {
+                state.ramp_up_time = 0;
+            }
         }
         break;
     case RotaryEncoder::State::rot_inc:
@@ -283,9 +316,9 @@ auto StateMachine::handleEvent(MainState& state,
 
 auto StateMachine::handleEvent(MainState& state, const SensorUpdateEvent& event)
     -> void {
-    state.screen.setMeasuredVoltage(event.voltage);
-    state.screen.setMeasuredCurrent(event.current);
-    state.screen.setTemperature(event.temperature);
+    state.measured_voltage = event.voltage;
+    state.measured_current = event.current;
+    state.measured_temperature = event.temperature;
 }
 
 auto StateMachine::handleEvent(MainState& state,

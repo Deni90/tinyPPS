@@ -71,6 +71,12 @@ class StateMachine {
         uint16_t target_current{0};
         bool is_fault_detected{false};
         uint32_t fault_recovery_time{0};
+        float measured_voltage{0.0F};
+        float measured_current{0.0F};
+        uint8_t measured_temperature{0};
+        uint32_t sensor_update_time{0};
+        uint32_t ramp_up_time{0};
+        uint32_t low_voltage_reading_count{0};
     };
 
     struct MainStateBuilder {

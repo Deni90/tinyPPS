@@ -1,0 +1,4 @@
+Checks: '-*,readability-*,modernize-*'
+UseColor: true
+ExtraArgs:
+  - -std=c++20
