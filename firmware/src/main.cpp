@@ -39,6 +39,7 @@ static constexpr unsigned int k_ntc_tr75 = 1912;
 static constexpr unsigned int k_ntc_tr100 = 987;
 
 static constexpr uint16_t k_ap33772s_vsel_min = 3300;
+static constexpr uint8_t k_otp_threshold = 85;
 
 static constexpr uint32_t k_sensor_read_period = 20;
 
@@ -81,6 +82,7 @@ auto main() -> int {
     std::reference_wrapper<IPdSink> pdsink = ap33772;
     if (ap33772.probe()) {
         ap33772.setNtc(k_ntc_tr25, k_ntc_tr50, k_ntc_tr75, k_ntc_tr100);
+        ap33772.setOtpThreshold(k_otp_threshold);
         Ap33772::MaskReg mask;
         mask.newpdo_en = 1;
         mask.ocp_en = 1;
@@ -90,6 +92,7 @@ auto main() -> int {
     } else {
         pdsink = std::ref(ap33772s);
         ap33772s.setNtc(k_ntc_tr25, k_ntc_tr50, k_ntc_tr75, k_ntc_tr100);
+        ap33772s.setOtpThreshold(k_otp_threshold);
         ap33772s.setVselMin(k_ap33772s_vsel_min);
         Ap33772s::MaskReg mask;
         mask.newpdo_msk = 1;

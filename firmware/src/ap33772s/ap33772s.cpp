@@ -205,6 +205,10 @@ auto Ap33772s::setNtc(uint16_t tr25, uint16_t tr50, uint16_t tr75,
            !writeRegister(k_cmd_tr100, tr100);
 }
 
+auto Ap33772s::setOtpThreshold(uint8_t threshold) -> bool {
+    return writeRegister(k_cmd_otpthr, threshold);
+}
+
 auto Ap33772s::setVselMin(uint16_t voltage) -> bool {
     return writeRegister(k_cmd_vselmin, static_cast<uint8_t>(voltage / 200));
 }

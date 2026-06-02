@@ -222,6 +222,14 @@ class Ap33772 : public IPdSink {
         -> bool;
 
     /**
+     * @brief Set the OTP threshold value
+     *
+     * @param threshold The OTP threshold value in degrees Celsius to set
+     * @return True if the value is successfully set
+     */
+    auto setOtpThreshold(uint8_t threshold) -> bool;
+
+    /**
      * @brief The maximum number of PD Source Power Capabilities
      */
     static constexpr uint8_t k_max_pdo_entries = 7;

@@ -188,6 +188,10 @@ auto Ap33772::setNtc(uint16_t tr25, uint16_t tr50, uint16_t tr75,
            !writeRegister(k_cmd_tr100, tr100);
 }
 
+auto Ap33772::setOtpThreshold(uint8_t threshold) -> bool {
+    return writeRegister(k_cmd_otpthr, threshold);
+}
+
 auto Ap33772::readRegister(uint8_t reg, uint8_t& value) -> bool {
     if (m_i2c.writeTo(k_i2c_addr, &reg, 1) != 1) {
         return false;

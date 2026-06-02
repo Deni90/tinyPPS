@@ -262,6 +262,14 @@ class Ap33772s : public IPdSink {
         -> bool;
 
     /**
+     * @brief Set the OTP threshold value
+     *
+     * @param threshold The OTP threshold value in degrees Celsius to set
+     * @return True if the value is successfully set
+     */
+    auto setOtpThreshold(uint8_t threshold) -> bool;
+
+    /**
      * @brief Sets the minimum allowed output voltage selection.
      *
      * The VSELMIN register is defined as the Minimum Selection Voltage. If the
