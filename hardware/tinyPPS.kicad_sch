@@ -8099,9 +8099,9 @@
 		)
 		(uuid "9d1549cb-9614-4911-a229-58f13d484d75")
 	)
-	(text "min 0.5W 1206"
+	(text "min 0.5W 1206\nAP33772 uses 10m\nAP33772s uses 5m"
 		(exclude_from_sim no)
-		(at 212.852 106.172 0)
+		(at 213.106 108.458 0)
 		(effects
 			(font
 				(size 1.27 1.27)
