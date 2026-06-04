@@ -28,7 +28,6 @@ constexpr auto supplyModeToString(SupplyMode mode) -> const char* {
  */
 struct Config {
     IPdSink::Pdo pdo;
-    SupplyMode supply_mode{SupplyMode::CV};
     bool is_editing_enabled{false};
     /**
      * @brief Default constructor
