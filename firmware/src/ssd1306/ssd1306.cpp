@@ -81,7 +81,7 @@ void Ssd1306::initialize() {
         0x30,                 // 0.83xVcc
         /* display */
         k_set_contrast,   // set contrast control
-        0xFF,
+        200,
         k_set_entire_on,     // set entire display on to follow RAM content
         k_set_norm_disp,     // set normal (not inverted) display
         k_set_charge_pump,   // set charge pump
