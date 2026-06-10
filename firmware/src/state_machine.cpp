@@ -105,8 +105,8 @@ auto StateMachine::handleEvent(LoadingState& state,
                 auto next_state =
                     MainStateBuilder::buildFromConfig(m_configs.back().second);
                 m_hw.pdsink.setPdoOutput(next_state.config.pdo.index,
-                                         next_state.target_voltage,
-                                         next_state.target_current);
+                                         next_state.user_voltage,
+                                         next_state.user_current);
                 m_current_state = next_state;
             } else {
                 m_current_state = MenuStateBuilder::build(m_configs, 0);
@@ -124,8 +124,8 @@ auto StateMachine::handleEvent(MenuState& state,
         auto next_state = MainStateBuilder::MainStateBuilder::buildFromConfig(
             m_configs[state.screen.getSelectedMenuItem()].second);
         m_hw.pdsink.setPdoOutput(next_state.config.pdo.index,
-                                 next_state.target_voltage,
-                                 next_state.target_current);
+                                 next_state.user_voltage,
+                                 next_state.user_current);
         m_current_state = next_state;
     }
     // Update selected menu item based on encoder direction
@@ -166,9 +166,8 @@ auto StateMachine::handleEvent(MainState& state, const SystemTickEvent& event)
         if (!m_hw.pdsink.getStatus().has_fault) {
             // Fault is cleared, re negotiate the selected power profile
             state.is_fault_detected = false;
-            m_hw.pdsink.setPdoOutput(state.config.pdo.index,
-                                     state.target_voltage,
-                                     state.target_current);
+            m_hw.pdsink.setPdoOutput(state.config.pdo.index, state.user_voltage,
+                                     state.user_current);
         }
     }
     // Update screen with sensor data periodically
@@ -207,8 +206,8 @@ auto StateMachine::handleEvent(MainState& state,
             // if tv or tc is selected enter editing mode of the value
             if (state.is_editing) {
                 m_hw.pdsink.setPdoOutput(state.config.pdo.index,
-                                         state.target_voltage,
-                                         state.target_current);
+                                         state.user_voltage,
+                                         state.user_current);
             }
             state.is_editing = !state.is_editing;
         } else {
@@ -275,7 +274,7 @@ auto StateMachine::handleEvent(MainState& state,
                     big_step ? k_big_step_size / state.config.pdo.voltage_step *
                                    direction
                              : direction;
-                adjustAndClamp(state.target_voltage,
+                adjustAndClamp(state.user_voltage,
                                state.config.pdo.voltage_step,
                                state.config.pdo.voltage_min,
                                state.config.pdo.voltage_max, step_multiplier);
@@ -286,7 +285,7 @@ auto StateMachine::handleEvent(MainState& state,
                     big_step ? k_big_step_size / state.config.pdo.current_step *
                                    direction
                              : direction;
-                adjustAndClamp(state.target_current,
+                adjustAndClamp(state.user_current,
                                state.config.pdo.current_step,
                                state.config.pdo.current_min,
                                state.config.pdo.current_max, step_multiplier);
@@ -295,8 +294,8 @@ auto StateMachine::handleEvent(MainState& state,
             default:
                 break;
             }
-            state.screen.setTargetVoltage(state.target_voltage)
-                .setTargetCurrent(state.target_current);
+            state.screen.setTargetVoltage(state.user_voltage)
+                .setTargetCurrent(state.user_current);
         } else {
             if (direction > 0) {
                 ++state.selection;
@@ -348,11 +347,11 @@ auto StateMachine::MainStateBuilder::buildFromConfig(Config& config)
     -> MainState {
     auto main_state =
         StateMachine::MainState{.config = config,
-                                .target_voltage = config.pdo.voltage_min,
-                                .target_current = config.pdo.current_min};
+                                .user_voltage = config.pdo.voltage_min,
+                                .user_current = config.pdo.current_min};
     main_state.screen.setPdoType(config.pdo.type);
-    main_state.screen.setTargetVoltage(main_state.target_voltage);
-    main_state.screen.setTargetCurrent(main_state.target_current);
+    main_state.screen.setTargetVoltage(main_state.user_voltage);
+    main_state.screen.setTargetCurrent(main_state.user_current);
     return main_state;
 }
 

@@ -67,8 +67,8 @@ class StateMachine {
         bool output_enable{false};
         uint32_t rotary_encoder_time{0};
         uint32_t ui_refresh_time{0};
-        uint16_t target_voltage{0};
-        uint16_t target_current{0};
+        uint16_t user_voltage{0};
+        uint16_t user_current{0};
         bool is_fault_detected{false};
         uint32_t fault_recovery_time{0};
         float measured_voltage{0.0F};
