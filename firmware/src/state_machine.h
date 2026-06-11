@@ -77,6 +77,10 @@ class StateMachine {
         uint32_t sensor_update_time{0};
         uint32_t ramp_up_time{0};
         uint32_t low_voltage_reading_count{0};
+
+        auto updateStateTimers(const SystemTickEvent& event) -> void;
+        auto handleFaultRecovery(const HardwareContext& hw) -> void;
+        auto handleShortCircuitDetection(const HardwareContext& hw) -> void;
     };
 
     struct MainStateBuilder {
@@ -100,9 +104,9 @@ class StateMachine {
         -> void;
 
     template <typename S, typename E>
-    void handleEvent(S& state, const E& evt) {}
+    auto handleEvent(S& state, const E& evt) -> void {}
 
-    void renderUI();
+    auto renderUI() -> void;
 
     HardwareContext& m_hw;
     State m_current_state{InitState{}};

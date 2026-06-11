@@ -139,13 +139,7 @@ auto StateMachine::handleEvent(MenuState& state,
 
 auto StateMachine::handleEvent(MainState& state, const SystemTickEvent& event)
     -> void {
-    // Update timers
-    state.blinking_time += event.delta;
-    state.rotary_encoder_time += event.delta;
-    state.ui_refresh_time += event.delta;
-    state.fault_recovery_time += event.delta;
-    state.ramp_up_time += event.delta;
-    state.sensor_update_time += event.delta;
+    state.updateStateTimers(event);
     // Handle blinking state for value editing mode
     if (state.is_editing && state.blinking_time >= k_blinking_period) {
         state.blinking_time = 0;
@@ -159,17 +153,7 @@ auto StateMachine::handleEvent(MainState& state, const SystemTickEvent& event)
     // Update screen state based on selection and editing state
     state.screen.selectTargetVoltage(highlight_voltage)
         .selectTargetCurrent(highlight_current);
-    // Handle fault recovery
-    if (state.is_fault_detected &&
-        state.fault_recovery_time >= k_fault_recovery_period) {
-        state.fault_recovery_time = 0;
-        if (!m_hw.pdsink.getStatus().has_fault) {
-            // Fault is cleared, re negotiate the selected power profile
-            state.is_fault_detected = false;
-            m_hw.pdsink.setPdoOutput(state.config.pdo.index, state.user_voltage,
-                                     state.user_current);
-        }
-    }
+    state.handleFaultRecovery(m_hw);
     // Update screen with sensor data periodically
     if (state.sensor_update_time >= k_sensor_update_period) {
         state.sensor_update_time = 0;
@@ -177,20 +161,7 @@ auto StateMachine::handleEvent(MainState& state, const SystemTickEvent& event)
         state.screen.setMeasuredCurrent(state.measured_current);
         state.screen.setTemperature(state.measured_temperature);
     }
-    // Handle when the LM73100 turns off the output due to a short circuit
-    // Ramp up time can be high (couple hundered ms), it is used to update UI
-    // and mark output as disabled. LM73100 immediately turns off output after
-    // short circuit is detected.
-    if (state.ramp_up_time >= k_ramp_up_period && state.output_enable == true &&
-        state.measured_voltage < k_low_voltage_threshold) {
-        ++state.low_voltage_reading_count;
-        if (state.low_voltage_reading_count >= k_low_voltage_reading_count) {
-            state.output_enable = false;
-            m_hw.output_enable.write(state.output_enable);
-            state.screen.setOutputEnable(state.output_enable);
-            state.low_voltage_reading_count = 0;
-        }
-    }
+    state.handleShortCircuitDetection(m_hw);
     // Update UI periodically
     if (state.ui_refresh_time >= k_ui_refresh_period) {
         state.ui_refresh_time = 0;
@@ -355,7 +326,48 @@ auto StateMachine::MainStateBuilder::buildFromConfig(Config& config)
     return main_state;
 }
 
-void StateMachine::renderUI() {
+auto StateMachine::MainState::updateStateTimers(const SystemTickEvent& event)
+    -> void {
+    blinking_time += event.delta;
+    rotary_encoder_time += event.delta;
+    ui_refresh_time += event.delta;
+    fault_recovery_time += event.delta;
+    ramp_up_time += event.delta;
+    sensor_update_time += event.delta;
+}
+
+auto StateMachine::MainState::handleFaultRecovery(const HardwareContext& hw)
+    -> void {
+    if (is_fault_detected && fault_recovery_time >= k_fault_recovery_period) {
+        fault_recovery_time = 0;
+        if (!hw.pdsink.getStatus().has_fault) {
+            // Fault is cleared, re negotiate the selected power profile
+            is_fault_detected = false;
+            hw.pdsink.setPdoOutput(config.pdo.index, user_voltage,
+                                   user_current);
+        }
+    }
+}
+
+auto StateMachine::MainState::handleShortCircuitDetection(
+    const HardwareContext& hw) -> void {
+    // Handle when the LM73100 turns off the output due to a short circuit
+    // Ramp up time can be high (couple hundered ms), it is used to update UI
+    // and mark output as disabled. LM73100 immediately turns off output after
+    // short circuit is detected.
+    if (ramp_up_time >= k_ramp_up_period && output_enable &&
+        measured_voltage < k_low_voltage_threshold) {
+        ++low_voltage_reading_count;
+        if (low_voltage_reading_count >= k_low_voltage_reading_count) {
+            output_enable = false;
+            hw.output_enable.write(output_enable);
+            screen.setOutputEnable(output_enable);
+            low_voltage_reading_count = 0;
+        }
+    }
+}
+
+auto StateMachine::renderUI() -> void {
     auto& current_screen = std::visit(
         [](auto& state) -> Screen& {
             using StateType = std::decay_t<decltype(state)>;
