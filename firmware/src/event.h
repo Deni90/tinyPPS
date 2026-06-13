@@ -29,14 +29,25 @@ struct SystemTickEvent {
     uint32_t delta{0};
 };
 
+/**
+ * @brief Event type for PD sink status update events.
+ */
 struct PdSinkStatusUpdateEvent {
     IPdSink::Status status;
 };
 
 /**
+ * @brief Event type for VOUT status update events.
+ */
+struct VoutStatusUpdateEvent {
+    bool enabled{false};
+};
+
+/**
  * @brief System event variant that holds one of the supported event types.
  */
-using SystemEvent = std::variant<RotaryEncoderEvent, SensorUpdateEvent,
-                                 SystemTickEvent, PdSinkStatusUpdateEvent>;
+using SystemEvent =
+    std::variant<RotaryEncoderEvent, SensorUpdateEvent, SystemTickEvent,
+                 PdSinkStatusUpdateEvent, VoutStatusUpdateEvent>;
 
 #endif   // event_h

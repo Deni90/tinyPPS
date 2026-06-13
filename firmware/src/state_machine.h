@@ -81,6 +81,7 @@ class StateMachine {
         auto updateStateTimers(const SystemTickEvent& event) -> void;
         auto handleFaultRecovery(const HardwareContext& hw) -> void;
         auto handleShortCircuitDetection(const HardwareContext& hw) -> void;
+        auto setOutputEnable(const HardwareContext& hw, bool enable) -> void;
     };
 
     struct MainStateBuilder {
@@ -101,6 +102,8 @@ class StateMachine {
     auto handleEvent(MainState& state, const RotaryEncoderEvent& event) -> void;
     auto handleEvent(MainState& state, const SensorUpdateEvent& event) -> void;
     auto handleEvent(MainState& state, const PdSinkStatusUpdateEvent& event)
+        -> void;
+    auto handleEvent(MainState& state, const VoutStatusUpdateEvent& event)
         -> void;
 
     template <typename S, typename E>

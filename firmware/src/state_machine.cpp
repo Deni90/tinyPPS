@@ -212,21 +212,11 @@ auto StateMachine::handleEvent(MainState& state,
         if (state.is_editing || state.is_fault_detected) {
             break;
         }
-        {   // toggle output enable
-            state.output_enable = !state.output_enable;
-            m_hw.output_enable.write(state.output_enable);
-            // read vout status (the output of the AND gate) and update
-            // screen with it
-            auto vout_status = m_hw.vout_status.read();
-            state.screen.setOutputEnable(vout_status);
-            // finally, write the vout status back to the output enable pin
-            m_hw.output_enable.write(vout_status);
-            // reset ramp up timer to ignore checking for SCP for some time
-            // while the output voltage is rising
-            if (vout_status) {
-                state.ramp_up_time = 0;
-            }
-        }
+        // toggle output enable
+        state.setOutputEnable(m_hw, !state.output_enable);
+        // reset ramp up timer to ignore checking for SCP for some time
+        // while the output voltage is rising
+        state.ramp_up_time = 0;
         break;
     case RotaryEncoder::State::rot_inc:
     case RotaryEncoder::State::rot_dec: {
@@ -295,10 +285,13 @@ auto StateMachine::handleEvent(MainState& state,
                                const PdSinkStatusUpdateEvent& event) -> void {
     if (event.status.has_fault) {
         state.is_fault_detected = true;
-        state.output_enable = false;
-        m_hw.output_enable.write(state.output_enable);
-        state.screen.setOutputEnable(state.output_enable);
+        state.setOutputEnable(m_hw, false);
     }
+}
+
+auto StateMachine::handleEvent(MainState& state,
+                               const VoutStatusUpdateEvent& event) -> void {
+    state.setOutputEnable(m_hw, false);
 }
 
 auto StateMachine::MenuStateBuilder::build(
@@ -359,12 +352,20 @@ auto StateMachine::MainState::handleShortCircuitDetection(
         measured_voltage < k_low_voltage_threshold) {
         ++low_voltage_reading_count;
         if (low_voltage_reading_count >= k_low_voltage_reading_count) {
-            output_enable = false;
-            hw.output_enable.write(output_enable);
-            screen.setOutputEnable(output_enable);
+            setOutputEnable(hw, false);
             low_voltage_reading_count = 0;
         }
     }
+}
+
+auto StateMachine::MainState::setOutputEnable(const HardwareContext& hw,
+                                              bool enable) -> void {
+    if (output_enable == enable) {
+        return;
+    }
+    output_enable = enable;
+    hw.output_enable.write(output_enable);
+    screen.setOutputEnable(output_enable);
 }
 
 auto StateMachine::renderUI() -> void {

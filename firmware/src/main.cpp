@@ -45,6 +45,7 @@ static constexpr uint32_t k_sensor_read_period = 20;
 
 volatile uint32_t g_system_time = 0;
 volatile bool g_is_pd_interrupt_pending = false;
+volatile bool g_is_vout_status_interrupt_pending = false;
 
 auto main() -> int {
     stdio_init_all();
@@ -67,6 +68,12 @@ auto main() -> int {
     rotary_encoder.initialize();
     output_enable.configure(IGpio::Direction::Output, IGpio::Pull::Down);
     vout_status.configure(IGpio::Direction::Input, IGpio::Pull::Down);
+    vout_status.attachInterrupt(
+        IGpio::Edge::Falling,
+        [](IGpio& gpio, void* user) -> void {
+            g_is_pd_interrupt_pending = true;
+        },
+        nullptr);
     pd_int.configure(IGpio::Direction::Input, IGpio::Pull::Down);
     pd_int.attachInterrupt(
         IGpio::Edge::Rising,
@@ -143,6 +150,11 @@ auto main() -> int {
             g_is_pd_interrupt_pending = false;
             state_machine.dispatch(
                 PdSinkStatusUpdateEvent{pdsink.get().getStatus()});
+        }
+
+        if (g_is_vout_status_interrupt_pending) {
+            g_is_vout_status_interrupt_pending = false;
+            state_machine.dispatch(VoutStatusUpdateEvent{vout_status.read()});
         }
 
         state_machine.dispatch(SystemTickEvent{delta});
