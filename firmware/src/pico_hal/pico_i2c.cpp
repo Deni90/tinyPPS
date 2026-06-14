@@ -14,17 +14,16 @@ auto PicoI2c::initialize(i2c_inst_t* i2c, unsigned int sda_pin,
     gpio_pull_up(scl_pin);
 }
 
-auto PicoI2c::writeTo(uint8_t addr, const uint8_t* data, unsigned int len)
-    -> int {
+auto PicoI2c::writeTo(uint8_t addr, std::span<const uint8_t> data) -> int {
     if (m_i2c == nullptr) {
         return -1;
     }
-    return i2c_write_blocking(m_i2c, addr, data, len, false);
+    return i2c_write_blocking(m_i2c, addr, data.data(), data.size(), false);
 }
 
-auto PicoI2c::readFrom(uint8_t addr, uint8_t* data, unsigned int len) -> int {
+auto PicoI2c::readFrom(uint8_t addr, std::span<uint8_t> data) -> int {
     if (m_i2c == nullptr) {
         return -1;
     }
-    return i2c_read_blocking(m_i2c, addr, data, len, false);
+    return i2c_read_blocking(m_i2c, addr, data.data(), data.size(), false);
 }

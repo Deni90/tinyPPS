@@ -65,10 +65,9 @@ class Ssd1306 {
     /**
      * @brief Send multiple commands to display via I2C
      *
-     * @param[in] cmds Buffer containing commands
-     * @param[in] len Size of the buffer
+     * @param[in] constant view of the command sequence buffer to transmit.
      */
-    void sendCommands(const uint8_t* cmds, uint16_t len);
+    void sendCommands(std::span<const uint8_t> cmds);
 
     II2c& m_i2c;
     Type m_type;

@@ -1,5 +1,6 @@
 #include "ssd1306.h"
 
+#include <array>
 #include <cstring>
 
 // SSD1306 commands
@@ -51,7 +52,7 @@ void Ssd1306::initialize() {
         display_height = 32;
     }
 
-    uint8_t cmds[] = {
+    const auto cmds = std::to_array<uint8_t>({
         k_set_disp,   // set display off
         /* memory mapping */
         k_set_mem_mode,   // set memory address mode 0 = horizontal, 1 =
@@ -90,8 +91,8 @@ void Ssd1306::initialize() {
             0x00,   // deactivate horizontal scrolling if set. This is necessary
                     // as memory writes will corrupt if scrolling was enabled
         k_set_disp | 0x01,   // turn display on
-    };
-    sendCommands(cmds, sizeof(cmds));
+    });
+    sendCommands(cmds);
 }
 
 void Ssd1306::display(const uint8_t* fb) {
@@ -103,18 +104,18 @@ void Ssd1306::display(const uint8_t* fb) {
             continue;
         }
         // Update only dirty pages
-        uint8_t cmds[] = {
+        auto cmds = std::to_array<uint8_t>({
             0x00,
             static_cast<uint8_t>(0xB0 |
                                  page),   // Set target page (0xB0 to 0xB7)
             0x00,                         // Set lower column start (0)
             0x10                          // Set higher column start (0)
-        };
-        m_i2c.writeTo(k_i2c_addr, cmds, sizeof(cmds));
-        uint8_t temp_buf[k_width + 1];
+        });
+        m_i2c.writeTo(k_i2c_addr, cmds);
+        std::array<uint8_t, k_width + 1> temp_buf;
         temp_buf[0] = 0x40;
-        memcpy(temp_buf + 1, fb + base, k_width);
-        m_i2c.writeTo(k_i2c_addr, temp_buf, sizeof(temp_buf));
+        memcpy(temp_buf.data() + 1, fb + base, k_width);
+        m_i2c.writeTo(k_i2c_addr, temp_buf);
     }
     memcpy(m_old_fb, fb, pages * k_width);
 }
@@ -129,12 +130,12 @@ void Ssd1306::sendCommand(uint8_t cmd) {
     // I2C write process expects a control byte followed by data
     // this "data" can be a command or data to follow up a command
     // Co = 1, D/C = 0 => the driver expects a command
-    uint8_t buf[2] = {0x80, cmd};
-    m_i2c.writeTo(k_i2c_addr, buf, 2);
+    std::array<uint8_t, 2> buf = {0x80, cmd};
+    m_i2c.writeTo(k_i2c_addr, buf);
 }
 
-void Ssd1306::sendCommands(const uint8_t* cmds, uint16_t len) {
-    for (int i = 0; i < len; ++i) {
-        sendCommand(cmds[i]);
+void Ssd1306::sendCommands(std::span<const uint8_t> cmds) {
+    for (const auto& cmd : cmds) {
+        sendCommand(cmd);
     }
 }

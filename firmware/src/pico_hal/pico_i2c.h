@@ -28,10 +28,8 @@ class PicoI2c : public II2c {
     /**
      * Implementation of II2c interface
      */
-    auto writeTo(uint8_t addr, const uint8_t* data, unsigned int len)
-        -> int override;
-    auto readFrom(uint8_t addr, uint8_t* data, unsigned int len)
-        -> int override;
+    auto writeTo(uint8_t addr, std::span<const uint8_t> data) -> int override;
+    auto readFrom(uint8_t addr, std::span<uint8_t> data) -> int override;
 
   private:
     i2c_inst_t* m_i2c{nullptr};
