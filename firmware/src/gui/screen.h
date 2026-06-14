@@ -1,18 +1,17 @@
 #ifndef screen_h
 #define screen_h
 
-#include <array>
 #include <cstdint>
+#include <span>
 #include <string>
-
-constexpr uint16_t k_width = 128;   // Width of the screen in pixels
-constexpr uint16_t k_height = 64;   // Height of the screen in pixels
-constexpr uint8_t k_page_height = 8;
-
-using FrameBuffer = std::array<uint8_t, k_width * k_height / k_page_height>;
 
 class Screen {
   public:
+    /**
+     * @brief Alias for the frame buffer type
+     */
+    using FrameBuffer = std::span<uint8_t>;
+
     /**
      * @brief Constructor
      */
@@ -22,6 +21,17 @@ class Screen {
      * @brief Destructor
      */
     virtual ~Screen() = default;
+
+    /**
+     * @brief Initialize the screen with the given frame buffer and dimensions
+     *
+     * @param[in] frame_buffer The frame buffer to use for the screen
+     * @param[in] width The width of the screen
+     * @param[in] height The height of the screen
+     * @param[in] page_height The height of each page in the frame buffer
+     */
+    static auto initialize(FrameBuffer frame_buffer, uint16_t width,
+                           uint16_t height, uint16_t page_height) -> void;
 
     /**
      * @brief Build function that all screens must to implement
@@ -153,7 +163,10 @@ class Screen {
         -> uint16_t;
 
     // Make the frame buffer shared across all screens
-    static FrameBuffer m_frame_buffer;
+    static inline FrameBuffer m_frame_buffer{};
+    static inline uint16_t m_width{0};
+    static inline uint16_t m_height{0};
+    static inline uint16_t m_page_height{0};
 };
 
 #endif   // screen_h

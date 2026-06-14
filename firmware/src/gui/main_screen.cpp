@@ -11,18 +11,18 @@ auto MainScreen::build() -> FrameBuffer& {
     printString(0, 0, IPdSink::pdoTypeToString(m_pdo_type));
 
     // Temperature
-    printString(k_width, 0, tinyFormat("%d*C", m_temperature),
+    printString(m_width, 0, tinyFormat("%d*C", m_temperature),
                 {.align = TextAlign::right});
 
     // Measured voltage in V
-    printString(k_width / 2, 0, tinyFormat("%05.2fV", m_measured_voltage),
+    printString(m_width / 2, 0, tinyFormat("%05.2fV", m_measured_voltage),
                 {.align = TextAlign::center, .size = FontSize::big});
 
     // Target/Limit voltage in mV
     std::string voltage_label =
         (m_supply_mode == SupplyMode::CV) ? "TARGET" : "LIMIT";
     auto target_voltage_pos =
-        (k_width - printString(0, 0, voltage_label + " 00000mV", true)) / 2;
+        (m_width - printString(0, 0, voltage_label + " 00000mV", true)) / 2;
     auto len = printString(target_voltage_pos, 16, voltage_label + " ");
     len += printString(target_voltage_pos + len, 16,
                        tinyFormat("%05d", m_target_voltage),
@@ -32,7 +32,7 @@ auto MainScreen::build() -> FrameBuffer& {
     // Measured current in A
     // Using std::abs as a safety net against sensor noise.
     // The circuit is physically wired for positive current only.
-    printString(k_width / 2, 25,
+    printString(m_width / 2, 25,
                 tinyFormat("%05.2fA", std::abs(m_measured_current)),
                 {.align = TextAlign::center, .size = FontSize::big});
 
@@ -40,7 +40,7 @@ auto MainScreen::build() -> FrameBuffer& {
     std::string current_label =
         (m_supply_mode == SupplyMode::CV) ? "LIMIT" : "TARGET";
     auto target_current_pos =
-        (k_width - printString(0, 0, current_label + " 0000mA", true)) / 2;
+        (m_width - printString(0, 0, current_label + " 0000mA", true)) / 2;
     len = printString(target_current_pos, 41, current_label + " ");
     len += printString(target_current_pos + len, 41,
                        tinyFormat("%04d", m_target_current),

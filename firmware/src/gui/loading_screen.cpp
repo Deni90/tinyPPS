@@ -32,20 +32,20 @@ constexpr uint8_t k_logo_height = 19;
 auto LoadingScreen::build() -> FrameBuffer& {
     clear();
     // Logo
-    draw((k_width - k_logo_width) / 2, (k_height - k_logo_height) / 2, k_logo,
+    draw((m_width - k_logo_width) / 2, (m_height - k_logo_height) / 2, k_logo,
          k_logo_width, k_logo_height);
     // if PDO count is not set show the progress bar, otherwise show the number
     // of PDO profiles
     if (m_pdo_profile_count.has_value()) {
         std::string profiles_found_text =
             std::to_string(m_pdo_profile_count.value()) + " PDOs found";
-        printString(k_width / 2, 48, profiles_found_text,
+        printString(m_width / 2, 48, profiles_found_text,
                     {.align = TextAlign::center});
     } else {
         std::string loading_text(m_progress, '.');
-        printString(k_width / 2, 50, loading_text,
+        printString(m_width / 2, 50, loading_text,
                     {.align = TextAlign::center, .size = FontSize::big});
-        printString(k_width / 2, 48, "Loading PDOs",
+        printString(m_width / 2, 48, "Loading PDOs",
                     {.align = TextAlign::center});
     }
 

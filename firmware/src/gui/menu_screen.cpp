@@ -46,10 +46,10 @@ auto MenuScreen::build() -> FrameBuffer& {
     printString(
         0, y_pos,
         tinyFormat("%d/%d", m_selected_menu_item + 1, m_menu_items.size()));
-    printString(k_width / 2, y_pos, m_title, {.align = TextAlign::center});
+    printString(m_width / 2, y_pos, m_title, {.align = TextAlign::center});
 
-    y_pos += 2 * k_page_height;
-    auto max_menu_size = (k_height / k_page_height) - 2;
+    y_pos += 2 * m_page_height;
+    auto max_menu_size = (m_height / m_page_height) - 2;
 
     auto start_index = (m_selected_menu_item / max_menu_size) * max_menu_size;
     for (auto i = 0; i < max_menu_size; ++i) {
@@ -59,11 +59,11 @@ auto MenuScreen::build() -> FrameBuffer& {
         bool is_selected = false;
         if (start_index + i == m_selected_menu_item) {
             is_selected = true;
-            drawRectangle(0, y_pos, 1, k_page_height, false);
+            drawRectangle(0, y_pos, 1, m_page_height, false);
         }
         printString(1, y_pos, m_menu_items[start_index + i],
                     {.invert = is_selected});
-        y_pos += k_page_height;
+        y_pos += m_page_height;
     }
     return m_frame_buffer;
 }

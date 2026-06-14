@@ -46,6 +46,7 @@ static constexpr uint32_t k_sensor_read_period = 20;
 volatile uint32_t g_system_time = 0;
 volatile bool g_is_pd_interrupt_pending = false;
 volatile bool g_is_vout_status_interrupt_pending = false;
+static std::array<uint8_t, Ssd1306_128x64::getFrameBufferSize()> g_frame_buffer;
 
 auto main() -> int {
     stdio_init_all();
@@ -85,6 +86,9 @@ auto main() -> int {
     oled.initialize();
     ina226.setAveragingMode(Ina226::AveragingMode::Samples128);
     ina226.calibrate(5, 0.01);
+    Screen::initialize(g_frame_buffer, Ssd1306_128x64::getWidth(),
+                       Ssd1306_128x64::getHeight(),
+                       Ssd1306_128x64::getPageHeight());
     // By default, use AP33772 if available, otherwise fall back to AP33772S
     std::reference_wrapper<IPdSink> pdsink = ap33772;
     if (ap33772.probe()) {

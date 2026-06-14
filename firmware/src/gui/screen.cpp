@@ -1,8 +1,6 @@
 #include "screen.h"
 
-#include <array>
-#include <cstdint>
-#include <cstring>
+#include <algorithm>
 #include <utility>
 
 static constexpr uint8_t k_font_width = 5;
@@ -110,19 +108,25 @@ static constexpr std::array<uint8_t, 475> k_font = {
     0x08, 0x04,     0x08,     0x04,     k_unused,   // ~
 };
 
-FrameBuffer Screen::m_frame_buffer;
-
 Screen::Screen() { clear(); }
 
-auto Screen::clear() -> void { m_frame_buffer.fill(0); }
+auto Screen::initialize(FrameBuffer frame_buffer, uint16_t width,
+                        uint16_t height, uint16_t page_height) -> void {
+    m_frame_buffer = frame_buffer;
+    m_width = width;
+    m_height = height;
+    m_page_height = page_height;
+}
+
+auto Screen::clear() -> void { std::ranges::fill(m_frame_buffer, 0); }
 
 auto Screen::setPixel(int16_t x_pos, int16_t y_pos) -> void {
-    if ((x_pos < 0) || (y_pos < 0) || std::cmp_greater_equal(x_pos, k_width) ||
-        std::cmp_greater_equal(y_pos, k_height)) {
+    if ((x_pos < 0) || (y_pos < 0) || std::cmp_greater_equal(x_pos, m_width) ||
+        std::cmp_greater_equal(y_pos, m_height)) {
         return;
     }
-    auto buffer_index = (k_width * (y_pos / k_page_height)) + x_pos;
-    m_frame_buffer[buffer_index] |= (1 << (y_pos % k_page_height));
+    auto buffer_index = (m_width * (y_pos / m_page_height)) + x_pos;
+    m_frame_buffer[buffer_index] |= (1 << (y_pos % m_page_height));
 }
 
 auto Screen::drawRectangle(int16_t x_pos, int16_t y_pos, uint16_t width,
@@ -152,25 +156,25 @@ auto Screen::draw(int16_t x_pos, int16_t y_pos, const uint8_t* object,
         for (auto temp_x_pos = x_pos; temp_x_pos < (x_pos + width);
              temp_x_pos++) {
             if ((temp_x_pos < 0) || (temp_y_pos < 0) ||
-                std::cmp_greater_equal(temp_x_pos, k_width) ||
-                std::cmp_greater_equal(temp_y_pos, k_height)) {
+                std::cmp_greater_equal(temp_x_pos, m_width) ||
+                std::cmp_greater_equal(temp_y_pos, m_height)) {
                 continue;
             }
             auto buffer_index =
-                (k_width * (temp_y_pos / k_page_height)) + temp_x_pos;
+                (m_width * (temp_y_pos / m_page_height)) + temp_x_pos;
             auto object_x = temp_x_pos - x_pos;
             auto object_y = temp_y_pos - y_pos;
-            auto object_index = (width * (object_y / k_page_height)) + object_x;
+            auto object_index = (width * (object_y / m_page_height)) + object_x;
             auto tmp_object = object[object_index];
             if (invert) {
                 tmp_object = ~tmp_object;
             }
-            if ((tmp_object >> (object_y % k_page_height) & 0x01) == 0x01) {
+            if ((tmp_object >> (object_y % m_page_height) & 0x01) == 0x01) {
                 m_frame_buffer[buffer_index] |=
-                    (1 << (temp_y_pos % k_page_height));
+                    (1 << (temp_y_pos % m_page_height));
             } else {
                 m_frame_buffer[buffer_index] &=
-                    ~(1 << (temp_y_pos % k_page_height));
+                    ~(1 << (temp_y_pos % m_page_height));
             }
         }
     }
