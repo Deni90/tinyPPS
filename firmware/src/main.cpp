@@ -11,7 +11,7 @@
 #include "pico_i2c.h"
 #include "pico_timer.h"
 #include "rotary_encoder.h"
-#include "ssd1306.h"
+#include "ssd1306.hpp"
 #include "state_machine.h"
 
 static constexpr uint k_rot_enc_btn_pin = 11;
@@ -58,7 +58,7 @@ auto main() -> int {
     PicoGpio output_enable{k_output_enable_pin};
     PicoGpio vout_status{k_vout_status_pin};
     PicoGpio pd_int{k_pd_int_pin};
-    Ssd1306 oled{i2c, Ssd1306::Type::ssd1306_128x64};
+    Ssd1306_128x64 oled{i2c};
     Ina226 ina226{i2c, k_ina226_addr};
     Ap33772 ap33772{i2c};
     Ap33772s ap33772s{i2c};

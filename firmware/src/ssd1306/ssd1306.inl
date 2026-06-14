@@ -1,55 +1,15 @@
-#include "ssd1306.h"
+#include <algorithm>
 
-#include <array>
-#include <cstring>
-
-// SSD1306 commands
-static constexpr uint8_t k_i2c_addr = 0x3C;
-static constexpr uint8_t k_set_mem_mode = 0x20;
-static constexpr uint8_t k_col_addr = 0x21;
-static constexpr uint8_t k_page_addr = 0x22;
-static constexpr uint8_t k_horiz_scroll = 0x26;
-static constexpr uint8_t k_set_scroll = 0x2E;
-
-static constexpr uint8_t k_disp_start_line = 0x40;
-
-static constexpr uint8_t k_set_contrast = 0x81;
-static constexpr uint8_t k_set_charge_pump = 0x8D;
-
-static constexpr uint8_t k_set_seg_remap = 0xA0;
-static constexpr uint8_t k_set_entire_on = 0xA4;
-static constexpr uint8_t k_set_all_on = 0xA5;
-static constexpr uint8_t k_set_norm_disp = 0xA6;
-static constexpr uint8_t k_set_inv_disp = 0xA7;
-static constexpr uint8_t k_set_mux_ratio = 0xA8;
-static constexpr uint8_t k_set_disp = 0xAE;
-static constexpr uint8_t k_set_com_out_dir = 0xC0;
-static constexpr uint8_t k_set_com_out_dir_flip = 0xC0;
-
-static constexpr uint8_t k_set_disp_offset = 0xD3;
-static constexpr uint8_t k_set_disp_clk_div = 0xD5;
-static constexpr uint8_t k_set_precharge = 0xD9;
-static constexpr uint8_t k_set_com_pin_cfg = 0xDA;
-static constexpr uint8_t k_set_vcom_desel = 0xDB;
-
-// Other helper constants
-static constexpr uint8_t k_width = 128;
-static constexpr uint8_t k_page_height = 8;
-
-Ssd1306::Ssd1306(II2c& i2c, Ssd1306::Type oled_type)
-    : m_i2c(i2c), m_type(oled_type) {}
-
-void Ssd1306::initialize() {
+template <uint16_t Height>
+auto Ssd1306<Height>::initialize() -> void {
     // Some of these commands are not strictly necessary as the reset
     // process defaults to some of these but they are shown here
     // to demonstrate what the initialization sequence looks like
     // Some configuration values are recommended by the board manufacturer
 
     uint8_t com_pin_cfg = 0x12;
-    uint8_t display_height = 64;
-    if (m_type == Type::ssd1306_128x32) {
+    if constexpr (Height == 32) {
         com_pin_cfg = 0x02;
-        display_height = 32;
     }
 
     const auto cmds = std::to_array<uint8_t>({
@@ -63,7 +23,7 @@ void Ssd1306::initialize() {
         k_set_seg_remap |
             0x01,   // set segment re-map, column address 127 is mapped to SEG0
         k_set_mux_ratio,            // set multiplex ratio
-        --display_height,           // Display height - 1
+        Height - 1,                 // Display height - 1
         k_set_com_out_dir | 0x08,   // set COM (common) output scan direction.
                                     // Scan from bottom up, COM[N-1] to COM0
         k_set_disp_offset,          // set display offset
@@ -95,16 +55,21 @@ void Ssd1306::initialize() {
     sendCommands(cmds);
 }
 
-void Ssd1306::display(const uint8_t* fb) {
-    const uint8_t pages = (m_type == Type::ssd1306_128x64) ? 8 : 4;
-    for (uint8_t page = 0; page < pages; page++) {
-        int base = page * k_width;
-        if (memcmp(fb + base, m_old_fb + base, k_width) == 0) {
+template <uint16_t Height>
+auto Ssd1306<Height>::display(std::span<const uint8_t> frame_buffer) -> void {
+    if (m_old_fb.size() != frame_buffer.size()) {
+        return;
+    }
+    for (uint8_t page = 0; page < k_page_height; page++) {
+        const auto offset = page * k_width;
+        const auto old_fb_slice = std::span{m_old_fb}.subspan(offset, k_width);
+        if (std::ranges::equal(old_fb_slice,
+                               frame_buffer.subspan(offset, k_width))) {
             // new page is same as old, no update required
             continue;
         }
         // Update only dirty pages
-        auto cmds = std::to_array<uint8_t>({
+        const auto cmds = std::to_array<uint8_t>({
             0x00,
             static_cast<uint8_t>(0xB0 |
                                  page),   // Set target page (0xB0 to 0xB7)
@@ -114,19 +79,15 @@ void Ssd1306::display(const uint8_t* fb) {
         m_i2c.writeTo(k_i2c_addr, cmds);
         std::array<uint8_t, k_width + 1> temp_buf;
         temp_buf[0] = 0x40;
-        memcpy(temp_buf.data() + 1, fb + base, k_width);
+        std::ranges::copy(frame_buffer.subspan(offset, k_width),
+                          temp_buf.begin() + 1);
         m_i2c.writeTo(k_i2c_addr, temp_buf);
     }
-    memcpy(m_old_fb, fb, pages * k_width);
+    std::ranges::copy(frame_buffer, m_old_fb.begin());
 }
 
-uint16_t Ssd1306::getWidth() const { return k_width; }
-
-uint16_t Ssd1306::getHeight() const {
-    return m_type == Type::ssd1306_128x64 ? 64 : 32;
-}
-
-void Ssd1306::sendCommand(uint8_t cmd) {
+template <uint16_t Height>
+auto Ssd1306<Height>::sendCommand(uint8_t cmd) -> void {
     // I2C write process expects a control byte followed by data
     // this "data" can be a command or data to follow up a command
     // Co = 1, D/C = 0 => the driver expects a command
@@ -134,7 +95,8 @@ void Ssd1306::sendCommand(uint8_t cmd) {
     m_i2c.writeTo(k_i2c_addr, buf);
 }
 
-void Ssd1306::sendCommands(std::span<const uint8_t> cmds) {
+template <uint16_t Height>
+auto Ssd1306<Height>::sendCommands(std::span<const uint8_t> cmds) -> void {
     for (const auto& cmd : cmds) {
         sendCommand(cmd);
     }

@@ -376,5 +376,5 @@ auto StateMachine::renderUI() -> void {
         },
         m_current_state);
 
-    m_hw.oled.display(current_screen.build().data());
+    m_hw.oled.display(current_screen.build());
 }

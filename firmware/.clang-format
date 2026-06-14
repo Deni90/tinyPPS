@@ -19,3 +19,5 @@ AlignConsecutiveMacros: Consecutive
 # use \n instead of \r\n
 PointerAlignment: Left
 UseCRLF: false
+# break the template <...> line away from your function declarations
+AlwaysBreakTemplateDeclarations: Yes

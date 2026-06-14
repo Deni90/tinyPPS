@@ -5,8 +5,10 @@
 #include "ina226.h"
 #include "pdsink_iface.h"
 #include "rotary_encoder.h"
-#include "ssd1306.h"
+#include "ssd1306.hpp"
 #include "timer_iface.h"
+
+using Ssd1306_128x64 = Ssd1306<64>;
 
 struct HardwareContext {
     IRepeatingTimer& timer;
@@ -16,7 +18,7 @@ struct HardwareContext {
     IGpio& pd_int;
     Ina226& ina226;
     RotaryEncoder& encoder;
-    Ssd1306& oled;
+    Ssd1306_128x64& oled;
 };
 
 #endif   // hardware_h
