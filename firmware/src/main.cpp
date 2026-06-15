@@ -49,8 +49,6 @@ volatile bool g_is_vout_status_interrupt_pending = false;
 static std::array<uint8_t, Ssd1306_128x64::getFrameBufferSize()> g_frame_buffer;
 
 auto main() -> int {
-    stdio_init_all();
-
     PicoI2c i2c;
     PicoGpio rot_enc_a_pin{k_rot_enc_a_pin};
     PicoGpio rot_enc_b_pin{k_rot_enc_b_pin};
