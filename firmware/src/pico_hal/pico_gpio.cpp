@@ -2,7 +2,7 @@
 
 /* RP2040 GPIO IRQ demux table */
 struct IrqEntry {
-    IGpio* gpio;
+    const IGpio* gpio;
     IGpio::IrqCallback callback;
     void* user;
     uint32_t events;
@@ -44,7 +44,7 @@ static void gpioIrqDispatch(uint gpio, uint32_t events) {
 
 PicoGpio::PicoGpio(unsigned int io_pin) : m_pin(io_pin) {}
 
-auto PicoGpio::configure(Direction dir, Pull pull) -> bool {
+auto PicoGpio::configure(Direction dir, Pull pull) const -> bool {
     if (m_pin >= NUM_BANK0_GPIOS) {
         return false;
     }
@@ -54,7 +54,7 @@ auto PicoGpio::configure(Direction dir, Pull pull) -> bool {
     return true;
 }
 
-auto PicoGpio::write(bool value) -> bool {
+auto PicoGpio::write(bool value) const -> bool {
     if (m_pin >= NUM_BANK0_GPIOS) {
         return false;
     }
@@ -62,15 +62,15 @@ auto PicoGpio::write(bool value) -> bool {
     return true;
 }
 
-auto PicoGpio::read() -> bool {
+auto PicoGpio::read() const -> bool {
     if (m_pin >= NUM_BANK0_GPIOS) {
         return false;
     }
     return gpio_get(m_pin);
 }
 
-auto PicoGpio::attachInterrupt(Edge edge, IrqCallback callback, void* user)
-    -> bool {
+auto PicoGpio::attachInterrupt(Edge edge, IrqCallback callback,
+                               void* user) const -> bool {
     if (m_pin >= NUM_BANK0_GPIOS || callback == nullptr) {
         return false;
     }
@@ -93,7 +93,7 @@ auto PicoGpio::attachInterrupt(Edge edge, IrqCallback callback, void* user)
     return true;
 }
 
-auto PicoGpio::enableInterrupt(bool enable) -> void {
+auto PicoGpio::enableInterrupt(bool enable) const -> void {
     if (m_pin >= NUM_BANK0_GPIOS) {
         return;
     }

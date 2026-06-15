@@ -69,14 +69,14 @@ auto main() -> int {
     vout_status.configure(IGpio::Direction::Input, IGpio::Pull::Down);
     vout_status.attachInterrupt(
         IGpio::Edge::Falling,
-        [](IGpio& gpio, void* user) -> void {
+        [](const IGpio& gpio, void* user) -> void {
             g_is_pd_interrupt_pending = true;
         },
         nullptr);
     pd_int.configure(IGpio::Direction::Input, IGpio::Pull::Down);
     pd_int.attachInterrupt(
         IGpio::Edge::Rising,
-        [](IGpio& gpio, void* user) -> void {
+        [](const IGpio& gpio, void* user) -> void {
             g_is_pd_interrupt_pending = true;
         },
         nullptr);

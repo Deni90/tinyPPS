@@ -20,16 +20,17 @@ class PicoGpio : public IGpio {
 
     ~PicoGpio() final = default;
 
-    auto configure(Direction dir, Pull pull = Pull::None) -> bool override;
-
-    auto write(bool value) -> bool override;
-
-    auto read() -> bool override;
-
-    auto attachInterrupt(Edge edge, IrqCallback callback, void* user = nullptr)
+    auto configure(Direction dir, Pull pull = Pull::None) const
         -> bool override;
 
-    void enableInterrupt(bool enable) override;
+    auto write(bool value) const -> bool override;
+
+    auto read() const -> bool override;
+
+    auto attachInterrupt(Edge edge, IrqCallback callback,
+                         void* user = nullptr) const -> bool override;
+
+    auto enableInterrupt(bool enable) const -> void override;
 
   private:
     unsigned int m_pin;
