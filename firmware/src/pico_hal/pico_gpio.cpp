@@ -42,12 +42,13 @@ static void gpioIrqDispatch(uint gpio, uint32_t events) {
     }
 }
 
-PicoGpio::PicoGpio(unsigned int io_pin) : m_pin(io_pin) { gpio_init(m_pin); }
+PicoGpio::PicoGpio(unsigned int io_pin) : m_pin(io_pin) {}
 
 auto PicoGpio::configure(Direction dir, Pull pull) -> bool {
     if (m_pin >= NUM_BANK0_GPIOS) {
         return false;
     }
+    gpio_init(m_pin);
     gpio_set_dir(m_pin, dir == Direction::Output);
     gpio_set_pulls(m_pin, pull == Pull::Up, pull == Pull::Down);
     return true;
