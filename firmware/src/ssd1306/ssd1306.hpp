@@ -21,7 +21,7 @@ class Ssd1306 {
      *
      * @param[in] i2c Reference to i2c interface implementation
      */
-    explicit Ssd1306(II2c& i2c) : m_i2c(i2c) {}
+    explicit Ssd1306(II2c& i2c);
 
     /**
      * @brief Initialize the module

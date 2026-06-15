@@ -1,6 +1,13 @@
 #include <algorithm>
 
 template <uint16_t Height>
+Ssd1306<Height>::Ssd1306(II2c& i2c) : m_i2c(i2c) {
+    // Initialize the buffer to values other than 0x00 to detect the first
+    // update
+    m_old_fb.fill(0xff);
+}
+
+template <uint16_t Height>
 auto Ssd1306<Height>::initialize() -> void {
     // Some of these commands are not strictly necessary as the reset
     // process defaults to some of these but they are shown here
