@@ -5,27 +5,31 @@
 #include "ap33772s.h"
 #include "event.h"
 #include "hardware.h"
+#include "hardware_config.hpp"
 #include "ina226.h"
 #include "pdsink_iface.h"
-#include "pico_gpio.h"
 #include "pico_i2c.h"
 #include "pico_timer.h"
 #include "rotary_encoder.h"
 #include "ssd1306.hpp"
 #include "state_machine.h"
 
-static constexpr uint k_rot_enc_btn_pin = 11;
+using hal::gpio::Direction;
+using hal::gpio::Edge;
+using hal::gpio::Pull;
+
+static constexpr uint k_g_rot_enc_btn_pin = 11;
 static constexpr uint k_rot_enc_a_pin = 10;
-static constexpr uint k_rot_enc_b_pin = 9;
+static constexpr uint k_g_rot_enc_b_pin = 9;
 
 static constexpr i2c_inst_t* k_i2c = i2c1;
 static constexpr unsigned int k_i2c_sda_pin = 18;
 static constexpr unsigned int k_i2c_scl_pin = 19;
 static constexpr unsigned int k_i2c_speed = 400;   // kHz
 
-static constexpr unsigned int k_pd_int_pin = 25;
-static constexpr unsigned int k_output_enable_pin = 17;
-static constexpr unsigned int k_vout_status_pin = 14;
+static constexpr unsigned int k_g_pd_int_pin = 25;
+static constexpr unsigned int k_g_output_enable_pin = 17;
+static constexpr unsigned int k_g_vout_status_pin = 14;
 
 static constexpr uint8_t k_ina226_addr = 0x40;
 
@@ -43,20 +47,22 @@ static constexpr uint8_t k_otp_threshold = 85;
 
 static constexpr uint32_t k_sensor_read_period = 20;
 
+static constexpr PicoGpioPin g_rot_enc_a_pin{k_rot_enc_a_pin};
+static constexpr PicoGpioPin g_rot_enc_b_pin{k_g_rot_enc_b_pin};
+static constexpr PicoGpioPin g_rot_enc_btn_pin(k_g_rot_enc_btn_pin);
+static constexpr PicoGpioPin g_output_enable{k_g_output_enable_pin};
+static constexpr PicoGpioPin g_vout_status{k_g_vout_status_pin};
+static constexpr PicoGpioPin g_pd_int{k_g_pd_int_pin};
+
 volatile uint32_t g_system_time = 0;
-volatile bool g_is_pd_interrupt_pending = false;
-volatile bool g_is_vout_status_interrupt_pending = false;
+volatile bool g_is_g_pd_interrupt_pending = false;
+volatile bool g_is_g_vout_status_interrupt_pending = false;
 static std::array<uint8_t, Ssd1306_128x64::getFrameBufferSize()> g_frame_buffer;
 
 auto main() -> int {
     PicoI2c i2c;
-    PicoGpio rot_enc_a_pin{k_rot_enc_a_pin};
-    PicoGpio rot_enc_b_pin{k_rot_enc_b_pin};
-    PicoGpio rot_enc_btn_pin(k_rot_enc_btn_pin);
-    RotaryEncoder rotary_encoder{rot_enc_a_pin, rot_enc_b_pin, rot_enc_btn_pin};
-    PicoGpio output_enable{k_output_enable_pin};
-    PicoGpio vout_status{k_vout_status_pin};
-    PicoGpio pd_int{k_pd_int_pin};
+    RotaryEncoder rotary_encoder{g_rot_enc_a_pin, g_rot_enc_b_pin,
+                                 g_rot_enc_btn_pin};
     Ssd1306_128x64 oled{i2c};
     Ina226 ina226{i2c, k_ina226_addr};
     Ap33772 ap33772{i2c};
@@ -65,22 +71,22 @@ auto main() -> int {
 
     i2c.initialize(k_i2c, k_i2c_sda_pin, k_i2c_scl_pin, k_i2c_speed);
     rotary_encoder.initialize();
-    output_enable.configure(IGpio::Direction::Output, IGpio::Pull::Down);
-    vout_status.configure(IGpio::Direction::Input, IGpio::Pull::Down);
-    vout_status.attachInterrupt(
-        IGpio::Edge::Falling,
-        [](const IGpio& gpio, void* user) -> void {
-            g_is_pd_interrupt_pending = true;
+    g_output_enable.configure(Direction::Output, Pull::Down);
+    g_vout_status.configure(Direction::Input, Pull::Down);
+    g_vout_status.attachInterrupt(
+        Edge::Falling,
+        [](const GpioPin& gpio, void* user) -> void {
+            g_is_g_pd_interrupt_pending = true;
         },
         nullptr);
-    pd_int.configure(IGpio::Direction::Input, IGpio::Pull::Down);
-    pd_int.attachInterrupt(
-        IGpio::Edge::Rising,
-        [](const IGpio& gpio, void* user) -> void {
-            g_is_pd_interrupt_pending = true;
+    g_pd_int.configure(Direction::Input, Pull::Down);
+    g_pd_int.attachInterrupt(
+        Edge::Rising,
+        [](const GpioPin& gpio, void* user) -> void {
+            g_is_g_pd_interrupt_pending = true;
         },
         nullptr);
-    pd_int.enableInterrupt(true);
+    g_pd_int.enableInterrupt(true);
     oled.initialize();
     ina226.setAveragingMode(Ina226::AveragingMode::Samples128);
     ina226.calibrate(5, 0.01);
@@ -116,9 +122,9 @@ auto main() -> int {
         nullptr);
     HardwareContext hardware{.timer = timer,
                              .pdsink = pdsink.get(),
-                             .output_enable = output_enable,
-                             .vout_status = vout_status,
-                             .pd_int = pd_int,
+                             .output_enable = g_output_enable,
+                             .vout_status = g_vout_status,
+                             .pd_int = g_pd_int,
                              .ina226 = ina226,
                              .encoder = rotary_encoder,
                              .oled = oled};
@@ -148,15 +154,15 @@ auto main() -> int {
                                                      pdsink.get().getTemp()});
         }
 
-        if (g_is_pd_interrupt_pending) {
-            g_is_pd_interrupt_pending = false;
+        if (g_is_g_pd_interrupt_pending) {
+            g_is_g_pd_interrupt_pending = false;
             state_machine.dispatch(
                 PdSinkStatusUpdateEvent{pdsink.get().getStatus()});
         }
 
-        if (g_is_vout_status_interrupt_pending) {
-            g_is_vout_status_interrupt_pending = false;
-            state_machine.dispatch(VoutStatusUpdateEvent{vout_status.read()});
+        if (g_is_g_vout_status_interrupt_pending) {
+            g_is_g_vout_status_interrupt_pending = false;
+            state_machine.dispatch(VoutStatusUpdateEvent{g_vout_status.read()});
         }
 
         state_machine.dispatch(SystemTickEvent{delta});

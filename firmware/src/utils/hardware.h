@@ -1,7 +1,7 @@
 #ifndef hardware_h
 #define hardware_h
 
-#include "gpio_iface.h"
+#include "hardware_config.hpp"
 #include "ina226.h"
 #include "pdsink_iface.h"
 #include "rotary_encoder.h"
@@ -13,9 +13,9 @@ using Ssd1306_128x64 = Ssd1306<64>;
 struct HardwareContext {
     IRepeatingTimer& timer;
     IPdSink& pdsink;
-    IGpio& output_enable;
-    IGpio& vout_status;
-    IGpio& pd_int;
+    const GpioPin& output_enable;
+    const GpioPin& vout_status;
+    const GpioPin& pd_int;
     Ina226& ina226;
     RotaryEncoder& encoder;
     Ssd1306_128x64& oled;

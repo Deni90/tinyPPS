@@ -71,6 +71,10 @@ target_link_libraries(TinyPPS
         tinypps_utils
 )
 
+target_include_directories(TinyPPS PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
 pico_add_extra_outputs(TinyPPS)
 
 #disable RTTI and exceptions

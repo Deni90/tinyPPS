@@ -3,17 +3,21 @@
 #include <array>
 #include <cstdint>
 
+using hal::gpio::Direction;
+using hal::gpio::Pull;
+
 static constexpr uint32_t k_debounce_time = 50;       // ms
 static constexpr uint32_t k_long_press_time = 1000;   // ms
 
-RotaryEncoder::RotaryEncoder(IGpio& a_gpio, IGpio& b_gpio, IGpio& btn_gpio)
+RotaryEncoder::RotaryEncoder(const GpioPin& a_gpio, const GpioPin& b_gpio,
+                             const GpioPin& btn_gpio)
     : m_state(RotaryEncoder::State::idle), m_a_gpio(a_gpio), m_b_gpio(b_gpio),
       m_btn_gpio(btn_gpio) {}
 
 auto RotaryEncoder::initialize() -> void {
-    m_a_gpio.configure(IGpio::Direction::Input, IGpio::Pull::Up);
-    m_b_gpio.configure(IGpio::Direction::Input, IGpio::Pull::Up);
-    m_btn_gpio.configure(IGpio::Direction::Input, IGpio::Pull::Up);
+    m_a_gpio.configure(Direction::Input, Pull::Up);
+    m_b_gpio.configure(Direction::Input, Pull::Up);
+    m_btn_gpio.configure(Direction::Input, Pull::Up);
 }
 
 auto RotaryEncoder::handle(uint32_t now_ms) -> void {

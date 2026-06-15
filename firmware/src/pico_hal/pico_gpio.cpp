@@ -1,9 +1,19 @@
-#include "pico_gpio.h"
+#include "pico_gpio.hpp"
+
+#include <cstdint>
+
+#include "gpio.hpp"
+#include "pico/stdlib.h"
+
+using hal::gpio::Direction;
+using hal::gpio::Edge;
+using hal::gpio::IrqCallback;
+using hal::gpio::Pull;
 
 /* RP2040 GPIO IRQ demux table */
 struct IrqEntry {
-    const IGpio* gpio;
-    IGpio::IrqCallback callback;
+    const PicoGpioPin* gpio;
+    IrqCallback<PicoGpioPin> callback;
     void* user;
     uint32_t events;
 };
@@ -11,25 +21,23 @@ struct IrqEntry {
 static IrqEntry irq_table[NUM_BANK0_GPIOS];
 static bool irq_callback_installed = false;
 
-static auto edgeToPico(IGpio::Edge edge) -> uint32_t {
+static auto edgeToPico(Edge edge) -> uint32_t {
     switch (edge) {
-    case IGpio::Edge::Rising:
+    case Edge::Rising:
         return GPIO_IRQ_EDGE_RISE;
-    case IGpio::Edge::Falling:
+    case Edge::Falling:
         return GPIO_IRQ_EDGE_FALL;
-    case IGpio::Edge::Both:
+    case Edge::Both:
         return GPIO_IRQ_EDGE_RISE | GPIO_IRQ_EDGE_FALL;
     default:
         return 0;
     }
 }
 
-/**
- * @brief Global Pico SDK GPIO IRQ dispatcher
- *
- * RP2040 supports only one GPIO IRQ callback per core.
- * This function demultiplexes interrupts to the correct Gpio instance.
- */
+// Global Pico SDK GPIO IRQ dispatcher
+//
+// RP2040 supports only one GPIO IRQ callback per core.
+// This function demultiplexes interrupts to the correct Gpio instance.
 static void gpioIrqDispatch(uint gpio, uint32_t events) {
     if (gpio >= NUM_BANK0_GPIOS) {
         return;
@@ -42,9 +50,7 @@ static void gpioIrqDispatch(uint gpio, uint32_t events) {
     }
 }
 
-PicoGpio::PicoGpio(unsigned int io_pin) : m_pin(io_pin) {}
-
-auto PicoGpio::configure(Direction dir, Pull pull) const -> bool {
+auto PicoGpioPin::configure(Direction dir, Pull pull) const -> bool {
     if (m_pin >= NUM_BANK0_GPIOS) {
         return false;
     }
@@ -54,7 +60,7 @@ auto PicoGpio::configure(Direction dir, Pull pull) const -> bool {
     return true;
 }
 
-auto PicoGpio::write(bool value) const -> bool {
+auto PicoGpioPin::write(bool value) const -> bool {
     if (m_pin >= NUM_BANK0_GPIOS) {
         return false;
     }
@@ -62,15 +68,15 @@ auto PicoGpio::write(bool value) const -> bool {
     return true;
 }
 
-auto PicoGpio::read() const -> bool {
+auto PicoGpioPin::read() const -> bool {
     if (m_pin >= NUM_BANK0_GPIOS) {
         return false;
     }
     return gpio_get(m_pin);
 }
 
-auto PicoGpio::attachInterrupt(Edge edge, IrqCallback callback,
-                               void* user) const -> bool {
+auto PicoGpioPin::attachInterrupt(Edge edge, IrqCallback<PicoGpioPin> callback,
+                                  void* user) const -> bool {
     if (m_pin >= NUM_BANK0_GPIOS || callback == nullptr) {
         return false;
     }
@@ -93,7 +99,7 @@ auto PicoGpio::attachInterrupt(Edge edge, IrqCallback callback,
     return true;
 }
 
-auto PicoGpio::enableInterrupt(bool enable) const -> void {
+auto PicoGpioPin::enableInterrupt(bool enable) const -> void {
     if (m_pin >= NUM_BANK0_GPIOS) {
         return;
     }
