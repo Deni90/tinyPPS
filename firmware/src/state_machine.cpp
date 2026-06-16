@@ -118,7 +118,6 @@ auto StateMachine::handleEvent(LoadingState& state,
 
 auto StateMachine::handleEvent(MenuState& state,
                                const RotaryEncoderEvent& event) -> void {
-    int direction = 0;
     // Handle encoder states
     if (event.encoder_state == RotaryEncoder::State::btn_short_press) {
         auto next_state = MainStateBuilder::MainStateBuilder::buildFromConfig(
@@ -271,6 +270,10 @@ auto StateMachine::handleEvent(MainState& state,
         // TODO implement me with constant current mode
         // implementation...
         break;
+    case RotaryEncoder::State::idle:
+    case RotaryEncoder::State::processed:
+        // do nothing
+        break;
     }
 }
 
@@ -370,11 +373,7 @@ auto StateMachine::MainState::setOutputEnable(const HardwareContext& hw,
 
 auto StateMachine::renderUI() -> void {
     auto& current_screen = std::visit(
-        [](auto& state) -> Screen& {
-            using StateType = std::decay_t<decltype(state)>;
-            return state.screen;
-        },
-        m_current_state);
+        [](auto& state) -> Screen& { return state.screen; }, m_current_state);
 
     m_hw.oled.display(current_screen.build());
 }

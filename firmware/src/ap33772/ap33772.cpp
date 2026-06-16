@@ -140,7 +140,6 @@ auto Ap33772::setPdoOutput(uint8_t index, uint16_t voltage, uint16_t current)
 
     RdoReg rdo;
     rdo.raw = 0;
-    uint8_t octphr_val = 0;
 
     if (m_pdo_array[index].pps.apdo == 0x03) {
         // if (current > (m_pdo_array[index].pps.current_max * 10)) {
@@ -153,7 +152,6 @@ auto Ap33772::setPdoOutput(uint8_t index, uint16_t voltage, uint16_t current)
         // }
         rdo.pps.voltage = voltage / k_rdo_pps_voltage_inc;
         rdo.pps.obj_position = index + 1;
-        octphr_val = rdo.pps.current_op;
     } else {
         // if (current > (m_pdo_array[index].fixed.current_max * 10) ||
         //     voltage != (m_pdo_array[index].fixed.voltage_max) * 50) {
@@ -162,7 +160,6 @@ auto Ap33772::setPdoOutput(uint8_t index, uint16_t voltage, uint16_t current)
         rdo.fixed.current_max = current / k_rdo_fixed_current_inc;
         rdo.fixed.current_op = current / k_rdo_fixed_current_inc;
         rdo.fixed.obj_position = index + 1;
-        octphr_val = rdo.fixed.current_op;
     }
     writeRegister(k_cmd_rdo, rdo.raw);
 
@@ -208,7 +205,9 @@ auto Ap33772::readRegister(uint8_t reg, uint16_t& value) -> bool {
         return false;
     }
     std::array<uint8_t, sizeof(uint16_t)> buffer;
-    if (m_i2c.readFrom(k_i2c_addr, buffer) != buffer.size()) {
+    auto bytes_read = m_i2c.readFrom(k_i2c_addr, buffer);
+    if (bytes_read < 0 ||
+        static_cast<std::size_t>(bytes_read) != buffer.size()) {
         return false;
     }
     value = (buffer[0] & 0xff) | (buffer[1] << 8);
@@ -224,7 +223,8 @@ auto Ap33772::writeRegister(uint8_t reg, uint16_t value) -> bool {
     std::array<uint8_t, sizeof(uint16_t) + 1> buffer = {
         reg, static_cast<uint8_t>(value & 0xff),
         static_cast<uint8_t>(value >> 8)};
-    return m_i2c.writeTo(k_i2c_addr, buffer) == buffer.size();
+    auto bytes_written = m_i2c.writeTo(k_i2c_addr, buffer);
+    return static_cast<std::size_t>(bytes_written) == buffer.size();
 }
 
 auto Ap33772::writeRegister(uint8_t reg, uint32_t value) -> bool {
@@ -232,5 +232,6 @@ auto Ap33772::writeRegister(uint8_t reg, uint32_t value) -> bool {
         reg, static_cast<uint8_t>(value & 0xff),
         static_cast<uint8_t>(value >> 8), static_cast<uint8_t>(value >> 16),
         static_cast<uint8_t>(value >> 24)};
-    return m_i2c.writeTo(k_i2c_addr, buffer) == buffer.size();
+    auto bytes_written = m_i2c.writeTo(k_i2c_addr, buffer);
+    return static_cast<std::size_t>(bytes_written) == buffer.size();
 }

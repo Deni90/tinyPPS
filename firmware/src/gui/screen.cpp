@@ -202,8 +202,6 @@ auto Screen::printCharBig(int16_t x_pos, int16_t y_pos, char character,
                           bool invert, bool dry_run) -> uint16_t {
     uint8_t font_element;
     uint8_t big_font_element = 0x00;
-    uint8_t temp_col;
-    uint8_t temp_row;
     uint8_t char_width = 0;
     for (auto j = 0; j < k_font_width * 2; j++) {
         font_element = k_font[((character - ' ') * k_font_width) + (j / 2)];

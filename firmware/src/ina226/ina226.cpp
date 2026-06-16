@@ -188,7 +188,9 @@ auto Ina226::readRegister(uint8_t reg, uint16_t& value) -> bool {
         return false;
     }
     std::array<uint8_t, 2> buffer;
-    if (m_i2c.readFrom(m_addr, buffer) != buffer.size()) {
+    auto bytes_read = m_i2c.readFrom(m_addr, buffer);
+    if (bytes_read < 0 ||
+        static_cast<std::size_t>(bytes_read) != buffer.size()) {
         return false;
     }
     // Combine bytes (Big-endian)
@@ -200,5 +202,10 @@ auto Ina226::writeRegister(uint8_t reg, uint16_t value) -> bool {
     std::array<uint8_t, 3> buffer = {reg,
                                      static_cast<uint8_t>((value >> 8) & 0xFF),
                                      static_cast<uint8_t>(value & 0xFF)};
-    return m_i2c.writeTo(m_addr, buffer) == buffer.size();
+    auto bytes_written = m_i2c.writeTo(m_addr, buffer);
+    if (bytes_written < 0 ||
+        static_cast<std::size_t>(bytes_written) != buffer.size()) {
+        return false;
+    }
+    return true;
 }

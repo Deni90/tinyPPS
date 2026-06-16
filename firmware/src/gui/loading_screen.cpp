@@ -53,7 +53,7 @@ auto LoadingScreen::build() -> FrameBuffer& {
 }
 
 auto LoadingScreen::updateProgress() -> LoadingScreen& {
-    m_progress = ++m_progress % 4;
+    m_progress = (m_progress + 1) % 4;
     return *this;
 }
 

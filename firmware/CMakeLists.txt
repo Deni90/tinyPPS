@@ -78,7 +78,7 @@ target_include_directories(TinyPPS PRIVATE
 pico_add_extra_outputs(TinyPPS)
 
 #disable RTTI and exceptions
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti -fno-exceptions")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti -fno-exceptions -Wall")
 
 # Custom target to flash the RP2040 via OpenOCD
 add_custom_target(flash

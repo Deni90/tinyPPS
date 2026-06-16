@@ -51,7 +51,8 @@ auto MenuScreen::build() -> FrameBuffer& {
     y_pos += 2 * m_page_height;
     auto max_menu_size = (m_height / m_page_height) - 2;
 
-    auto start_index = (m_selected_menu_item / max_menu_size) * max_menu_size;
+    std::size_t start_index =
+        (m_selected_menu_item / max_menu_size) * max_menu_size;
     for (auto i = 0; i < max_menu_size; ++i) {
         if ((start_index + i) >= m_menu_items.size()) {
             break;
