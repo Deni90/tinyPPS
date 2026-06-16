@@ -44,33 +44,33 @@ class IPdSink {
      * voltage.
      */
     struct Pdo {
-        uint8_t index = 0;
-        PdoType type = PdoType::NONE;
-        uint16_t voltage_min = 5000;   // mV
-        uint16_t voltage_max = 5000;   // mV
-        uint16_t voltage_step = 0;     // mV
-        uint16_t current_min = 1000;   // mV
-        uint16_t current_max = 1000;   // mA
-        uint16_t current_step = 0;     // mA
+        uint8_t index{0};
+        PdoType type{PdoType::NONE};
+        uint16_t voltage_min{5000};   // mV
+        uint16_t voltage_max{5000};   // mV
+        uint16_t voltage_step{0};     // mV
+        uint16_t current_min{1000};   // mV
+        uint16_t current_max{1000};   // mA
+        uint16_t current_step{0};     // mA
     };
 
     /**
      * @brief Current operational status of the PD Sink.
      */
     struct Status {
-        bool is_ready = false;   // PD negotiation successful / Power stable
-        bool caps_received = false;   // Source PDOs are now available
-        bool has_fault = false;       // Any protection (OVP/OCP/OTP) tripped
+        bool is_ready{false};        // PD negotiation successful / Power stable
+        bool caps_received{false};   // Source PDOs are now available
+        bool has_fault{false};       // Any protection (OVP/OCP/OTP) tripped
     };
 
     /**
      * @brief Represents specific hardware fault conditions for a PD Sink.
      */
     struct Faults {
-        bool over_voltage = false;
-        bool under_voltage = false;
-        bool over_current = false;
-        bool over_temperature = false;
+        bool over_voltage{false};
+        bool under_voltage{false};
+        bool over_current{false};
+        bool over_temperature{false};
     };
 
     /**
