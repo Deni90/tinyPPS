@@ -24,7 +24,7 @@ class Ap33772s : public IPdSink {
             uint8_t ocp : 1;
             uint8_t otp : 1;
             uint8_t : 1;
-        };
+        } bits;
         uint8_t raw;
     };
 
@@ -42,7 +42,7 @@ class Ap33772s : public IPdSink {
             uint8_t : 2;
             uint8_t cmdver : 2;
             uint8_t : 2;
-        };
+        } bits;
         uint8_t raw;
     };
 
@@ -77,7 +77,7 @@ class Ap33772s : public IPdSink {
         struct {
             uint8_t byte0;
             uint8_t byte1;
-        };
+        } bits;
         uint16_t raw;
     };
 
@@ -92,7 +92,7 @@ class Ap33772s : public IPdSink {
             uint16_t voltage_sel : 8;   // Bits 7:0  VOLTAGE_SEL filed
             uint16_t current_sel : 4;   // Bits 8:11 CURRENT_SEL field
             uint16_t pdo_index : 4;     // Bits 12:15 PDO_INDEX field
-        };
+        } bits;
         uint16_t raw;
     };
 
@@ -107,7 +107,7 @@ class Ap33772s : public IPdSink {
     union PdMsgrltReg {
         struct {
             uint8_t response : 2;
-        };
+        } bits;
         uint8_t raw;
     };
 
@@ -151,7 +151,7 @@ class Ap33772s : public IPdSink {
             uint8_t ocp_msk : 1;
             uint8_t otp_msk : 1;
             uint8_t : 1;
-        };
+        } bits;
         uint8_t raw;
     };
 

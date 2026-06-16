@@ -22,7 +22,7 @@ class Ap33772 : public IPdSink {
             uint8_t ocp : 1;
             uint8_t otp : 1;
             uint8_t dr : 1;
-        };
+        } bits;
         uint8_t raw;
     };
 
@@ -111,7 +111,7 @@ class Ap33772 : public IPdSink {
             uint8_t ocp_en : 1;
             uint8_t otp_en : 1;
             uint8_t dr_en : 1;
-        };
+        } bits;
         uint8_t raw;
     };
 

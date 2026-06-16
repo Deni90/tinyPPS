@@ -96,10 +96,10 @@ auto initialize() -> void {
         g_ap33772.setNtc(k_ntc_tr25, k_ntc_tr50, k_ntc_tr75, k_ntc_tr100);
         g_ap33772.setOtpThreshold(k_otp_threshold);
         Ap33772::MaskReg mask;
-        mask.newpdo_en = 1;
-        mask.ocp_en = 1;
-        mask.otp_en = 1;
-        mask.ovp_en = 1;
+        mask.bits.newpdo_en = 1;
+        mask.bits.ocp_en = 1;
+        mask.bits.otp_en = 1;
+        mask.bits.ovp_en = 1;
         g_ap33772.setMask(mask);
     } else {
         g_pdsink = std::ref(g_ap33772s);
@@ -107,11 +107,11 @@ auto initialize() -> void {
         g_ap33772s.setOtpThreshold(k_otp_threshold);
         g_ap33772s.setVselMin(k_ap33772s_vsel_min);
         Ap33772s::MaskReg mask;
-        mask.newpdo_msk = 1;
-        mask.ocp_msk = 1;
-        mask.otp_msk = 1;
-        mask.ovp_msk = 1;
-        mask.uvp_msk = 1;
+        mask.bits.newpdo_msk = 1;
+        mask.bits.ocp_msk = 1;
+        mask.bits.otp_msk = 1;
+        mask.bits.ovp_msk = 1;
+        mask.bits.uvp_msk = 1;
         g_ap33772s.setMask(mask);
     }
     g_timer.start(

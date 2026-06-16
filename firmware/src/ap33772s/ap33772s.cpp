@@ -63,10 +63,10 @@ auto Ap33772s::probe() -> bool {
 auto Ap33772s::getStatus() -> IPdSink::Status {
     m_status = getStatusReg();
     IPdSink::Status status;
-    if (m_status.ready) {
+    if (m_status.bits.ready) {
         status.is_ready = true;
     }
-    if (m_status.newpdo) {
+    if (m_status.bits.newpdo) {
         status.caps_received = true;
     }
     if ((m_status.raw & k_fault_mask) != 0) {
@@ -82,16 +82,16 @@ auto Ap33772s::clearStatus() -> void {
 
 auto Ap33772s::getFaultDetails() -> IPdSink::Faults {
     IPdSink::Faults fault;
-    if (m_status.ovp) {
+    if (m_status.bits.ovp) {
         fault.over_voltage = true;
     }
-    if (m_status.uvp) {
+    if (m_status.bits.uvp) {
         fault.under_voltage = true;
     }
-    if (m_status.ocp) {
+    if (m_status.bits.ocp) {
         fault.over_current = true;
     }
-    if (m_status.otp) {
+    if (m_status.bits.otp) {
         fault.over_temperature = true;
     }
     return fault;
@@ -169,9 +169,9 @@ auto Ap33772s::setPdoOutput(uint8_t index, uint16_t voltage, uint16_t current)
     }
     bool is_epr = (index >= 7 && index <= 12);   // 1-6 for SPR, 7-12 for EPR
     PdReqMsgReg req;
-    req.pdo_index = index + 1;
-    req.voltage_sel = voltage / (is_epr ? 200 : 100);
-    req.current_sel = (current / 250) - 4;
+    req.bits.pdo_index = index + 1;
+    req.bits.voltage_sel = voltage / (is_epr ? 200 : 100);
+    req.bits.current_sel = (current / 250) - 4;
 
     if (!writeRegister(k_cmd_pd_reqmsg, req.raw)) {
         return false;
@@ -180,7 +180,7 @@ auto Ap33772s::setPdoOutput(uint8_t index, uint16_t voltage, uint16_t current)
     if (!readRegister(k_cmd_pd_msgrlt, res.raw)) {
         return false;
     }
-    if (res.response == 1) {
+    if (res.bits.response == 1) {
         return true;
     }
     return false;

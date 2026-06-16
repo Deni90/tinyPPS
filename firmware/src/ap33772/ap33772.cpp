@@ -46,10 +46,10 @@ auto Ap33772::probe() -> bool {
 auto Ap33772::getStatus() -> IPdSink::Status {
     m_status = getStatusReg();
     IPdSink::Status status;
-    if (m_status.ready) {
+    if (m_status.bits.ready) {
         status.is_ready = true;
     }
-    if (m_status.newpdo) {
+    if (m_status.bits.newpdo) {
         status.caps_received = true;
     }
     if ((m_status.raw & k_fault_mask) != 0) {
@@ -65,13 +65,13 @@ auto Ap33772::clearStatus() -> void {
 
 auto Ap33772::getFaultDetails() -> IPdSink::Faults {
     IPdSink::Faults fault;
-    if (m_status.ovp) {
+    if (m_status.bits.ovp) {
         fault.over_voltage = true;
     }
-    if (m_status.ocp) {
+    if (m_status.bits.ocp) {
         fault.over_current = true;
     }
-    if (m_status.otp) {
+    if (m_status.bits.otp) {
         fault.over_temperature = true;
     }
     return fault;
