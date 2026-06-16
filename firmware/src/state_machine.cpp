@@ -76,8 +76,8 @@ auto StateMachine::handleEvent(InitState& state, const SystemTickEvent& event)
     renderUI();
 }
 
-auto StateMachine::handleEvent(InitState& state,
-                               const PdSinkStatusUpdateEvent& event) -> void {
+auto StateMachine::handleEvent(InitState&, const PdSinkStatusUpdateEvent& event)
+    -> void {
     if (event.status.caps_received) {
         m_current_state = LoadingState{};
     }
@@ -292,8 +292,8 @@ auto StateMachine::handleEvent(MainState& state,
     }
 }
 
-auto StateMachine::handleEvent(MainState& state,
-                               const VoutStatusUpdateEvent& event) -> void {
+auto StateMachine::handleEvent(MainState& state, const VoutStatusUpdateEvent&)
+    -> void {
     state.setOutputEnable(m_hw, false);
 }
 

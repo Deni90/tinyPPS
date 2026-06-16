@@ -305,7 +305,7 @@ class Ap33772s : public IPdSink {
 
     const I2c& m_i2c;
     std::array<SrcPdoReg, k_max_pdo_entries> m_pdo_array{};
-    StatusReg m_status{0};
+    StatusReg m_status{};
 };
 
 #endif   // ap33772s_hpp

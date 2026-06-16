@@ -59,7 +59,7 @@ class StateMachine {
 
     struct MainState {
         Config config;
-        MainScreen screen;
+        MainScreen screen{};
         bool is_editing{false};
         uint32_t blinking_time{0};
         bool blinking_state{false};
@@ -107,7 +107,7 @@ class StateMachine {
         -> void;
 
     template <typename S, typename E>
-    auto handleEvent(S& state, const E& evt) -> void {}
+    auto handleEvent(S&, const E&) -> void {}
 
     auto renderUI() -> void;
 

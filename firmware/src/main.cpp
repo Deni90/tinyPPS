@@ -73,14 +73,14 @@ auto initialize() -> void {
     g_vout_status.configure(Direction::Input, Pull::Down);
     g_vout_status.attachInterrupt(
         Edge::Falling,
-        [](const GpioPin& gpio, void* user) -> void {
+        [](const GpioPin&, void*) -> void {
             g_is_g_pd_interrupt_pending = true;
         },
         nullptr);
     g_pd_int.configure(Direction::Input, Pull::Down);
     g_pd_int.attachInterrupt(
         Edge::Rising,
-        [](const GpioPin& gpio, void* user) -> void {
+        [](const GpioPin&, void*) -> void {
             g_is_g_pd_interrupt_pending = true;
         },
         nullptr);
@@ -115,8 +115,7 @@ auto initialize() -> void {
         g_ap33772s.setMask(mask);
     }
     g_timer.start(
-        1, [](void* ctx) -> void { g_system_time = g_system_time + 1; },
-        nullptr);
+        1, [](void*) -> void { g_system_time = g_system_time + 1; }, nullptr);
 }
 
 auto main() -> int {
