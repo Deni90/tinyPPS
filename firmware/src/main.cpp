@@ -119,14 +119,8 @@ auto main() -> int {
     g_timer.start(
         1, [](void* ctx) -> void { g_system_time = g_system_time + 1; },
         nullptr);
-    HardwareContext hardware{.timer = g_timer,
-                             .pdsink = pdsink.get(),
-                             .output_enable = g_output_enable,
-                             .vout_status = g_vout_status,
-                             .pd_int = g_pd_int,
-                             .ina226 = ina226,
-                             .encoder = rotary_encoder,
-                             .oled = oled};
+    HardwareContext hardware{
+        .pdsink = pdsink.get(), .output_enable = g_output_enable, .oled = oled};
 
     StateMachine state_machine{hardware};
 

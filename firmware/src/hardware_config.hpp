@@ -9,4 +9,8 @@ using GpioPin = PicoGpioPin;
 using I2c = PicoI2c;
 using RepeatingTimer = PicoRepeatingTimer;
 
+#include "ssd1306.hpp"
+
+using Ssd1306_128x64 = Ssd1306<64>;
+
 #endif   // hardware_config_hpp
