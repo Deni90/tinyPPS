@@ -8,7 +8,6 @@
 #include "hardware_config.hpp"
 #include "ina226.h"
 #include "pdsink_iface.h"
-#include "pico_timer.h"
 #include "rotary_encoder.h"
 #include "ssd1306.hpp"
 #include "state_machine.h"
@@ -53,6 +52,7 @@ static constexpr PicoGpioPin g_output_enable{k_g_output_enable_pin};
 static constexpr PicoGpioPin g_vout_status{k_g_vout_status_pin};
 static constexpr PicoGpioPin g_pd_int{k_g_pd_int_pin};
 static constexpr PicoI2c g_i2c{k_i2c};
+PicoRepeatingTimer g_timer;
 
 volatile uint32_t g_system_time = 0;
 volatile bool g_is_g_pd_interrupt_pending = false;
@@ -67,7 +67,6 @@ auto main() -> int {
     Ina226 ina226{g_i2c, k_ina226_addr};
     Ap33772 ap33772{g_i2c};
     Ap33772s ap33772s{g_i2c};
-    PicoRepeatingTimer timer;
 
     g_i2c.initialize(k_i2c_sda_pin, k_i2c_scl_pin, k_i2c_speed);
     rotary_encoder.initialize();
@@ -117,10 +116,10 @@ auto main() -> int {
         mask.uvp_msk = 1;
         ap33772s.setMask(mask);
     }
-    timer.start(
+    g_timer.start(
         1, [](void* ctx) -> void { g_system_time = g_system_time + 1; },
         nullptr);
-    HardwareContext hardware{.timer = timer,
+    HardwareContext hardware{.timer = g_timer,
                              .pdsink = pdsink.get(),
                              .output_enable = g_output_enable,
                              .vout_status = g_vout_status,

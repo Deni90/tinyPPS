@@ -1,4 +1,6 @@
-#include "pico_timer.h"
+#include "pico_timer.hpp"
+
+using hal::timer::Callback;
 
 PicoRepeatingTimer::~PicoRepeatingTimer() { stop(); }
 

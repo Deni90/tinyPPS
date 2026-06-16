@@ -1,16 +1,14 @@
-#ifndef timer_iface_h
-#define timer_iface_h
+#ifndef pico_timer_hpp
+#define pico_timer_hpp
 
-#include <cstdint>
+#include "pico/time.h"
+#include "timer.hpp"
 
-class IRepeatingTimer {
+class PicoRepeatingTimer {
   public:
-    using Callback = void (*)(void* ctx);
+    PicoRepeatingTimer() = default;
 
-    /**
-     * @brief Destructor for the interface.
-     */
-    virtual ~IRepeatingTimer() = default;
+    ~PicoRepeatingTimer();
 
     /**
      * @brief Start a repeating timer.
@@ -30,8 +28,8 @@ class IRepeatingTimer {
      * @return true  Timer was successfully started.
      * @return false Failed to start the timer.
      */
-    virtual auto start(uint32_t period_ms, Callback callback, void* ctx)
-        -> bool = 0;
+    auto start(uint32_t period_ms, hal::timer::Callback callback, void* context)
+        -> bool;
 
     /**
      * @brief Stop the repeating timer.
@@ -39,7 +37,7 @@ class IRepeatingTimer {
      * Stops the timer if it is currently running.
      * After calling this function, the callback will no longer be invoked.
      */
-    virtual auto stop() -> void = 0;
+    auto stop() -> void;
 
     /**
      * @brief Check whether the timer is running.
@@ -47,7 +45,19 @@ class IRepeatingTimer {
      * @return true  Timer is running.
      * @return false Timer is stopped.
      */
-    [[nodiscard]] virtual auto isRunning() const -> bool = 0;
+    [[nodiscard]] auto isRunning() const -> bool;
+
+  private:
+    static auto timerThunk(repeating_timer_t* repeating_timer) -> bool;
+
+    repeating_timer_t m_timer;
+    hal::timer::Callback m_callback = nullptr;
+    void* m_context = nullptr;
+    bool m_running = false;
 };
 
-#endif   // timer_iface_h
+static_assert(hal::timer::RepeatingTimer<PicoRepeatingTimer>,
+              "PicoRepeatingTimer must implement the "
+              "hal::timer::RepeatingTimer concept!");
+
+#endif   // pico_timer_hpp
