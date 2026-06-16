@@ -26,7 +26,7 @@ static constexpr float k_internal_calibration_multiplier = 5.12e-3F;
 static constexpr float k_bus_voltage_lsb = 1.25e-3F;
 static constexpr float k_shunt_voltage_lsb = 2.5e-6F;
 
-Ina226::Ina226(II2c& i2c, uint8_t address) : m_i2c(i2c), m_addr(address) {}
+Ina226::Ina226(const I2c& i2c, uint8_t address) : m_i2c(i2c), m_addr(address) {}
 
 auto Ina226::calibrate(float max_current, float shunt) -> bool {
     if (max_current <= 0.0F || shunt <= 0.0F) {

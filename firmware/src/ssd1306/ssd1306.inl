@@ -1,7 +1,7 @@
 #include <algorithm>
 
 template <uint16_t Height>
-Ssd1306<Height>::Ssd1306(II2c& i2c) : m_i2c(i2c) {
+Ssd1306<Height>::Ssd1306(const I2c& i2c) : m_i2c(i2c) {
     // Initialize the buffer to values other than 0x00 to detect the first
     // update
     m_old_fb.fill(0xff);

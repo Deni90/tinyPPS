@@ -54,7 +54,7 @@ static constexpr uint8_t k_fault_mask = 0x78;   // OVP, OCP, OTP & UVP
 static constexpr uint16_t k_current_min = 1000;   // mA
 static constexpr uint16_t k_voltage_min = 3300;   // mV
 
-Ap33772s::Ap33772s(II2c& i2c) : m_i2c(i2c) {}
+Ap33772s::Ap33772s(const I2c& i2c) : m_i2c(i2c) {}
 
 auto Ap33772s::probe() -> bool {
     return writeRegister(0x00, static_cast<uint8_t>(0x00));

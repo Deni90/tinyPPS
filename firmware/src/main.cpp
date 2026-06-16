@@ -8,7 +8,6 @@
 #include "hardware_config.hpp"
 #include "ina226.h"
 #include "pdsink_iface.h"
-#include "pico_i2c.h"
 #include "pico_timer.h"
 #include "rotary_encoder.h"
 #include "ssd1306.hpp"
@@ -53,6 +52,7 @@ static constexpr PicoGpioPin g_rot_enc_btn_pin(k_g_rot_enc_btn_pin);
 static constexpr PicoGpioPin g_output_enable{k_g_output_enable_pin};
 static constexpr PicoGpioPin g_vout_status{k_g_vout_status_pin};
 static constexpr PicoGpioPin g_pd_int{k_g_pd_int_pin};
+static constexpr PicoI2c g_i2c{k_i2c};
 
 volatile uint32_t g_system_time = 0;
 volatile bool g_is_g_pd_interrupt_pending = false;
@@ -60,16 +60,16 @@ volatile bool g_is_g_vout_status_interrupt_pending = false;
 static std::array<uint8_t, Ssd1306_128x64::getFrameBufferSize()> g_frame_buffer;
 
 auto main() -> int {
-    PicoI2c i2c;
+
     RotaryEncoder rotary_encoder{g_rot_enc_a_pin, g_rot_enc_b_pin,
                                  g_rot_enc_btn_pin};
-    Ssd1306_128x64 oled{i2c};
-    Ina226 ina226{i2c, k_ina226_addr};
-    Ap33772 ap33772{i2c};
-    Ap33772s ap33772s{i2c};
+    Ssd1306_128x64 oled{g_i2c};
+    Ina226 ina226{g_i2c, k_ina226_addr};
+    Ap33772 ap33772{g_i2c};
+    Ap33772s ap33772s{g_i2c};
     PicoRepeatingTimer timer;
 
-    i2c.initialize(k_i2c, k_i2c_sda_pin, k_i2c_scl_pin, k_i2c_speed);
+    g_i2c.initialize(k_i2c_sda_pin, k_i2c_scl_pin, k_i2c_speed);
     rotary_encoder.initialize();
     g_output_enable.configure(Direction::Output, Pull::Down);
     g_vout_status.configure(Direction::Input, Pull::Down);

@@ -1,7 +1,7 @@
 #ifndef ssd1306_h
 #define ssd1306_h
 
-#include "i2c_iface.h"
+#include "hardware_config.hpp"
 
 #include <array>
 #include <cstdint>
@@ -21,7 +21,7 @@ class Ssd1306 {
      *
      * @param[in] i2c Reference to i2c interface implementation
      */
-    explicit Ssd1306(II2c& i2c);
+    explicit Ssd1306(const I2c& i2c);
 
     /**
      * @brief Initialize the module
@@ -118,7 +118,7 @@ class Ssd1306 {
      */
     auto sendCommands(std::span<const uint8_t> cmds) -> void;
 
-    II2c& m_i2c;
+    const I2c& m_i2c;
     std::array<uint8_t, k_width * k_page_height> m_old_fb;
 };
 

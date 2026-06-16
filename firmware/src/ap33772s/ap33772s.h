@@ -6,7 +6,7 @@
 #include <cstdint>
 #include <string>
 
-#include "i2c_iface.h"
+#include "hardware_config.hpp"
 #include "pdsink_iface.h"
 
 class Ap33772s : public IPdSink {
@@ -160,7 +160,7 @@ class Ap33772s : public IPdSink {
      *
      * @param[in] i2c Reference to i2c object
      */
-    Ap33772s(II2c& i2c);
+    Ap33772s(const I2c& i2c);
 
     /**
      * @brief Checks the I2C bus to see if the specific chip is present.
@@ -303,7 +303,7 @@ class Ap33772s : public IPdSink {
     auto writeRegister(uint8_t reg, uint8_t value) -> bool;
     auto writeRegister(uint8_t reg, uint16_t value) -> bool;
 
-    II2c& m_i2c;
+    const I2c& m_i2c;
     std::array<SrcPdoReg, k_max_pdo_entries> m_pdo_array{};
     StatusReg m_status{0};
 };

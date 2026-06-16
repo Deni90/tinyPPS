@@ -1,7 +1,7 @@
 #ifndef ina226_h
 #define ina226_h
 
-#include "i2c_iface.h"
+#include "hardware_config.hpp"
 
 #include <cstdint>
 
@@ -79,7 +79,7 @@ class Ina226 {
      * @param[in] i2c Reference to i2c interface implementation
      * @param[in] address I2C address of the chip
      */
-    Ina226(II2c& i2c, uint8_t address);
+    Ina226(const I2c& i2c, uint8_t address);
 
     /**
      * @brief Calibrate function
@@ -232,7 +232,7 @@ class Ina226 {
     auto readRegister(uint8_t reg, uint16_t& value) -> bool;
     auto writeRegister(uint8_t reg, uint16_t value) -> bool;
 
-    II2c& m_i2c;
+    const I2c& m_i2c;
     uint8_t m_addr;
     float m_current_lsb;
 };

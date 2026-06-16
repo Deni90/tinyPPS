@@ -37,7 +37,7 @@ static constexpr uint16_t k_rdo_fixed_current_inc = 10;   // mV
 static constexpr uint16_t k_rdo_pps_voltage_inc = 20;     // mV
 static constexpr uint16_t k_rdo_pps_current_inc = 50;     // mA
 
-Ap33772::Ap33772(II2c& i2c) : m_i2c(i2c) {}
+Ap33772::Ap33772(const I2c& i2c) : m_i2c(i2c) {}
 
 auto Ap33772::probe() -> bool {
     return writeRegister(0x00, static_cast<uint8_t>(0x00));
