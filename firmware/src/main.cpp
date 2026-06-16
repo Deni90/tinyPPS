@@ -3,8 +3,8 @@
 
 #include "ap33772.hpp"
 #include "ap33772s.hpp"
+#include "config.hpp"
 #include "event.hpp"
-#include "hardware.hpp"
 #include "hardware_config.hpp"
 #include "ina226.hpp"
 #include "pdsink_iface.hpp"

@@ -1,6 +1,7 @@
 #ifndef config_hpp
 #define config_hpp
 
+#include "hardware_config.hpp"
 #include "pdsink_iface.hpp"
 
 /**
@@ -56,5 +57,14 @@ struct ConfigBuilder {
      * @return Config object
      */
     static auto buildWithPdo(const IPdSink::Pdo& pdo) -> Config;
+};
+
+/**
+ * @brief Struct containing references to hardware components
+ */
+struct HardwareContext {
+    IPdSink& pdsink;
+    const GpioPin& output_enable;
+    Ssd1306_128x64& oled;
 };
 #endif   // config_hpp

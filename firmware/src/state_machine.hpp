@@ -7,7 +7,6 @@
 
 #include "config.hpp"
 #include "event.hpp"
-#include "hardware.hpp"
 #include "loading_screen.hpp"
 #include "main_screen.hpp"
 #include "menu_screen.hpp"
