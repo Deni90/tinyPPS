@@ -1,7 +1,7 @@
-#ifndef menu_screen_h
-#define menu_screen_h
+#ifndef menu_screen_hpp
+#define menu_screen_hpp
 
-#include "screen.h"
+#include "screen.hpp"
 
 #include <string>
 #include <vector>
@@ -96,4 +96,4 @@ class MenuScreen : public Screen {
     uint8_t m_selected_menu_item{0};
 };
 
-#endif   // menu_screen_h
+#endif   // menu_screen_hpp

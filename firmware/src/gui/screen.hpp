@@ -1,5 +1,5 @@
-#ifndef screen_h
-#define screen_h
+#ifndef screen_hpp
+#define screen_hpp
 
 #include <cstdint>
 #include <span>
@@ -169,4 +169,4 @@ class Screen {
     static inline uint16_t m_page_height{0};
 };
 
-#endif   // screen_h
+#endif   // screen_hpp

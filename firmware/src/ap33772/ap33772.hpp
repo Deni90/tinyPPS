@@ -1,11 +1,11 @@
-#ifndef ap33772_h
-#define ap33772_h
+#ifndef ap33772_hpp
+#define ap33772_hpp
 
 #include <array>
 #include <cstdint>
 
 #include "hardware_config.hpp"
-#include "pdsink_iface.h"
+#include "pdsink_iface.hpp"
 
 class Ap33772 : public IPdSink {
   protected:
@@ -252,4 +252,4 @@ class Ap33772 : public IPdSink {
     StatusReg m_status{0};
 };
 
-#endif   // ap33772_h
+#endif   // ap33772_hpp

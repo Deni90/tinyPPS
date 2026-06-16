@@ -1,16 +1,16 @@
-#ifndef state_machine_h
-#define state_machine_h
+#ifndef state_machine_hpp
+#define state_machine_hpp
 
 #include <cstdint>
 #include <string>
 #include <variant>
 
-#include "config.h"
-#include "event.h"
-#include "hardware.h"
-#include "loading_screen.h"
-#include "main_screen.h"
-#include "menu_screen.h"
+#include "config.hpp"
+#include "event.hpp"
+#include "hardware.hpp"
+#include "loading_screen.hpp"
+#include "main_screen.hpp"
+#include "menu_screen.hpp"
 
 enum MainScreenSelection { None, Voltage, Current, Count };   // FIXME
 
@@ -116,4 +116,4 @@ class StateMachine {
     std::vector<std::pair<std::string, Config>> m_configs;
 };
 
-#endif   // state_machine_h
+#endif   // state_machine_hpp

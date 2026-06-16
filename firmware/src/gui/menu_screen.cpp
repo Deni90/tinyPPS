@@ -1,7 +1,7 @@
-#include "menu_screen.h"
+#include "menu_screen.hpp"
 
-#include "screen.h"
-#include "tiny_format.h"
+#include "screen.hpp"
+#include "tiny_format.hpp"
 
 auto MenuScreen::setTitle(const std::string& title) -> MenuScreen& {
     m_title = title;

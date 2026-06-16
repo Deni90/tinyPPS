@@ -1,10 +1,10 @@
-#ifndef event_h
-#define event_h
+#ifndef event_hpp
+#define event_hpp
 
 #include <variant>
 
-#include "pdsink_iface.h"
-#include "rotary_encoder.h"
+#include "pdsink_iface.hpp"
+#include "rotary_encoder.hpp"
 
 /**
  * @brief Event type for rotary encoder state changes.
@@ -50,4 +50,4 @@ using SystemEvent =
     std::variant<RotaryEncoderEvent, SensorUpdateEvent, SystemTickEvent,
                  PdSinkStatusUpdateEvent, VoutStatusUpdateEvent>;
 
-#endif   // event_h
+#endif   // event_hpp

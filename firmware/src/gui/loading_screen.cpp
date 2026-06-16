@@ -1,4 +1,4 @@
-#include "loading_screen.h"
+#include "loading_screen.hpp"
 
 #include <array>
 

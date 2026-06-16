@@ -1,5 +1,5 @@
-#ifndef tiny_format_h
-#define tiny_format_h
+#ifndef tiny_format_hpp
+#define tiny_format_hpp
 
 #include <cstdio>
 #include <string>
@@ -23,4 +23,4 @@ std::string tinyFormat(const char* format, Args... args) {
     return std::string(buf);
 }
 
-#endif   // tiny_format_h
+#endif   // tiny_format_hpp

@@ -1,8 +1,8 @@
-#ifndef hardware_h
-#define hardware_h
+#ifndef hardware_hpp
+#define hardware_hpp
 
 #include "hardware_config.hpp"
-#include "pdsink_iface.h"
+#include "pdsink_iface.hpp"
 
 struct HardwareContext {
     IPdSink& pdsink;
@@ -10,4 +10,4 @@ struct HardwareContext {
     Ssd1306_128x64& oled;
 };
 
-#endif   // hardware_h
+#endif   // hardware_hpp

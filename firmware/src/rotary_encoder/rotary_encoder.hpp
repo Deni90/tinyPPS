@@ -1,5 +1,5 @@
-#ifndef rotary_encoder_h
-#define rotary_encoder_h
+#ifndef rotary_encoder_hpp
+#define rotary_encoder_hpp
 
 #include <cstdint>
 
@@ -72,4 +72,4 @@ class RotaryEncoder {
     bool m_last_btn_state{true};   // make it high
 };
 
-#endif   // rotary_encoder_h
+#endif   // rotary_encoder_hpp

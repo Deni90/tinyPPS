@@ -1,7 +1,7 @@
-#ifndef loading_screen_h
-#define loading_screen_h
+#ifndef loading_screen_hpp
+#define loading_screen_hpp
 
-#include "screen.h"
+#include "screen.hpp"
 
 #include <optional>
 
@@ -46,4 +46,4 @@ class LoadingScreen : public Screen {
     std::optional<uint8_t> m_pdo_profile_count;
 };
 
-#endif   // loading_screen_h
+#endif   // loading_screen_hpp

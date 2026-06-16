@@ -1,9 +1,9 @@
-#ifndef pdo_helper_h
-#define pdo_helper_h
+#ifndef pdo_helper_hpp
+#define pdo_helper_hpp
 
 #include <string>
 
-#include "pdsink_iface.h"
+#include "pdsink_iface.hpp"
 
 /**
  * @brief Convert a PDO to string
@@ -14,4 +14,4 @@
  */
 auto pdoToString(const IPdSink::Pdo& pdo) -> std::string;
 
-#endif   // pdo_helper_h
+#endif   // pdo_helper_hpp

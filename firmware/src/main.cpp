@@ -1,16 +1,16 @@
 #include <cstdint>
 #include <functional>
 
-#include "ap33772.h"
-#include "ap33772s.h"
-#include "event.h"
-#include "hardware.h"
+#include "ap33772.hpp"
+#include "ap33772s.hpp"
+#include "event.hpp"
+#include "hardware.hpp"
 #include "hardware_config.hpp"
-#include "ina226.h"
-#include "pdsink_iface.h"
-#include "rotary_encoder.h"
+#include "ina226.hpp"
+#include "pdsink_iface.hpp"
+#include "rotary_encoder.hpp"
 #include "ssd1306.hpp"
-#include "state_machine.h"
+#include "state_machine.hpp"
 
 using hal::gpio::Direction;
 using hal::gpio::Edge;

@@ -1,8 +1,8 @@
-#include "main_screen.h"
+#include "main_screen.hpp"
 
-#include "config.h"
-#include "pdsink_iface.h"
-#include "tiny_format.h"
+#include "config.hpp"
+#include "pdsink_iface.hpp"
+#include "tiny_format.hpp"
 
 auto MainScreen::build() -> FrameBuffer& {
     clear();

@@ -1,9 +1,9 @@
-#include "state_machine.h"
+#include "state_machine.hpp"
 
 #include <algorithm>
 #include <cstdint>
 
-#include "pdo_helper.h"
+#include "pdo_helper.hpp"
 
 static constexpr uint8_t k_retry_count = 20;
 static constexpr uint32_t k_timeout_period = 200;             // ms

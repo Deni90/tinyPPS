@@ -1,7 +1,7 @@
-#ifndef config_h
-#define config_h
+#ifndef config_hpp
+#define config_hpp
 
-#include "pdsink_iface.h"
+#include "pdsink_iface.hpp"
 
 /**
  * @brief Enum representing different supply modes
@@ -57,4 +57,4 @@ struct ConfigBuilder {
      */
     static auto buildWithPdo(const IPdSink::Pdo& pdo) -> Config;
 };
-#endif   // config_h
+#endif   // config_hpp

@@ -1,4 +1,4 @@
-#include "rotary_encoder.h"
+#include "rotary_encoder.hpp"
 
 #include <array>
 #include <cstdint>

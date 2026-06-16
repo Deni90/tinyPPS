@@ -1,5 +1,5 @@
-#ifndef pdsink_iface_h
-#define pdsink_iface_h
+#ifndef pdsink_iface_hpp
+#define pdsink_iface_hpp
 
 #include <cstdint>
 
@@ -159,4 +159,4 @@ class IPdSink {
         -> bool = 0;
 };
 
-#endif   // pdsink_iface_h
+#endif   // pdsink_iface_hpp

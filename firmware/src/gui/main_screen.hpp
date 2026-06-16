@@ -1,9 +1,9 @@
-#ifndef main_screen_h
-#define main_screen_h
+#ifndef main_screen_hpp
+#define main_screen_hpp
 
-#include "config.h"
-#include "pdsink_iface.h"
-#include "screen.h"
+#include "config.hpp"
+#include "pdsink_iface.hpp"
+#include "screen.hpp"
 
 class MainScreen : public Screen {
   public:
@@ -118,4 +118,4 @@ class MainScreen : public Screen {
     bool m_is_target_current_selected{false};
 };
 
-#endif   // main_screen_h
+#endif   // main_screen_hpp

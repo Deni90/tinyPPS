@@ -1,7 +1,7 @@
-#include "pdo_helper.h"
-#include "pdsink_iface.h"
+#include "pdo_helper.hpp"
+#include "pdsink_iface.hpp"
 
-#include "tiny_format.h"
+#include "tiny_format.hpp"
 
 auto pdoToString(const IPdSink::Pdo& pdo) -> std::string {
     if (pdo.type == IPdSink::PdoType::FIX) {

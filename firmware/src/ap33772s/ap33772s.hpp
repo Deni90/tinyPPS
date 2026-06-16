@@ -1,5 +1,5 @@
-#ifndef ap33772s_h
-#define ap33772s_h
+#ifndef ap33772s_hpp
+#define ap33772s_hpp
 
 #include <array>
 #include <cassert>
@@ -7,7 +7,7 @@
 #include <string>
 
 #include "hardware_config.hpp"
-#include "pdsink_iface.h"
+#include "pdsink_iface.hpp"
 
 class Ap33772s : public IPdSink {
   protected:
@@ -308,4 +308,4 @@ class Ap33772s : public IPdSink {
     StatusReg m_status{0};
 };
 
-#endif   // ap33772s_h
+#endif   // ap33772s_hpp

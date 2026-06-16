@@ -1,4 +1,4 @@
-#include "ina226.h"
+#include "ina226.hpp"
 
 #include <array>
 #include <cmath>

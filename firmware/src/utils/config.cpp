@@ -1,5 +1,5 @@
-#include "config.h"
-#include "pdsink_iface.h"
+#include "config.hpp"
+#include "pdsink_iface.hpp"
 
 auto ConfigBuilder::buildDefault() -> Config { return Config(); }
 

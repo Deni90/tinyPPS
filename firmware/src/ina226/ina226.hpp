@@ -1,5 +1,5 @@
-#ifndef ina226_h
-#define ina226_h
+#ifndef ina226_hpp
+#define ina226_hpp
 
 #include "hardware_config.hpp"
 
@@ -226,7 +226,8 @@ class Ina226 {
     static const uint16_t k_die_id = 0x2260;
 
   private:
-    template <typename T> auto min(const T& left, const T& right) -> const T& {
+    template <typename T>
+    auto min(const T& left, const T& right) -> const T& {
         return (right < left) ? right : left;   // Returns the first if equal
     }
     auto readRegister(uint8_t reg, uint16_t& value) -> bool;
@@ -237,4 +238,4 @@ class Ina226 {
     float m_current_lsb;
 };
 
-#endif   // ina226_h
+#endif   // ina226_hpp
