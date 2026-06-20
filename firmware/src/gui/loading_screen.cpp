@@ -1,6 +1,8 @@
 #include "loading_screen.hpp"
 
 #include <array>
+#include <charconv>
+#include <cstring>
 
 constexpr uint8_t k_logo[] = {
     0xE0, 0xE0, 0xE0, 0xFE, 0xFE, 0xFE, 0xE0, 0xE0, 0xE0, 0x00, 0x00, 0x00,
@@ -29,6 +31,10 @@ constexpr uint8_t k_logo[] = {
 constexpr uint8_t k_logo_width = 91;
 constexpr uint8_t k_logo_height = 19;
 
+constexpr uint8_t k_max_dots = 3;
+constexpr std::string_view k_all_dots_str = "...";
+constexpr std::string_view k_pdos_found_str = " PDOs found";
+
 auto LoadingScreen::build() -> FrameBuffer& {
     clear();
     // Logo
@@ -36,14 +42,26 @@ auto LoadingScreen::build() -> FrameBuffer& {
          k_logo_width, k_logo_height);
     // if PDO count is not set show the progress bar, otherwise show the number
     // of PDO profiles
-    if (m_pdo_profile_count.has_value()) {
-        std::string profiles_found_text =
-            std::to_string(m_pdo_profile_count.value()) + " PDOs found";
-        printString(m_width / 2, 48, profiles_found_text,
-                    {.align = TextAlign::center});
+    // safety check -> make sure pdo count has two digits to avoid overflowing
+    // the array
+    if (m_pdo_profile_count.has_value() && m_pdo_profile_count.value() < 100) {
+        // The array size is len() + 2 for 2 digits (pdo count)
+        std::array<char, k_pdos_found_str.size() + 2> profiles_found_str;
+        // convert the pdo count to a string and copy it into the array
+        auto res = std::to_chars(profiles_found_str.data(),
+                                 profiles_found_str.data() +
+                                     sizeof(profiles_found_str),
+                                 m_pdo_profile_count.value());
+        // if the conversion was successful, append the k_pdos_found_str suffix
+        if (res.ec == std::errc{}) {
+            std::memcpy(res.ptr, k_pdos_found_str.data(),
+                        k_pdos_found_str.size());
+            printString(m_width / 2, 48, profiles_found_str.data(),
+                        {.align = TextAlign::center});
+        }
     } else {
-        std::string loading_text(m_progress, '.');
-        printString(m_width / 2, 50, loading_text,
+        std::string_view dots_str = k_all_dots_str.substr(0, m_progress);
+        printString(m_width / 2, 50, dots_str,
                     {.align = TextAlign::center, .size = FontSize::big});
         printString(m_width / 2, 48, "Loading PDOs",
                     {.align = TextAlign::center});
@@ -53,7 +71,8 @@ auto LoadingScreen::build() -> FrameBuffer& {
 }
 
 auto LoadingScreen::updateProgress() -> LoadingScreen& {
-    m_progress = (m_progress + 1) % 4;
+    // Increment progress and wrap around to 0 after reaching k_max_dots
+    m_progress = (m_progress + 1) % (k_max_dots + 1);
     return *this;
 }
 

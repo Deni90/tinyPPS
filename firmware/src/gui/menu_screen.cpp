@@ -1,23 +1,16 @@
 #include "menu_screen.hpp"
 
+#include "pdo_helper.hpp"
 #include "screen.hpp"
 #include "tiny_format.hpp"
 
-auto MenuScreen::setTitle(const std::string& title) -> MenuScreen& {
-    m_title = title;
+MenuScreen::MenuScreen(std::string_view title) : m_title(title) {}
+
+auto MenuScreen::getTitle() const -> std::string_view { return m_title; }
+
+auto MenuScreen::setConfig(std::span<const Config> config) -> MenuScreen& {
+    m_config = config;
     return *this;
-}
-
-auto MenuScreen::getTitle() const -> std::string { return m_title; }
-
-auto MenuScreen::setMenuItems(const std::vector<std::string>& menu_items)
-    -> MenuScreen& {
-    m_menu_items = menu_items;
-    return *this;
-}
-
-auto MenuScreen::getMenuItems() const -> std::vector<std::string> {
-    return m_menu_items;
 }
 
 auto MenuScreen::getSelectedMenuItem() const -> uint8_t {
@@ -30,22 +23,26 @@ auto MenuScreen::selectMenuItem(uint8_t index) -> MenuScreen& {
 }
 
 auto MenuScreen::selectNextMenuItem() -> MenuScreen& {
-    m_selected_menu_item = (m_selected_menu_item + 1) % m_menu_items.size();
+    m_selected_menu_item = (m_selected_menu_item + 1) % m_config.size();
     return *this;
 }
 
 auto MenuScreen::selectPreviousMenuItem() -> MenuScreen& {
     m_selected_menu_item =
-        (m_selected_menu_item - 1 + m_menu_items.size()) % m_menu_items.size();
+        (m_selected_menu_item - 1 + m_config.size()) % m_config.size();
     return *this;
 }
 
 auto MenuScreen::build() -> FrameBuffer& {
     clear();
+    if (m_config.empty()) {
+        return m_frame_buffer;
+    }
     uint16_t y_pos = 0;
+    std::array<char, 8> buffer;
     printString(
         0, y_pos,
-        tinyFormat("%d/%d", m_selected_menu_item + 1, m_menu_items.size()));
+        tinyFormat(buffer, "%d/%d", m_selected_menu_item + 1, m_config.size()));
     printString(m_width / 2, y_pos, m_title, {.align = TextAlign::center});
 
     y_pos += 2 * m_page_height;
@@ -54,7 +51,7 @@ auto MenuScreen::build() -> FrameBuffer& {
     std::size_t start_index =
         (m_selected_menu_item / max_menu_size) * max_menu_size;
     for (auto i = 0; i < max_menu_size; ++i) {
-        if ((start_index + i) >= m_menu_items.size()) {
+        if ((start_index + i) >= m_config.size()) {
             break;
         }
         bool is_selected = false;
@@ -62,7 +59,9 @@ auto MenuScreen::build() -> FrameBuffer& {
             is_selected = true;
             drawRectangle(0, y_pos, 1, m_page_height, false);
         }
-        printString(1, y_pos, m_menu_items[start_index + i],
+        std::array<char, 24> buffer;
+        printString(1, y_pos,
+                    pdoToString(m_config[start_index + i].pdo, buffer),
                     {.invert = is_selected});
         y_pos += m_page_height;
     }

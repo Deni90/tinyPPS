@@ -1,4 +1,5 @@
 #include "config.hpp"
+#include "pdo_helper.hpp"
 #include "pdsink_iface.hpp"
 
 auto ConfigBuilder::buildDefault() -> Config { return Config(); }

@@ -1,8 +1,13 @@
 #include "main_screen.hpp"
 
+#include <string_view>
+
 #include "config.hpp"
 #include "pdsink_iface.hpp"
 #include "tiny_format.hpp"
+
+static constexpr std::string_view k_target = "TARGET ";
+static constexpr std::string_view k_limit = "LIMIT ";
 
 auto MainScreen::build() -> FrameBuffer& {
     clear();
@@ -10,22 +15,27 @@ auto MainScreen::build() -> FrameBuffer& {
     // PDO type
     printString(0, 0, IPdSink::pdoTypeToString(m_pdo_type));
 
+    std::array<char, 24> buffer;
+
     // Temperature
-    printString(m_width, 0, tinyFormat("%d*C", m_temperature),
+    printString(m_width, 0, tinyFormat(buffer, "%d*C", m_temperature),
                 {.align = TextAlign::right});
 
     // Measured voltage in V
-    printString(m_width / 2, 0, tinyFormat("%05.2fV", m_measured_voltage),
+    printString(m_width / 2, 0,
+                tinyFormat(buffer, "%05.2fV", m_measured_voltage),
                 {.align = TextAlign::center, .size = FontSize::big});
 
     // Target/Limit voltage in mV
-    std::string voltage_label =
-        (m_supply_mode == SupplyMode::CV) ? "TARGET" : "LIMIT";
+    std::string_view voltage_label =
+        (m_supply_mode == SupplyMode::CV) ? k_target : k_limit;
     auto target_voltage_pos =
-        (m_width - printString(0, 0, voltage_label + " 00000mV", true)) / 2;
-    auto len = printString(target_voltage_pos, 16, voltage_label + " ");
+        (m_width - printString(0, 0, voltage_label, true) -
+         printString(0, 0, "00000mV", true)) /
+        2;
+    auto len = printString(target_voltage_pos, 16, voltage_label);
     len += printString(target_voltage_pos + len, 16,
-                       tinyFormat("%05d", m_target_voltage),
+                       tinyFormat(buffer, "%05d", m_target_voltage),
                        {.invert = m_is_target_voltage_selected});
     printString(target_voltage_pos + len, 16, "mV");
 
@@ -33,17 +43,19 @@ auto MainScreen::build() -> FrameBuffer& {
     // Using std::abs as a safety net against sensor noise.
     // The circuit is physically wired for positive current only.
     printString(m_width / 2, 25,
-                tinyFormat("%05.2fA", std::abs(m_measured_current)),
+                tinyFormat(buffer, "%05.2fA", std::abs(m_measured_current)),
                 {.align = TextAlign::center, .size = FontSize::big});
 
     // Target/Limit current in mA
-    std::string current_label =
-        (m_supply_mode == SupplyMode::CV) ? "LIMIT" : "TARGET";
+    std::string_view current_label =
+        (m_supply_mode == SupplyMode::CV) ? k_limit : k_target;
     auto target_current_pos =
-        (m_width - printString(0, 0, current_label + " 0000mA", true)) / 2;
-    len = printString(target_current_pos, 41, current_label + " ");
+        (m_width - printString(0, 0, current_label, true) -
+         printString(0, 0, "0000mA", true)) /
+        2;
+    len = printString(target_current_pos, 41, current_label);
     len += printString(target_current_pos + len, 41,
-                       tinyFormat("%04d", m_target_current),
+                       tinyFormat(buffer, "%04d", m_target_current),
                        {.invert = m_is_target_current_selected});
     printString(target_current_pos + len, 41, "mA");
 

@@ -1,8 +1,9 @@
 #ifndef state_machine_hpp
 #define state_machine_hpp
 
+#include <array>
 #include <cstdint>
-#include <string>
+#include <span>
 #include <variant>
 
 #include "config.hpp"
@@ -10,6 +11,8 @@
 #include "loading_screen.hpp"
 #include "main_screen.hpp"
 #include "menu_screen.hpp"
+
+constexpr size_t k_max_configs = 16;
 
 enum MainScreenSelection { None, Voltage, Current, Count };   // FIXME
 
@@ -51,9 +54,8 @@ class StateMachine {
     };
 
     struct MenuStateBuilder {
-        static auto
-        build(const std::vector<std::pair<std::string, Config>>& configs,
-              uint8_t selected_item) -> MenuState;
+        static auto build(std::span<const Config> configs,
+                          uint8_t selected_item) -> MenuState;
     };
 
     struct MainState {
@@ -110,9 +112,13 @@ class StateMachine {
 
     auto renderUI() -> void;
 
+    auto insertConfig(const Config& config) -> bool;
+    auto getActiveConfigs() const -> std::span<const Config>;
+
     HardwareContext& m_hw;
     State m_current_state{InitState{}};
-    std::vector<std::pair<std::string, Config>> m_configs;
+    std::array<Config, k_max_configs> m_configs;
+    size_t m_active_config_count = 0;
 };
 
 #endif   // state_machine_hpp

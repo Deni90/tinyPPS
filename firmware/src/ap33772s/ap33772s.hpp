@@ -4,7 +4,6 @@
 #include <array>
 #include <cassert>
 #include <cstdint>
-#include <string>
 
 #include "hardware_config.hpp"
 #include "pdsink_iface.hpp"

@@ -1,17 +1,20 @@
 #ifndef menu_screen_hpp
 #define menu_screen_hpp
 
+#include "config.hpp"
 #include "screen.hpp"
 
-#include <string>
-#include <vector>
+#include <span>
+#include <string_view>
 
 class MenuScreen : public Screen {
   public:
     /**
      * @brief Constructor
+     *
+     * @param[in] title Menu title
      */
-    MenuScreen() = default;
+    MenuScreen(std::string_view title);
 
     /**
      * @brief Destructor
@@ -23,31 +26,15 @@ class MenuScreen : public Screen {
      *
      * @return Menu title
      */
-    [[nodiscard]] auto getTitle() const -> std::string;
+    [[nodiscard]] auto getTitle() const -> std::string_view;
 
     /**
-     * @brief Set menu title
+     * @brief Set config
      *
-     * @param[in] title Title
+     * @param[in] config Span containing PDOs that can be used as menu items
      * @return reference to this menu screen object
      */
-    auto setTitle(const std::string& title) -> MenuScreen&;
-
-    /**
-     * @brief Get menu items
-     *
-     * @return Vector containing menu items
-     */
-    [[nodiscard]] auto getMenuItems() const -> std::vector<std::string>;
-
-    /**
-     * @brief Populate menu with menu items
-     *
-     * @param[in] Vector containing menu items
-     * @return reference to this menu screen object
-     */
-    auto setMenuItems(const std::vector<std::string>& menu_items)
-        -> MenuScreen&;
+    auto setConfig(std::span<const Config> config) -> MenuScreen&;
 
     /**
      * @brief Get the index of the selected menu item
@@ -91,8 +78,8 @@ class MenuScreen : public Screen {
     auto build() -> FrameBuffer& override;
 
   private:
-    std::string m_title;
-    std::vector<std::string> m_menu_items;
+    std::string_view m_title;
+    std::span<const Config> m_config;
     uint8_t m_selected_menu_item{0};
 };
 

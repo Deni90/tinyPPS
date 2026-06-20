@@ -20,6 +20,8 @@ static constexpr uint16_t k_big_step_size = 250;
 static constexpr float k_low_voltage_threshold = 0.5F;
 static constexpr uint8_t k_low_voltage_reading_count = 10;
 
+static constexpr std::string_view k_menu_title = "Available PDOs";
+
 inline auto operator++(MainScreenSelection& selection) -> MainScreenSelection& {
     using T = std::underlying_type_t<MainScreenSelection>;
     selection = static_cast<MainScreenSelection>(
@@ -66,10 +68,8 @@ auto StateMachine::handleEvent(InitState& state, const SystemTickEvent& event)
         state.screen.setPdoProfileCount(0);
         state.transition_time += event.delta;
         if (state.transition_time >= k_state_transition_period) {
-            m_configs.emplace_back(
-                std::make_pair("", ConfigBuilder::buildDefault()));
-            m_current_state =
-                MainStateBuilder::buildFromConfig(m_configs.back().second);
+            insertConfig(ConfigBuilder::buildDefault());
+            m_current_state = MainStateBuilder::buildFromConfig(m_configs[0]);
             ;
         }
     }
@@ -93,8 +93,7 @@ auto StateMachine::handleEvent(LoadingState& state,
             if (m_hw.pdsink.getPdo(i, pdo) &&
                 pdo.type != IPdSink::PdoType::AVS) {
                 // Skip AVS PDOs, since the HW is not capable of handling them
-                m_configs.emplace_back(std::make_pair(
-                    pdoToString(pdo), ConfigBuilder::buildWithPdo(pdo)));
+                insertConfig(ConfigBuilder::buildWithPdo(pdo));
             }
         }
         state.screen.setPdoProfileCount(state.pdo_count);
@@ -103,13 +102,14 @@ auto StateMachine::handleEvent(LoadingState& state,
         if (state.transition_time >= k_state_transition_period) {
             if (state.pdo_count == 1) {
                 auto next_state =
-                    MainStateBuilder::buildFromConfig(m_configs.back().second);
+                    MainStateBuilder::buildFromConfig(m_configs[0]);
                 m_hw.pdsink.setPdoOutput(next_state.config.pdo.index,
                                          next_state.user_voltage,
                                          next_state.user_current);
                 m_current_state = next_state;
             } else {
-                m_current_state = MenuStateBuilder::build(m_configs, 0);
+                m_current_state =
+                    MenuStateBuilder::build(getActiveConfigs(), 0);
             }
         }
     }
@@ -121,7 +121,7 @@ auto StateMachine::handleEvent(MenuState& state,
     // Handle encoder states
     if (event.encoder_state == RotaryEncoder::State::btn_short_press) {
         auto next_state = MainStateBuilder::MainStateBuilder::buildFromConfig(
-            m_configs[state.screen.getSelectedMenuItem()].second);
+            m_configs[state.screen.getSelectedMenuItem()]);
         m_hw.pdsink.setPdoOutput(next_state.config.pdo.index,
                                  next_state.user_voltage,
                                  next_state.user_current);
@@ -189,16 +189,9 @@ auto StateMachine::handleEvent(MainState& state,
             }
             if (state.rotary_encoder_time <= k_double_click_period) {
                 // Switch to menu state
-                MenuScreen menu_screen;
-                menu_screen.setTitle("Available PDOs");
-                std::vector<std::string> profile_names;
-                for (const auto& config : m_configs) {
-                    profile_names.emplace_back(config.first);
-                }
-                menu_screen.setMenuItems(profile_names)
-                    .selectMenuItem(state.config.pdo.index);
-                m_current_state =
-                    MenuStateBuilder::build(m_configs, state.config.pdo.index);
+                MenuScreen menu_screen{k_menu_title};
+                m_current_state = MenuStateBuilder::build(
+                    getActiveConfigs(), state.config.pdo.index);
                 renderUI();
                 return;
             }
@@ -297,16 +290,10 @@ auto StateMachine::handleEvent(MainState& state, const VoutStatusUpdateEvent&)
     state.setOutputEnable(m_hw, false);
 }
 
-auto StateMachine::MenuStateBuilder::build(
-    const std::vector<std::pair<std::string, Config>>& configs,
-    uint8_t selected_item) -> MenuState {
-    MenuScreen menu_screen;
-    menu_screen.setTitle("Available PDOs");
-    std::vector<std::string> profile_names;
-    for (const auto& config : configs) {
-        profile_names.emplace_back(config.first);
-    }
-    menu_screen.setMenuItems(profile_names).selectMenuItem(selected_item);
+auto StateMachine::MenuStateBuilder::build(std::span<const Config> configs,
+                                           uint8_t selected_item) -> MenuState {
+    MenuScreen menu_screen{k_menu_title};
+    menu_screen.setConfig(configs).selectMenuItem(selected_item);
     return MenuState{.screen = menu_screen};
 }
 
@@ -376,4 +363,16 @@ auto StateMachine::renderUI() -> void {
         [](auto& state) -> Screen& { return state.screen; }, m_current_state);
 
     m_hw.oled.display(current_screen.build());
+}
+
+auto StateMachine::insertConfig(const Config& config) -> bool {
+    if (m_active_config_count < k_max_configs) {
+        m_configs[m_active_config_count++] = config;
+        return true;
+    }
+    return false;
+}
+
+auto StateMachine::getActiveConfigs() const -> std::span<const Config> {
+    return std::span<const Config>(m_configs.data(), m_active_config_count);
 }
